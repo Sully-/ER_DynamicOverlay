@@ -2,6 +2,8 @@
 
 A Rust overlay injected into an **already-running** `eldenring.exe`, **read-only**. Shows a customizable dashboard: IGT, a **boss** counter, Great Runes, deaths, NG+, Key items...
 
+![Elden Ring Overlay](docs/overlay.png)
+
 > **Read-only, offline, no cheating.** No memory writes, no anti-cheat bypass. Single-player, offline use only.
 
 > **Note on development.** This project was developed largely with the assistance of an LLM (code generation, refactoring, documentation). The code is reviewed and tested, but keep this in mind when reviewing or reusing it.
@@ -132,6 +134,8 @@ Provided layout: `layouts/dashboard.toml` (two sections: `minimalist` and `exten
 ## Layout editor
 
 Instead of writing TOML by hand, use the **visual editor** in `tools/layout-editor/`.
+
+![Layout editor](docs/layout-editor.png)
 
 1. Open `tools/layout-editor/index.html` in a browser.
    *(If file import/export is blocked by the browser, serve the folder: `python -m http.server` from `tools/layout-editor/`, then open `http://localhost:8000`.)*
