@@ -31,7 +31,7 @@ col = 0
 row = 0
 w = 2
 h = 1
-label = "KAHCOURSE"
+label = "DEFAULT"
 
 [[section.tile]]
 kind = "metric"
