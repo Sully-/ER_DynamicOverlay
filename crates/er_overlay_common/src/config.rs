@@ -1,0 +1,229 @@
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
+
+use anyhow::{Context, Result};
+use serde::{Deserialize, Serialize};
+use tracing::{info, warn};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Anchor {
+    TopLeft,
+    #[default]
+    TopRight,
+    BottomLeft,
+    BottomRight,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OverlayConfig {
+    #[serde(default)]
+    pub show_debug: bool,
+    #[serde(default)]
+    pub anchor: Anchor,
+    #[serde(default)]
+    pub offset_x: f32,
+    #[serde(default = "default_offset_y")]
+    pub offset_y: f32,
+    #[serde(default = "default_scale")]
+    pub scale: f32,
+    #[serde(default = "default_text_size")]
+    pub text_size: f32,
+    #[serde(default = "default_icon_size")]
+    pub icon_size: f32,
+    #[serde(default = "default_bg_opacity")]
+    pub background_opacity: f32,
+    #[serde(default = "default_gray_tint")]
+    pub gray_tint: f32,
+    #[serde(default = "default_true")]
+    pub use_item_icons: bool,
+    #[serde(default)]
+    pub icons_dir: Option<String>,
+    #[serde(default = "default_layout_file")]
+    pub layout_file: Option<String>,
+    /// Hotkey to cycle layout sections (e.g. `"F8"`, `"Ctrl+Shift+F1"`).
+    #[serde(default)]
+    pub layout_section_hotkey: Option<String>,
+    /// Initial layout section name; overrides `default_section` in the layout file.
+    #[serde(default)]
+    pub default_layout_section: Option<String>,
+}
+
+fn default_true() -> bool {
+    true
+}
+
+fn default_offset_y() -> f32 {
+    16.0
+}
+
+fn default_scale() -> f32 {
+    1.0
+}
+
+fn default_text_size() -> f32 {
+    18.0
+}
+
+fn default_bg_opacity() -> f32 {
+    0.65
+}
+
+fn default_icon_size() -> f32 {
+    24.0
+}
+
+fn default_gray_tint() -> f32 {
+    0.40
+}
+
+fn default_layout_file() -> Option<String> {
+    Some("layouts/dashboard.toml".into())
+}
+
+impl Default for OverlayConfig {
+    fn default() -> Self {
+        Self {
+            show_debug: false,
+            anchor: Anchor::TopRight,
+            offset_x: 16.0,
+            offset_y: 16.0,
+            scale: 1.0,
+            text_size: 18.0,
+            icon_size: 24.0,
+            background_opacity: 0.65,
+            gray_tint: 0.40,
+            use_item_icons: true,
+            icons_dir: None,
+            layout_file: default_layout_file(),
+            layout_section_hotkey: None,
+            default_layout_section: None,
+        }
+    }
+}
+
+impl OverlayConfig {
+    pub fn validate_and_clamp(&mut self) {
+        if self.scale <= 0.0 || self.scale > 4.0 {
+            warn!("Invalid scale {}, clamping to 1.0", self.scale);
+            self.scale = 1.0;
+        }
+        if self.text_size <= 0.0 || self.text_size > 72.0 {
+            warn!("Invalid text_size {}, clamping to 18.0", self.text_size);
+            self.text_size = 18.0;
+        }
+        if !(0.0..=1.0).contains(&self.gray_tint) {
+            warn!("Invalid gray_tint {}, clamping to 0.40", self.gray_tint);
+            self.gray_tint = 0.40;
+        }
+        if self.icon_size <= 0.0 || self.icon_size > 128.0 {
+            warn!("Invalid icon_size {}, clamping to 24.0", self.icon_size);
+            self.icon_size = 24.0;
+        }
+        if !(0.0..=1.0).contains(&self.background_opacity) {
+            warn!(
+                "Invalid background_opacity {}, clamping to 0.65",
+                self.background_opacity
+            );
+            self.background_opacity = 0.65;
+        }
+    }
+}
+
+static OVERLAY_BASE_DIR: OnceLock<PathBuf> = OnceLock::new();
+
+/// Base directory for config, assets and logs when running inside an injected DLL.
+/// Call once from DllMain before any other overlay init (falls back to `current_exe()`).
+pub fn set_overlay_base_dir(dir: PathBuf) {
+    let _ = OVERLAY_BASE_DIR.set(dir);
+}
+
+pub fn default_config_path() -> PathBuf {
+    default_base_dir().join("er_overlay.toml")
+}
+
+pub fn default_base_dir() -> PathBuf {
+    OVERLAY_BASE_DIR
+        .get()
+        .cloned()
+        .unwrap_or_else(default_exe_dir)
+}
+
+pub fn default_exe_dir() -> PathBuf {
+    std::env::current_exe()
+        .ok()
+        .and_then(|p| p.parent().map(|d| d.to_path_buf()))
+        .unwrap_or_else(|| PathBuf::from("."))
+}
+
+pub fn default_icons_dir() -> PathBuf {
+    default_base_dir().join("assets/icons")
+}
+
+pub fn resolve_configured_path(configured: Option<&Path>, base: &Path) -> PathBuf {
+    match configured {
+        Some(path) if path.is_absolute() => path.to_path_buf(),
+        Some(path) => base.join(path),
+        None => default_icons_dir(),
+    }
+}
+
+pub fn load_or_create_config(path: &Path) -> Result<OverlayConfig> {
+    if path.exists() {
+        let raw = fs::read_to_string(path)
+            .with_context(|| format!("Failed to read config at {}", path.display()))?;
+        let mut config: OverlayConfig = toml::from_str(&raw)
+            .with_context(|| format!("Failed to parse config at {}", path.display()))?;
+        config.validate_and_clamp();
+        info!("Loaded config from {}", path.display());
+        Ok(config)
+    } else {
+        let config = OverlayConfig::default();
+        write_config(path, &config)?;
+        info!("Created default config at {}", path.display());
+        Ok(config)
+    }
+}
+
+pub fn write_config(path: &Path, config: &OverlayConfig) -> Result<()> {
+    if let Some(parent) = path.parent() {
+        if !parent.as_os_str().is_empty() {
+            fs::create_dir_all(parent)?;
+        }
+    }
+    let raw = toml::to_string_pretty(config).context("Failed to serialize config")?;
+    fs::write(path, raw)
+        .with_context(|| format!("Failed to write config to {}", path.display()))?;
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_config_roundtrip() {
+        let raw = toml::to_string(&OverlayConfig::default()).unwrap();
+        let parsed: OverlayConfig = toml::from_str(&raw).unwrap();
+        assert_eq!(
+            parsed.layout_file.as_deref(),
+            Some("layouts/dashboard.toml")
+        );
+        assert_eq!(parsed.anchor, Anchor::TopRight);
+    }
+
+    #[test]
+    fn clamp_invalid_values() {
+        let mut cfg = OverlayConfig {
+            scale: -1.0,
+            text_size: 999.0,
+            background_opacity: 2.0,
+            ..Default::default()
+        };
+        cfg.validate_and_clamp();
+        assert_eq!(cfg.scale, 1.0);
+        assert_eq!(cfg.text_size, 18.0);
+        assert_eq!(cfg.background_opacity, 0.65);
+    }
+}

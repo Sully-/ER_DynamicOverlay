@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ER Overlay — Layout Editor</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-icon">◈</span>
+      <h1>Layout Editor</h1>
+      <span class="brand-sub">Elden Ring Overlay</span>
+    </div>
+    <div class="topbar-actions">
+      <label class="btn btn-ghost" for="import-file">
+        Importer TOML
+        <input id="import-file" type="file" accept=".toml" hidden />
+      </label>
+      <button id="btn-new" class="btn btn-ghost" type="button">Nouveau</button>
+      <button id="btn-export" class="btn btn-primary" type="button">Exporter TOML</button>
+    </div>
+  </header>
+
+  <div class="workspace">
+    <aside class="panel panel-left">
+      <section class="panel-block">
+        <h2>Palette</h2>
+        <p class="hint">Glissez un élément sur la grille.</p>
+        <div id="palette-metrics" class="palette"></div>
+        <h3 class="subhead">Texte</h3>
+        <div id="palette-label" class="palette"></div>
+        <h3 class="subhead">Items <span id="catalog-count" class="badge"></span></h3>
+        <div id="palette-item-sections" class="item-sections"></div>
+      </section>
+    </aside>
+
+    <main class="canvas-area">
+      <div class="canvas-toolbar">
+        <div class="section-tabs" id="section-tabs"></div>
+        <div class="canvas-toolbar-spacer"></div>
+        <span id="grid-info" class="muted"></span>
+      </div>
+      <div class="canvas-wrapper">
+        <div id="grid-canvas" class="grid-canvas"></div>
+      </div>
+    </main>
+
+    <aside class="panel panel-right">
+      <section class="panel-block" id="props-empty">
+        <h2>Propriétés</h2>
+        <p class="hint">Sélectionnez une tuile ou configurez la grille.</p>
+      </section>
+
+      <section class="panel-block hidden" id="props-tile">
+        <h2>Tuile</h2>
+        <div class="field">
+          <label>Type</label>
+          <input id="prop-kind" class="input" type="text" readonly />
+        </div>
+        <div class="field" id="field-label">
+          <label>Label</label>
+          <input id="prop-label" class="input" type="text" />
+        </div>
+        <div class="field hidden" id="field-metric">
+          <label>Métrique</label>
+          <select id="prop-metric" class="input"></select>
+        </div>
+        <div class="field hidden" id="field-key">
+          <label>Clé (key)</label>
+          <input id="prop-key" class="input" type="text" />
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Col</label>
+            <input id="prop-col" class="input input-num" type="number" min="0" />
+          </div>
+          <div class="field">
+            <label>Row</label>
+            <input id="prop-row" class="input input-num" type="number" min="0" />
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>w</label>
+            <input id="prop-w" class="input input-num" type="number" min="1" />
+          </div>
+          <div class="field">
+            <label>h</label>
+            <input id="prop-h" class="input input-num" type="number" min="1" />
+          </div>
+        </div>
+        <div class="field hidden" id="field-show-max">
+          <label class="checkbox-label">
+            <input id="prop-show-max" type="checkbox" />
+            show_max
+          </label>
+        </div>
+        <div class="field hidden" id="field-icon">
+          <label>Icon (optionnel)</label>
+          <input id="prop-icon" class="input" type="text" placeholder="kindling, scadutree…" />
+        </div>
+        <button id="btn-delete-tile" class="btn btn-danger btn-block" type="button">Supprimer</button>
+      </section>
+
+      <section class="panel-block">
+        <h2>Grille</h2>
+        <div class="field-row">
+          <div class="field">
+            <label>Colonnes</label>
+            <input id="cfg-columns" class="input input-num" type="number" min="1" max="32" />
+          </div>
+          <div class="field">
+            <label>Lignes</label>
+            <input id="cfg-rows" class="input input-num" type="number" min="1" max="32" />
+          </div>
+        </div>
+        <p class="hint">Glissez les bords de la grille pour redimensionner.</p>
+        <div class="field-row">
+          <div class="field">
+            <label>Unit (px)</label>
+            <input id="cfg-unit-size" class="input input-num" type="number" min="16" />
+          </div>
+          <div class="field">
+            <label>Gap</label>
+            <input id="cfg-gap" class="input input-num" type="number" min="0" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Padding</label>
+          <input id="cfg-padding" class="input input-num" type="number" min="0" />
+        </div>
+        <div class="field">
+          <label>Section par défaut</label>
+          <select id="cfg-default-section" class="input">
+            <option value="minimalist">minimalist</option>
+            <option value="extended">extended</option>
+          </select>
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  <script src="catalog.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

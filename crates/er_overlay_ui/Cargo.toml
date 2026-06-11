@@ -1,0 +1,21 @@
+[package]
+name = "er_overlay_ui"
+description = "ImGui overlay UI for Elden Ring metrics"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[features]
+default = []
+
+[dependencies]
+er_overlay_common.workspace = true
+er_game_state = { workspace = true, features = ["mock"] }
+hudhook = { workspace = true }
+image = { workspace = true }
+imgui.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+er_game_state = { workspace = true, features = ["mock"] }

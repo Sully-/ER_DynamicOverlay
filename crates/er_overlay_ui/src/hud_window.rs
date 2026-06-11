@@ -1,0 +1,103 @@
+use er_overlay_common::{Anchor, OverlayConfig};
+use imgui::{Condition, Ui, WindowFlags};
+
+/// Position remembered when the user moves the overlay.
+#[derive(Debug, Clone)]
+pub struct HudDragState {
+    pub pos: Option<[f32; 2]>,
+    anchor: Anchor,
+    offset_x: f32,
+    offset_y: f32,
+}
+
+impl Default for HudDragState {
+    fn default() -> Self {
+        Self {
+            pos: None,
+            anchor: Anchor::default(),
+            offset_x: 0.0,
+            offset_y: 0.0,
+        }
+    }
+}
+
+impl HudDragState {
+    pub fn sync_anchor(&mut self, config: &OverlayConfig) {
+        if self.anchor != config.anchor
+            || self.offset_x != config.offset_x
+            || self.offset_y != config.offset_y
+        {
+            self.pos = None;
+            self.anchor = config.anchor;
+            self.offset_x = config.offset_x;
+            self.offset_y = config.offset_y;
+        }
+    }
+
+    pub fn capture_pos(&mut self, ui: &Ui) {
+        self.pos = Some(ui.window_pos());
+    }
+}
+
+pub struct HudWindowPlacement {
+    pub pos: [f32; 2],
+    pub condition: Condition,
+    pub pivot: Option<[f32; 2]>,
+}
+
+pub fn hud_window_placement(
+    ui: &Ui,
+    config: &OverlayConfig,
+    drag: &HudDragState,
+) -> HudWindowPlacement {
+    if let Some(pos) = drag.pos {
+        return HudWindowPlacement {
+            pos,
+            condition: Condition::Always,
+            pivot: None,
+        };
+    }
+
+    let display = ui.io().display_size;
+    let w = display[0];
+    let h = display[1];
+    let ox = config.offset_x * config.scale;
+    let oy = config.offset_y * config.scale;
+    let (pos, pivot) = match config.anchor {
+        Anchor::TopLeft => ([ox, oy], [0.0, 0.0]),
+        Anchor::TopRight => ([w - ox, oy], [1.0, 0.0]),
+        Anchor::BottomLeft => ([ox, h - oy], [0.0, 1.0]),
+        Anchor::BottomRight => ([w - ox, h - oy], [1.0, 1.0]),
+    };
+    // `Always` so the anchor is re-applied every frame: when the active section
+    // changes the window width (e.g. minimalist -> extended), a top-right anchor
+    // must keep its right edge pinned instead of growing off-screen.
+    HudWindowPlacement {
+        pos,
+        condition: Condition::Always,
+        pivot: Some(pivot),
+    }
+}
+
+pub fn hud_window_flags(fixed_size: bool) -> WindowFlags {
+    let mut flags = WindowFlags::NO_TITLE_BAR
+        | WindowFlags::NO_SCROLLBAR
+        | WindowFlags::NO_COLLAPSE
+        | WindowFlags::NO_FOCUS_ON_APPEARING
+        | WindowFlags::NO_BRING_TO_FRONT_ON_FOCUS
+        | WindowFlags::NO_NAV;
+
+    if fixed_size {
+        flags |= WindowFlags::NO_RESIZE;
+    } else {
+        flags |= WindowFlags::ALWAYS_AUTO_RESIZE;
+    }
+
+    flags
+}
+
+pub fn debug_window_flags() -> WindowFlags {
+    WindowFlags::NO_COLLAPSE
+        | WindowFlags::NO_FOCUS_ON_APPEARING
+        | WindowFlags::NO_BRING_TO_FRONT_ON_FOCUS
+}

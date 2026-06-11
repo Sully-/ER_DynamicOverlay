@@ -1,0 +1,15 @@
+mod fonts;
+mod hud_window;
+mod icon_atlas;
+mod layout_engine;
+mod metric_registry;
+mod render;
+mod tile_render;
+mod tracked_icon;
+mod view_model;
+
+pub use fonts::setup_overlay_fonts;
+pub use hud_window::HudDragState;
+pub use icon_atlas::IconAtlas;
+pub use render::render_overlay;
+pub use view_model::{build_view_model, OverlayViewModel};

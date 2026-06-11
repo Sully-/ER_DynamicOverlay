@@ -1,0 +1,27 @@
+[package]
+name = "er_overlay_injector"
+description = "Transparent LoadLibrary injector for er_overlay DLL"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "er_overlay_injector"
+path = "src/main.rs"
+
+[dependencies]
+er_overlay_common.workspace = true
+anyhow.workspace = true
+clap.workspace = true
+tracing.workspace = true
+windows = { workspace = true, features = [
+    "Win32_Foundation",
+    "Win32_Security",
+    "Win32_System_Diagnostics_Debug",
+    "Win32_System_Diagnostics_ToolHelp",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Memory",
+    "Win32_System_ProcessStatus",
+    "Win32_System_Threading",
+] }

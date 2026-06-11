@@ -1,0 +1,23 @@
+[package]
+name = "er_overlay_dll"
+description = "Injected Elden Ring overlay DLL (DX12 + ImGui via hudhook)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[lib]
+name = "er_overlay"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+er_overlay_common.workspace = true
+er_game_state = { workspace = true, features = ["game"] }
+er_overlay_ui.workspace = true
+hudhook.workspace = true
+imgui.workspace = true
+tracing.workspace = true
+windows = { workspace = true, features = [
+    "Win32_System_LibraryLoader",
+    "Win32_System_Threading",
+] }
