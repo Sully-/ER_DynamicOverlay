@@ -41,6 +41,14 @@ jobs:
           Copy-Item target/release/assets  $out/ -Recurse
           Copy-Item README.md, LICENSE     $out/
 
+          # Layout editor (static web app)
+          New-Item -ItemType Directory -Force "$out/layout-editor" | Out-Null
+          Copy-Item tools/layout-editor/index.html   "$out/layout-editor/"
+          Copy-Item tools/layout-editor/app.js        "$out/layout-editor/"
+          Copy-Item tools/layout-editor/catalog.js    "$out/layout-editor/"
+          Copy-Item tools/layout-editor/style.css     "$out/layout-editor/"
+          Copy-Item tools/layout-editor/README.md     "$out/layout-editor/"
+
           Compress-Archive -Path "$out/*" -DestinationPath "$out.zip" -Force
 
       - name: Publish GitHub release
