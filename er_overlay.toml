@@ -9,6 +9,6 @@ background_opacity = 0.65
 gray_tint = 0.40
 use_item_icons = true
 # icons_dir = "assets/icons"   # relative to the er_overlay.dll directory
-layout_file = "layouts/test.toml"
+layout_file = "layouts/dashboard.toml"
 layout_section_hotkey = "F8"
 default_layout_section = "minimalist"
