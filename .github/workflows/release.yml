@@ -1,0 +1,50 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  release:
+    name: Build and publish release
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry and target
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build release
+        run: cargo build --release
+
+      - name: Bundle artifacts
+        shell: pwsh
+        run: |
+          $ver = "${{ github.ref_name }}"
+          $out = "er-overlay-$ver"
+          New-Item -ItemType Directory -Force $out | Out-Null
+
+          Copy-Item target/release/er_overlay_injector.exe $out/
+          Copy-Item target/release/er_overlay.dll          $out/
+          Copy-Item target/release/er_overlay.toml          $out/
+          Copy-Item target/release/layouts $out/ -Recurse
+          Copy-Item target/release/assets  $out/ -Recurse
+          Copy-Item README.md, LICENSE     $out/
+
+          Compress-Archive -Path "$out/*" -DestinationPath "$out.zip" -Force
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: er-overlay-${{ github.ref_name }}.zip
+          generate_release_notes: true
