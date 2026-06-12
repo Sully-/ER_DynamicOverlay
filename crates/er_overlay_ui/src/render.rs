@@ -1,4 +1,5 @@
-use er_overlay_common::{LayoutConfig, OverlayConfig};
+use er_game_state::{active_boss_locale, bosses_total_count, resolve_boss_table_path};
+use er_overlay_common::{default_base_dir, LayoutConfig, OverlayConfig};
 use imgui::{Condition, MouseButton, Ui};
 
 use crate::boss_panel::{render_boss_panel, BossPanelState};
@@ -142,6 +143,10 @@ fn render_debug(ui: &Ui, vm: &OverlayViewModel) {
         "Boss panel: {:?} ({}/{})",
         vm.boss_panel_scope, vm.boss_panel_killed, vm.boss_panel_total
     ));
+    let locale = active_boss_locale();
+    let table_path = resolve_boss_table_path(&default_base_dir(), &locale);
+    ui.text(format!("Boss table: {locale} ({} bosses)", bosses_total_count()));
+    ui.text(format!("  {}", table_path.display()));
 }
 
 #[cfg(test)]

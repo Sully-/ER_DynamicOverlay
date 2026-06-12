@@ -38,6 +38,7 @@ jobs:
           Copy-Item target/release/er_overlay.dll          $out/
           Copy-Item target/release/er_overlay.toml          $out/
           Copy-Item target/release/layouts $out/ -Recurse
+          Copy-Item target/release/tables  $out/ -Recurse
           Copy-Item target/release/assets  $out/ -Recurse
           Copy-Item README.md, LICENSE     $out/
 

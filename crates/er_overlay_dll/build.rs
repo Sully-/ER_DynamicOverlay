@@ -32,13 +32,29 @@ fn main() {
         .join("crates")
         .join("er_game_state")
         .join("tables");
-    for lang in ["en", "fr"] {
-        let src = boss_tables_src.join(lang).join("bosses.toml");
-        println!("cargo:rerun-if-changed={}", src.display());
-        if src.is_file() {
-            let dest_dir = out_dir.join("tables").join(lang);
-            let _ = fs::create_dir_all(&dest_dir);
-            let _ = fs::copy(&src, dest_dir.join("bosses.toml"));
+    println!("cargo:rerun-if-changed={}", boss_tables_src.display());
+    if boss_tables_src.is_dir() {
+        for entry in fs::read_dir(&boss_tables_src).into_iter().flatten().flatten() {
+            if !entry.file_type().map(|t| t.is_dir()).unwrap_or(false) {
+                continue;
+            }
+            let lang = entry.file_name().to_string_lossy().into_owned();
+            let src = entry.path().join("bosses.toml");
+            if !src.is_file() {
+                continue;
+            }
+            println!("cargo:rerun-if-changed={}", src.display());
+            let dest_dir = out_dir.join("tables").join(&lang);
+            if let Err(e) = fs::create_dir_all(&dest_dir) {
+                println!("cargo:warning=Could not create {}: {e}", dest_dir.display());
+                continue;
+            }
+            if let Err(e) = fs::copy(&src, dest_dir.join("bosses.toml")) {
+                println!(
+                    "cargo:warning=Could not copy boss table to {}: {e}",
+                    dest_dir.display()
+                );
+            }
         }
     }
 

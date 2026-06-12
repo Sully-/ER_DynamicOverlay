@@ -24,5 +24,6 @@ boss_panel_visible = true
 # Y is shifted down automatically if it would cover the minimalist HUD.
 # boss_panel_layout = "-5, 10, 25%, 92%"
 default_layout_section = "minimalist"
-# Boss table language (hot-reloaded). auto = game language (Steam), or en, fr, …
-# boss_locale = "auto"
+# Boss table: tables/<lang>/bosses.toml next to the DLL (hot-reloaded every ~2 s).
+# auto = game language (Steam), or en, fr, …
+boss_locale = "auto"

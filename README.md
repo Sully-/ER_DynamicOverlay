@@ -61,12 +61,12 @@ Artifacts in `target/release/`:
 - `er_overlay_injector.exe` — the injector
 - `er_overlay.dll` — the overlay itself
 
-The build copies `er_overlay.toml`, the `layouts/` folder and `assets/icons/` next to the binaries.
+The build copies `er_overlay.toml`, `layouts/`, `tables/<lang>/bosses.toml` and `assets/icons/` next to the binaries.
 
 ## Running the overlay
 
 1. Launch Elden Ring **offline** (EAC disabled).
-2. Make sure `er_overlay.dll`, `er_overlay_injector.exe`, `er_overlay.toml` and `layouts/` are **in the same folder**.
+2. Make sure `er_overlay.dll`, `er_overlay_injector.exe`, `er_overlay.toml`, `layouts/` and `tables/` are **in the same folder**.
 3. **Double-click `er_overlay_injector.exe`.** That's it — the overlay appears in-game.
 
 The injector finds `eldenring.exe` automatically, checks it's x64, warns if EAC modules are detected, then injects.
