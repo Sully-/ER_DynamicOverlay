@@ -19,9 +19,7 @@ static DETECTED: OnceLock<String> = OnceLock::new();
 
 /// Short language id for `tables/<lang>/bosses.toml` (e.g. `en`, `fr`).
 pub fn detect_game_language() -> String {
-    DETECTED
-        .get_or_init(read_steam_language)
-        .clone()
+    DETECTED.get_or_init(read_steam_language).clone()
 }
 
 fn read_steam_language() -> String {
@@ -45,10 +43,8 @@ fn try_read_steam_language() -> Option<String> {
             .collect();
         let handle: HMODULE = GetModuleHandleW(PCWSTR(dll_name.as_ptr())).ok()?;
 
-        let apps_ctor: SteamAppsFn = std::mem::transmute(load_proc(
-            handle,
-            "SteamAPI_SteamApps_v008",
-        )?);
+        let apps_ctor: SteamAppsFn =
+            std::mem::transmute(load_proc(handle, "SteamAPI_SteamApps_v008")?);
         let get_lang: GetGameLanguageFn = std::mem::transmute(load_proc(
             handle,
             "SteamAPI_ISteamApps_GetCurrentGameLanguage",
@@ -73,8 +69,7 @@ fn try_read_steam_language() -> Option<String> {
 
 unsafe fn load_proc(handle: HMODULE, name: &str) -> Option<usize> {
     let c_name = CString::new(name).ok()?;
-    GetProcAddress(handle, PCSTR(c_name.as_ptr() as *const u8))
-        .map(|ptr| ptr as usize)
+    GetProcAddress(handle, PCSTR(c_name.as_ptr() as *const u8)).map(|ptr| ptr as usize)
 }
 
 fn map_steam_language(steam_lang: &str) -> String {

@@ -68,12 +68,8 @@ impl OverlayApp {
             .map(|l| l.collect_equipped_refs())
             .unwrap_or_default();
         let boss_panel = BossPanelState::default();
-        let view_model = build_view_model(
-            &reader,
-            &data_refs,
-            &equipped_refs,
-            config.boss_panel_scope,
-        );
+        let view_model =
+            build_view_model(&reader, &data_refs, &equipped_refs, config.boss_panel_scope);
         let show_boss_panel = config.boss_panel_visible;
         let icon_signature = Self::icon_signature_for(&config, layout.as_ref());
         let mut app = Self {
@@ -473,8 +469,8 @@ impl ImguiRenderLoop for OverlayApp {
         } else {
             None
         };
-        let show_boss_panel = self.show_boss_panel
-            && self.section_allows_boss_panel(self.section_state.active_index);
+        let show_boss_panel =
+            self.show_boss_panel && self.section_allows_boss_panel(self.section_state.active_index);
 
         render_overlay(
             ui,

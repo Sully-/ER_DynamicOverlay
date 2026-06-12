@@ -4,14 +4,15 @@ use imgui::{Condition, MouseButton, Ui};
 
 use crate::boss_panel::{render_boss_panel, BossPanelState};
 use crate::hud_window::{
-    debug_window_flags, hud_window_flags, hud_window_placement, top_left_from_placement,
-    HudBounds, HudDragState,
+    debug_window_flags, hud_window_flags, hud_window_placement, top_left_from_placement, HudBounds,
+    HudDragState,
 };
 use crate::icon_atlas::IconAtlas;
 use crate::layout_engine::render_layout_dashboard;
 use crate::tile_render::rgba;
 use crate::view_model::OverlayViewModel;
 
+#[allow(clippy::too_many_arguments)]
 pub fn render_overlay(
     ui: &Ui,
     config: &OverlayConfig,
@@ -145,7 +146,10 @@ fn render_debug(ui: &Ui, vm: &OverlayViewModel) {
     ));
     let locale = active_boss_locale();
     let table_path = resolve_boss_table_path(&default_base_dir(), &locale);
-    ui.text(format!("Boss table: {locale} ({} bosses)", bosses_total_count()));
+    ui.text(format!(
+        "Boss table: {locale} ({} bosses)",
+        bosses_total_count()
+    ));
     ui.text(format!("  {}", table_path.display()));
 }
 

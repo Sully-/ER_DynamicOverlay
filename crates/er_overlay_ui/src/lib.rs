@@ -9,8 +9,8 @@ mod tile_render;
 mod tracked_icon;
 mod view_model;
 
-pub use fonts::setup_overlay_fonts;
 pub use boss_panel::BossPanelState;
+pub use fonts::setup_overlay_fonts;
 pub use hud_window::{HudBounds, HudDragState};
 pub use icon_atlas::IconAtlas;
 pub use render::render_overlay;

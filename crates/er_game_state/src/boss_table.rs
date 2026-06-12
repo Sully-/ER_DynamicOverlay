@@ -93,9 +93,7 @@ pub fn normalize_locale_id(raw: &str) -> String {
 
 /// Path to `tables/<lang>/bosses.toml` relative to the DLL directory.
 pub fn resolve_boss_table_path(base: &Path, locale_id: &str) -> PathBuf {
-    base.join("tables")
-        .join(locale_id)
-        .join("bosses.toml")
+    base.join("tables").join(locale_id).join("bosses.toml")
 }
 
 /// Parses and validates a boss table TOML payload.
@@ -149,10 +147,7 @@ pub fn boss_table() -> Arc<BossTableData> {
 }
 
 pub fn active_boss_locale() -> String {
-    ACTIVE_LOCALE_ID
-        .read()
-        .expect("locale id poisoned")
-        .clone()
+    ACTIVE_LOCALE_ID.read().expect("locale id poisoned").clone()
 }
 
 pub fn bosses_total_count() -> usize {

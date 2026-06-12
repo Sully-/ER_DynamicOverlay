@@ -84,59 +84,53 @@ pub fn render_boss_panel(
     }
 
     window.build(|| {
-            ui.set_window_font_scale(text_scale);
+        ui.set_window_font_scale(text_scale);
 
-            if ui.is_window_hovered() && ui.is_mouse_dragging(imgui::MouseButton::Left) {
-                state.pos = Some(ui.window_pos());
+        if ui.is_window_hovered() && ui.is_mouse_dragging(imgui::MouseButton::Left) {
+            state.pos = Some(ui.window_pos());
+        }
+
+        render_header(ui, vm);
+        ui.separator();
+
+        if vm.boss_panel_sections.is_empty() {
+            ui.text("Unknown region");
+            if let Some(id) = vm.current_subregion_id {
+                ui.text(format!("map_id: {id} (key: {})", id / 1000));
+            } else {
+                ui.text("(not in-game or data unavailable)");
             }
+            return;
+        }
 
-            render_header(ui, vm);
-            ui.separator();
-
-            if vm.boss_panel_sections.is_empty() {
-                ui.text("Unknown region");
-                if let Some(id) = vm.current_subregion_id {
-                    ui.text(format!("map_id: {id} (key: {})", id / 1000));
-                } else {
-                    ui.text("(not in-game or data unavailable)");
-                }
-                return;
-            }
-
-            ui.child_window("##boss_list")
-                .size(ui.content_region_avail())
-                .build(|| {
-                    match vm.boss_panel_scope {
-                        BossPanelScope::AllRegions => {
-                            let current_index = vm
-                                .boss_panel_sections
-                                .iter()
-                                .position(|s| s.is_current);
-                            let scroll_to_current =
-                                state.should_scroll_to_section(current_index);
-                            let scroll_follow_up = state.consume_scroll_follow_up();
-                            let scroll_current = scroll_to_current || scroll_follow_up;
-                            for (i, section) in vm.boss_panel_sections.iter().enumerate() {
-                                let should_open = current_index == Some(i);
-                                if should_open && scroll_current {
-                                    scroll_current_region_into_view(ui);
-                                }
-                                render_region_tree(ui, section, should_open);
-                            }
+        ui.child_window("##boss_list")
+            .size(ui.content_region_avail())
+            .build(|| match vm.boss_panel_scope {
+                BossPanelScope::AllRegions => {
+                    let current_index = vm.boss_panel_sections.iter().position(|s| s.is_current);
+                    let scroll_to_current = state.should_scroll_to_section(current_index);
+                    let scroll_follow_up = state.consume_scroll_follow_up();
+                    let scroll_current = scroll_to_current || scroll_follow_up;
+                    for (i, section) in vm.boss_panel_sections.iter().enumerate() {
+                        let should_open = current_index == Some(i);
+                        if should_open && scroll_current {
+                            scroll_current_region_into_view(ui);
                         }
-                        BossPanelScope::CurrentRegion => {
-                            for boss in vm
-                                .boss_panel_sections
-                                .first()
-                                .into_iter()
-                                .flat_map(|s| s.bosses.iter())
-                            {
-                                render_boss_row(ui, boss);
-                            }
-                        }
+                        render_region_tree(ui, section, should_open);
                     }
-                });
-        });
+                }
+                BossPanelScope::CurrentRegion => {
+                    for boss in vm
+                        .boss_panel_sections
+                        .first()
+                        .into_iter()
+                        .flat_map(|s| s.bosses.iter())
+                    {
+                        render_boss_row(ui, boss);
+                    }
+                }
+            });
+    });
 }
 
 fn render_header(ui: &Ui, vm: &OverlayViewModel) {
@@ -150,10 +144,7 @@ fn render_header(ui: &Ui, vm: &OverlayViewModel) {
             }
         }
         BossPanelScope::AllRegions => {
-            let region = vm
-                .current_region
-                .clone()
-                .unwrap_or_else(|| "?".to_string());
+            let region = vm.current_region.clone().unwrap_or_else(|| "?".to_string());
             ui.text(format!(
                 "Bosses {}/{} — region: {}",
                 vm.boss_panel_killed, vm.boss_panel_total, region
@@ -166,11 +157,7 @@ fn scroll_current_region_into_view(ui: &Ui) {
     ui.set_scroll_from_pos_y_with_ratio(ui.cursor_pos()[1], 0.2);
 }
 
-fn render_region_tree(
-    ui: &Ui,
-    section: &crate::view_model::BossPanelSection,
-    should_open: bool,
-) {
+fn render_region_tree(ui: &Ui, section: &crate::view_model::BossPanelSection, should_open: bool) {
     let label = format!("{} ({}/{})", section.region, section.killed, section.total);
     // Same `should_open` logic as ER_boss_checklist_R; `Always` re-opens on region change
     // (needed because DLC is one aggregated node — `default_open` alone is FirstUseEver only).
@@ -226,7 +213,11 @@ fn boss_panel_geometry(
         };
     }
 
-    if let Some(raw) = config.boss_panel_layout.as_deref().and_then(parse_panel_layout) {
+    if let Some(raw) = config
+        .boss_panel_layout
+        .as_deref()
+        .and_then(parse_panel_layout)
+    {
         let PanelRect { pos, size, pivot } = resolve_panel_rect(viewport, raw);
         let mut geom = BossPanelGeometry {
             pos,
@@ -300,7 +291,8 @@ mod tests {
             pos: [1412.0, 16.0],
             size: [492.0, 84.0],
         };
-        let geom = default_boss_panel_geometry([1920.0, 1080.0], Some(hud), &OverlayConfig::default());
+        let geom =
+            default_boss_panel_geometry([1920.0, 1080.0], Some(hud), &OverlayConfig::default());
         assert!((panel_top_y(&geom) - 108.0).abs() < 0.01);
         assert!((geom.width - 480.0).abs() < 0.01);
     }

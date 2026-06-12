@@ -52,7 +52,11 @@ fn main() {
         .join("tables");
     println!("cargo:rerun-if-changed={}", boss_tables_src.display());
     if boss_tables_src.is_dir() {
-        for entry in fs::read_dir(&boss_tables_src).into_iter().flatten().flatten() {
+        for entry in fs::read_dir(&boss_tables_src)
+            .into_iter()
+            .flatten()
+            .flatten()
+        {
             if !entry.file_type().map(|t| t.is_dir()).unwrap_or(false) {
                 continue;
             }

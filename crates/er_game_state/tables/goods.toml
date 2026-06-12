@@ -10,7 +10,7 @@ texture_prefix = "MENU_Knowledge"
 # Aggregate groups expose an "owned / total" metric named after the group, counting how
 # many member goods are owned. Members can be any goods — no Rust changes required.
 [groups.great_runes]
-members = ["godrick_rune", "radahn_rune", "morgott_rune", "rykard_rune", "mohg_rune", "malenia_rune"]
+members = ["godrick_rune", "radahn_rune", "morgott_rune", "rykard_rune", "mohg_rune", "malenia_rune", "unborn_rune"]
 
 [[good]]
 key = "godrick_rune"
@@ -1346,7 +1346,7 @@ icon_id = 3002
 
 [[good]]
 key = "academy_glintstone_key"
-item_id = 8174
+item_id = 8109
 name = "Academy Glintstone Key"
 icon_id = 3006
 

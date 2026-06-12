@@ -54,10 +54,7 @@ pub struct HudWindowPlacement {
 
 /// Converts an anchored pivot position into a top-left corner.
 pub fn top_left_from_placement(pos: [f32; 2], pivot: [f32; 2], size: [f32; 2]) -> [f32; 2] {
-    [
-        pos[0] - pivot[0] * size[0],
-        pos[1] - pivot[1] * size[1],
-    ]
+    [pos[0] - pivot[0] * size[0], pos[1] - pivot[1] * size[1]]
 }
 
 pub fn hud_window_placement(
