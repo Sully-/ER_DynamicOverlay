@@ -38,6 +38,16 @@ const PREVIEW_METRICS = {
 
 const PREVIEW_ITEM_COUNT = "3";
 
+/** Reference height used in tile_render.rs for line spacing (not text_size). */
+const OVERLAY_FONT_REF_PX = 18;
+
+const OVERLAY_CONFIG_URL = (() => {
+  const pageDir = new URL(".", location.href);
+  const path = decodeURIComponent(pageDir.pathname).replace(/\\/g, "/").toLowerCase();
+  const rel = path.includes("/tools/layout_editor/") ? "../../er_overlay.toml" : "er_overlay.toml";
+  return new URL(rel, pageDir).href;
+})();
+
 const SECTION_NAMES = ["minimalist", "extended"];
 
 const ITEM_CATEGORY_IDS = ["runes", "key_items", "talismans", "consumables"];
@@ -67,6 +77,7 @@ function createDefaultState() {
   return {
     grid: { columns: 8, unit_size: 64, gap: 4, border_radius: 6, window_padding: 8 },
     style: { ...DEFAULT_STYLE },
+    overlay: { text_size: 18, scale: 1 },
     default_section: "minimalist",
     sections: SECTION_NAMES.map((name) => ({ name, tiles: [], ...defaultSectionGrid(name) })),
     activeSection: 0,
@@ -123,6 +134,8 @@ const els = {
   cfgGap: $("#cfg-gap"),
   cfgPadding: $("#cfg-padding"),
   cfgDefaultSection: $("#cfg-default-section"),
+  cfgTextSize: $("#cfg-text-size"),
+  cfgOverlayScale: $("#cfg-overlay-scale"),
 };
 
 // ── TOML parse (local, no CDN) ──────────────────────────────────────
@@ -197,6 +210,33 @@ function parseLayoutToml(text) {
   return out;
 }
 
+function parseOverlayToml(text) {
+  const out = {};
+  for (const line of text.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#") || trimmed.startsWith("[")) continue;
+    const eq = trimmed.indexOf("=");
+    if (eq === -1) continue;
+    const key = trimmed.slice(0, eq).trim();
+    if (key === "text_size" || key === "scale") {
+      out[key] = parseTomlValue(trimmed.slice(eq + 1));
+    }
+  }
+  return out;
+}
+
+async function loadOverlayConfig() {
+  try {
+    const resp = await fetch(OVERLAY_CONFIG_URL);
+    if (!resp.ok) return;
+    const parsed = parseOverlayToml(await resp.text());
+    if (parsed.text_size != null) state.overlay.text_size = Number(parsed.text_size) || 18;
+    if (parsed.scale != null) state.overlay.scale = Number(parsed.scale) || 1;
+  } catch {
+    /* file:// or missing config — keep defaults */
+  }
+}
+
 // ── Init ────────────────────────────────────────────────────────────
 
 function rebuildLocalizedPalette() {
@@ -222,6 +262,11 @@ function init() {
   bindEvents();
   syncConfigInputs();
   applyThemeFromState();
+  loadOverlayConfig().then(() => {
+    syncConfigInputs();
+    applyThemeFromState();
+    render();
+  });
   render();
 }
 
@@ -280,30 +325,109 @@ function applyThemeFromState() {
   root.setProperty("--tile-bg-color", rgbaCss(s.tile_bg));
   root.setProperty("--tile-border-color", rgbaCss(s.border_default));
   root.setProperty("--tile-border-complete", rgbaCss(s.border_complete));
+  const scales = overlayFontScales();
+  root.setProperty("--overlay-label-line", `${scales.label * OVERLAY_FONT_REF_PX}px`);
 }
 
-function fontSizes(pxW, pxH) {
-  const unit = Math.min(pxW, pxH);
-  const base = unit / 64;
+function overlayTextSize() {
+  return Math.max(12, Math.min(48, Number(state.overlay?.text_size) || 18));
+}
+
+function overlayPreviewScale() {
+  return Math.max(0.25, Math.min(4, Number(state.overlay?.scale) || 1));
+}
+
+let _textProbe = null;
+
+function measureTextWidth(text, fontScale) {
+  if (!_textProbe) {
+    _textProbe = document.createElement("span");
+    _textProbe.className = "tile-text-probe";
+    document.body.appendChild(_textProbe);
+  }
+  _textProbe.style.fontSize = `${overlayFontPx(fontScale)}px`;
+  _textProbe.textContent = text;
+  return _textProbe.getBoundingClientRect().width;
+}
+
+/** Same formula as tile_render.rs: (text_size * scale / 18).max(0.5) */
+function overlayBaseFontScale() {
+  const textSize = overlayTextSize();
+  const scale = overlayPreviewScale();
+  return Math.max(0.5, (textSize * scale) / OVERLAY_FONT_REF_PX);
+}
+
+function overlayFontScales() {
+  const base = overlayBaseFontScale();
   return {
-    label: Math.max(7, base * state.style.label_scale * 13),
-    value: Math.max(9, base * state.style.value_scale * 17),
-    solo: Math.max(10, base * state.style.value_scale * 20),
+    label: base * state.style.label_scale,
+    value: base * state.style.value_scale,
   };
 }
 
+function overlayFontPx(fontScale) {
+  return overlayTextSize() * fontScale;
+}
+
+function overlayLineHeight(fontScale) {
+  return fontScale * OVERLAY_FONT_REF_PX;
+}
+
+/** Same logic as tile_render.rs fit_font_scale (linear shrink to max width). */
+function fitFontScale(text, maxWidth, scale) {
+  const MIN_SCALE = 0.32;
+  if (!text || maxWidth <= 0) return scale;
+  const width = measureTextWidth(text, scale);
+  if (width <= maxWidth || width <= 0) return scale;
+  return Math.max(MIN_SCALE, scale * (maxWidth / width));
+}
+
+function maxTextWidth(pxW) {
+  const padX = pxW * 0.1;
+  return Math.max(8, pxW - padX * 2);
+}
+
+function appendTileText(body, text, top, fontScale, className, maxW) {
+  const el = document.createElement("div");
+  el.className = `tile-layer ${className}`;
+  el.style.top = `${top}px`;
+  el.style.fontSize = `${overlayFontPx(fontScale)}px`;
+  el.style.maxWidth = `${maxW}px`;
+  el.textContent = text;
+  body.appendChild(el);
+  return overlayLineHeight(fontScale);
+}
+
+function appendTileIcon(body, iconKey, className, left, top, size, alt = "") {
+  const icon = makeIconImg(iconKey, className, alt);
+  icon.classList.add("tile-layer", "tile-layer--icon");
+  icon.style.left = `${left}px`;
+  icon.style.top = `${top}px`;
+  icon.style.width = `${size}px`;
+  icon.style.height = `${size}px`;
+  body.appendChild(icon);
+}
+
 function metricPreview(metric, showMax) {
-  const text = PREVIEW_METRICS[metric] ?? "---";
+  let text = PREVIEW_METRICS[metric] ?? "---";
   let complete = false;
-  if (showMax && text.includes("/")) {
+  if (text.includes("/")) {
     const [cur, max] = text.split("/");
-    complete = cur === max && max !== "0";
+    if (showMax) {
+      complete = cur === max && max !== "0";
+    } else {
+      text = cur;
+    }
   }
   return { text, complete };
 }
 
 function fillPaletteThumb(thumb, kind, data) {
   thumb.innerHTML = "";
+  const thumbW = 34;
+  const scales = overlayFontScales();
+  const maxW = maxTextWidth(thumbW);
+
   if (kind === "metric") {
     const m = METRICS.find((x) => x.id === (data.id || data.metric)) || data;
     const preview = metricPreview(m.id || m.metric, m.showMax ?? data.showMax);
@@ -315,11 +439,14 @@ function fillPaletteThumb(thumb, kind, data) {
     } else {
       const lbl = document.createElement("span");
       lbl.className = "palette-thumb-text";
+      lbl.style.fontSize = `${overlayFontPx(scales.label)}px`;
       lbl.textContent = (m.label || m.id).slice(0, 8);
       thumb.appendChild(lbl);
     }
     const val = document.createElement("span");
     val.className = "palette-thumb-value";
+    const fitted = fitFontScale(preview.text, maxW, scales.value);
+    val.style.fontSize = `${overlayFontPx(fitted)}px`;
     val.textContent = preview.text;
     thumb.appendChild(val);
     return;
@@ -327,7 +454,8 @@ function fillPaletteThumb(thumb, kind, data) {
   if (kind === "label") {
     const val = document.createElement("span");
     val.className = "palette-thumb-value";
-    val.style.fontSize = "0.62rem";
+    const fitted = fitFontScale(data.label || t("defaultTitle"), maxW, scales.value);
+    val.style.fontSize = `${overlayFontPx(fitted)}px`;
     val.textContent = data.label || t("defaultTitle");
     thumb.appendChild(val);
     return;
@@ -340,6 +468,8 @@ function fillPaletteThumb(thumb, kind, data) {
     if (countable) {
       const val = document.createElement("span");
       val.className = "palette-thumb-value";
+      const countScale = fitFontScale(PREVIEW_ITEM_COUNT, thumbW * 0.9, scales.value * 0.85);
+      val.style.fontSize = `${overlayFontPx(countScale)}px`;
       val.textContent = PREVIEW_ITEM_COUNT;
       thumb.appendChild(val);
     }
@@ -348,52 +478,72 @@ function fillPaletteThumb(thumb, kind, data) {
 
 function fillTileBody(body, tile, pxW, pxH) {
   body.innerHTML = "";
-  const sizes = fontSizes(pxW, pxH);
+  const scales = overlayFontScales();
+  const maxW = maxTextWidth(pxW);
 
   if (tile.kind === "label") {
-    const val = document.createElement("div");
-    val.className = "tile-value tile-value--solo";
-    val.style.fontSize = `${sizes.solo}px`;
-    val.textContent = tile.label || t("defaultTitle");
-    body.appendChild(val);
+    const labelText = tile.label || t("defaultTitle");
+    const fitted = fitFontScale(labelText, maxW, scales.value);
+    const textH = overlayLineHeight(fitted);
+    appendTileText(body, labelText, (pxH - textH) * 0.5, fitted, "tile-value tile-value--solo", maxW);
     return;
   }
 
   if (tile.kind === "metric") {
     const preview = metricPreview(tile.metric, tile.show_max);
-    if (tile.icon) {
-      const icon = makeIconImg(tile.icon, "tile-icon tile-icon--metric", tile.label);
-      const iconPx = Math.min(pxW, pxH) * 0.38;
-      icon.style.width = `${iconPx}px`;
-      icon.style.maxHeight = `${iconPx}px`;
-      body.appendChild(icon);
+    const labelText = tile.label || tile.metric;
+    const labelScale = scales.label;
+    const valueScale = fitFontScale(preview.text, maxW, scales.value);
+    const labelH = overlayLineHeight(labelScale);
+    const valueH = overlayLineHeight(valueScale);
+    const hasIcon = !!(tile.icon && iconUrl(tile.icon));
+    const iconSize = hasIcon ? Math.min(pxW, pxH) * 0.38 : 0;
+    const blockH = hasIcon
+      ? iconSize + labelH * 0.35 + labelH + valueH
+      : labelH + valueH * 1.1;
+    let y = (pxH - blockH) * 0.5;
+
+    if (hasIcon) {
+      appendTileIcon(
+        body,
+        tile.icon,
+        "tile-icon tile-icon--metric",
+        (pxW - iconSize) * 0.5,
+        y,
+        iconSize,
+        tile.label
+      );
+      y += iconSize + labelH * 0.25;
     }
-    const lbl = document.createElement("div");
-    lbl.className = "tile-label";
-    lbl.style.fontSize = `${sizes.label}px`;
-    lbl.textContent = tile.label || tile.metric;
-    body.appendChild(lbl);
-    const val = document.createElement("div");
-    val.className = "tile-value";
-    val.style.fontSize = `${sizes.value}px`;
-    val.textContent = preview.text;
-    body.appendChild(val);
+
+    y += appendTileText(body, labelText, y, labelScale, "tile-label", maxW);
+    appendTileText(body, preview.text, y, valueScale, "tile-value", maxW);
     return { complete: preview.complete };
   }
 
   if (tile.kind === "item") {
     const countable = itemIsCountable(tile.key);
-    const iconPx = Math.min(pxW, pxH) * (countable ? 0.58 : 0.78);
-    const icon = makeIconImg(itemIconKey(tile.key), `tile-icon ${countable ? "tile-icon--item-countable" : "tile-icon--item"}`, tile.key);
-    icon.style.width = `${iconPx}px`;
-    icon.style.maxHeight = `${iconPx}px`;
-    body.appendChild(icon);
+    const iconSize = Math.min(pxW, pxH) * (countable ? 0.58 : 0.78);
+    const iy = countable ? pxH * 0.12 : (pxH - iconSize) * 0.5;
+    appendTileIcon(
+      body,
+      itemIconKey(tile.key),
+      `tile-icon ${countable ? "tile-icon--item-countable" : "tile-icon--item"}`,
+      (pxW - iconSize) * 0.5,
+      iy,
+      iconSize,
+      tile.key
+    );
     if (countable) {
-      const val = document.createElement("div");
-      val.className = "tile-value tile-count";
-      val.style.fontSize = `${sizes.value * 0.85}px`;
-      val.textContent = PREVIEW_ITEM_COUNT;
-      body.appendChild(val);
+      const countScale = fitFontScale(PREVIEW_ITEM_COUNT, pxW * 0.9, scales.value * 0.85);
+      appendTileText(
+        body,
+        PREVIEW_ITEM_COUNT,
+        pxH - countScale * 16 - 2,
+        countScale,
+        "tile-value tile-count",
+        pxW * 0.9
+      );
     }
   }
   return {};
@@ -556,14 +706,17 @@ function minGridBounds() {
 
 function gridMetrics() {
   const sec = activeSection();
+  const preview = overlayPreviewScale();
   const { unit_size, gap, window_padding } = state.grid;
-  const unit = unit_size;
+  const unit = unit_size * preview;
+  const gapPx = gap * preview;
+  const pad = window_padding * preview;
   const { minCol, minRow } = minGridBounds();
   const cols = Math.max(sec.gridCols ?? 8, minCol);
   const rows = Math.max(sec.gridRows ?? 1, minRow);
-  const w = window_padding * 2 + cols * unit + (cols - 1) * gap;
-  const h = window_padding * 2 + rows * unit + (rows - 1) * gap;
-  return { columns: cols, unit, gap, window_padding, rows, w, h };
+  const w = pad * 2 + cols * unit + (cols - 1) * gapPx;
+  const h = pad * 2 + rows * unit + (rows - 1) * gapPx;
+  return { columns: cols, unit, gap: gapPx, window_padding: pad, rows, w, h, preview };
 }
 
 function renderGrid() {
@@ -626,7 +779,7 @@ function renderTileEl(tile, gm, overlap) {
   el.style.top = `${top}px`;
   el.style.width = `${w}px`;
   el.style.height = `${h}px`;
-  el.style.borderRadius = `${state.grid.border_radius}px`;
+  el.style.borderRadius = `${state.grid.border_radius * gm.preview}px`;
 
   const body = document.createElement("div");
   body.className = "tile-body";
@@ -724,6 +877,8 @@ function syncConfigInputs() {
   els.cfgGap.value = state.grid.gap;
   els.cfgPadding.value = state.grid.window_padding;
   els.cfgDefaultSection.value = state.default_section;
+  if (els.cfgTextSize) els.cfgTextSize.value = state.overlay.text_size;
+  if (els.cfgOverlayScale) els.cfgOverlayScale.value = state.overlay.scale;
 }
 
 function updateGridInfo() {
@@ -1186,6 +1341,20 @@ function bindEvents() {
   els.cfgDefaultSection.addEventListener("change", () => {
     state.default_section = els.cfgDefaultSection.value;
   });
+  if (els.cfgTextSize) {
+    els.cfgTextSize.addEventListener("change", () => {
+      state.overlay.text_size = Math.max(12, Math.min(48, Number(els.cfgTextSize.value) || 18));
+      applyThemeFromState();
+      render();
+    });
+  }
+  if (els.cfgOverlayScale) {
+    els.cfgOverlayScale.addEventListener("change", () => {
+      state.overlay.scale = Math.max(0.25, Math.min(4, Number(els.cfgOverlayScale.value) || 1));
+      applyThemeFromState();
+      render();
+    });
+  }
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Delete" || e.key === "Backspace") {

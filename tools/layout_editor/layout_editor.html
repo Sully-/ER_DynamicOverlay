@@ -142,6 +142,18 @@
             <option value="extended">extended</option>
           </select>
         </div>
+        <h3 class="subhead" data-i18n="overlayPreview">Overlay preview</h3>
+        <p class="hint" data-i18n="overlayPreviewHint">Values from er_overlay.toml — affects text size on the canvas only.</p>
+        <div class="field-row">
+          <div class="field">
+            <label data-i18n="textSize">text_size</label>
+            <input id="cfg-text-size" class="input input-num" type="number" min="12" max="48" step="1" />
+          </div>
+          <div class="field">
+            <label data-i18n="overlayScale">scale</label>
+            <input id="cfg-overlay-scale" class="input input-num" type="number" min="0.25" max="4" step="0.05" />
+          </div>
+        </div>
       </section>
     </aside>
   </div>
