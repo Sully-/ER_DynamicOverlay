@@ -132,6 +132,13 @@ name = "Smithing Stone [7]"
 icon_id = 2006
 
 [[good]]
+key = "smithing_stone_8"
+count = true
+item_id = 10107
+name = "Smithing Stone [8]"
+icon_id = 2007
+
+[[good]]
 key = "ancient_dragon_smithing_stone"
 count = true
 item_id = 10140

@@ -119,6 +119,13 @@ window.LAYOUT_CATALOG = [
     "countable": true
   },
   {
+    "key": "smithing_stone_8",
+    "name": "Smithing Stone [8]",
+    "iconKey": "smithing_stone_8",
+    "category": "consumables",
+    "countable": true
+  },
+  {
     "key": "ancient_dragon_smithing_stone",
     "name": "Ancient Dragon Smithing Stone",
     "iconKey": "ancient_dragon_smithing_stone",
