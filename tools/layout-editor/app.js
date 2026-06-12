@@ -18,7 +18,13 @@ const DEFAULT_STYLE = {
   value_scale: 1.15,
 };
 
-const ICON_BASE = "../../assets/icons/";
+/** Dev repo and release zip: tools/layout-editor/ → ../../assets/icons/; legacy release root layout-editor/ → ../assets/icons/ */
+const ICON_BASE = (() => {
+  const pageDir = new URL(".", location.href);
+  const path = decodeURIComponent(pageDir.pathname).replace(/\\/g, "/").toLowerCase();
+  const rel = path.includes("/tools/layout-editor/") ? "../../assets/icons/" : "../assets/icons/";
+  return new URL(rel, pageDir).href;
+})();
 
 const PREVIEW_METRICS = {
   igt: "1:23:45",
