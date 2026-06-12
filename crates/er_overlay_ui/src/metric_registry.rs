@@ -1,3 +1,4 @@
+use er_game_state::SCADUTREE_BLESSING_MAX;
 use er_overlay_common::{GameTime, TrackKind};
 
 use crate::view_model::{OverlayViewModel, TrackedEntryRow};
@@ -25,6 +26,10 @@ pub fn resolve_metric(metric: &str, vm: &OverlayViewModel) -> MetricValue {
             max: None,
         },
         "ng_cycle" => MetricValue::NgCycle(vm.ng_cycle),
+        "scadutree_blessing" => MetricValue::Count {
+            current: vm.scadutree_blessing,
+            max: Some(SCADUTREE_BLESSING_MAX),
+        },
         "bosses" => MetricValue::Count {
             current: vm.bosses_killed,
             max: Some(vm.bosses_total),
@@ -122,6 +127,28 @@ mod tests {
                 current: Some(0),
                 max: Some(6),
             }
+        );
+    }
+
+    #[test]
+    fn scadutree_blessing_resolves_from_mock() {
+        let vm = build_view_model(&MockGameState::default(), &[]);
+        assert_eq!(
+            resolve_metric("scadutree_blessing", &vm),
+            MetricValue::Count {
+                current: Some(12),
+                max: Some(SCADUTREE_BLESSING_MAX),
+            }
+        );
+        assert_eq!(
+            format_metric_value(
+                &MetricValue::Count {
+                    current: Some(12),
+                    max: Some(SCADUTREE_BLESSING_MAX),
+                },
+                true
+            ),
+            "12/20"
         );
     }
 

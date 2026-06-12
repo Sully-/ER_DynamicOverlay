@@ -131,6 +131,11 @@ impl GameStateSource for GameStateReader {
         Some(gdm.ng_lvl)
     }
 
+    fn get_scadutree_blessing(&self) -> Option<u32> {
+        let gdm = unsafe { GameDataMan::instance().ok()? };
+        Some(gdm.main_player_game_data.scadutree_blessing as u32)
+    }
+
     fn get_goods_quantity(&self, item_id: u32) -> Option<u32> {
         crate::inventory::game::quantity_of(eldenring::cs::ItemCategory::Goods, item_id)
     }

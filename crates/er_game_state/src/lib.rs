@@ -9,6 +9,9 @@ pub use tables::{
     ItemKind, BOSSES_TOTAL,
 };
 
+/// Maximum Scadutree Blessing level (fragments spent at Sites of Grace in the DLC).
+pub const SCADUTREE_BLESSING_MAX: u32 = 20;
+
 #[cfg(feature = "game")]
 pub use reader::GameStateReader;
 
@@ -20,6 +23,8 @@ pub trait GameStateSource {
     fn get_igt(&self) -> Option<GameTime>;
     fn get_death_count(&self) -> Option<u32>;
     fn get_ng_cycle(&self) -> Option<u32>;
+    /// Scadutree Blessing level (`PlayerGameData.scadutree_blessing`), not fragment inventory count.
+    fn get_scadutree_blessing(&self) -> Option<u32>;
     fn get_killed_boss_count(&self) -> Option<u32>;
     /// Inventory quantity of a good (`ItemCategory::Goods`).
     fn get_goods_quantity(&self, item_id: u32) -> Option<u32>;
@@ -41,6 +46,7 @@ pub mod mock {
         pub igt: Option<GameTime>,
         pub deaths: Option<u32>,
         pub ng_cycle: Option<u32>,
+        pub scadutree_blessing: Option<u32>,
         pub bosses_killed: Option<u32>,
     }
 
@@ -50,6 +56,7 @@ pub mod mock {
                 igt: Some(GameTime::from_ms(3_661_000)),
                 deaths: Some(42),
                 ng_cycle: Some(2),
+                scadutree_blessing: Some(12),
                 bosses_killed: Some(8),
             }
         }
@@ -64,6 +71,9 @@ pub mod mock {
         }
         fn get_ng_cycle(&self) -> Option<u32> {
             self.ng_cycle
+        }
+        fn get_scadutree_blessing(&self) -> Option<u32> {
+            self.scadutree_blessing
         }
         fn get_killed_boss_count(&self) -> Option<u32> {
             self.bosses_killed

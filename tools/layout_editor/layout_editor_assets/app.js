@@ -8,6 +8,7 @@ const METRICS = [
   { id: "great_runes", label: "RUNES", showMax: true },
   { id: "kindling", label: "KINDLING", showMax: true, icon: "kindling" },
   { id: "scadutree", label: "SHARDS", showMax: true, icon: "scadutree" },
+  { id: "scadutree_blessing", label: "BLESSING", showMax: true, icon: "scadutree" },
 ];
 
 const DEFAULT_STYLE = {
@@ -34,6 +35,7 @@ const PREVIEW_METRICS = {
   great_runes: "6/6",
   kindling: "7/8",
   scadutree: "12/20",
+  scadutree_blessing: "12/20",
 };
 
 const PREVIEW_ITEM_COUNT = "3";

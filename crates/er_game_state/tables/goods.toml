@@ -77,7 +77,7 @@ icon_id = 3821
 [[good]]
 key = "scadutree"
 count = true
-item_id = 256000
+item_id = 2010000
 name = "Scadutree Fragment"
 max = 50
 icon_id = 3816

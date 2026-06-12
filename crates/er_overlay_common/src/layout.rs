@@ -133,7 +133,7 @@ fn default_span() -> u32 {
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum TileDef {
     /// Counter, time, or aggregate. `metric` is a built-in id (`igt`, `deaths`, `ng_cycle`,
-    /// `bosses`), an aggregate group name from `goods.toml`, or a single good key (quantity).
+    /// `bosses`, `scadutree_blessing`), an aggregate group name from `goods.toml`, or a single good key (quantity).
     Metric {
         #[serde(default)]
         id: Option<String>,
