@@ -476,13 +476,25 @@ function fillPaletteThumb(thumb, kind, data) {
   }
 }
 
+function metricIconSize(pxW, pxH, hasLabel, valueH) {
+  const minDim = Math.min(pxW, pxH);
+  if (!hasLabel) {
+    const verticalPad = minDim * 0.06;
+    const valueGap = valueH * 0.25;
+    const maxFromHeight = pxH - valueH - valueGap - verticalPad * 2;
+    return Math.min(minDim, maxFromHeight, minDim * 0.72);
+  }
+  return minDim * 0.38;
+}
+
 function fillTileBody(body, tile, pxW, pxH) {
   body.innerHTML = "";
   const scales = overlayFontScales();
   const maxW = maxTextWidth(pxW);
 
   if (tile.kind === "label") {
-    const labelText = tile.label || t("defaultTitle");
+    if (!tile.label) return;
+    const labelText = tile.label;
     const fitted = fitFontScale(labelText, maxW, scales.value);
     const textH = overlayLineHeight(fitted);
     appendTileText(body, labelText, (pxH - textH) * 0.5, fitted, "tile-value tile-value--solo", maxW);
@@ -491,16 +503,21 @@ function fillTileBody(body, tile, pxW, pxH) {
 
   if (tile.kind === "metric") {
     const preview = metricPreview(tile.metric, tile.show_max);
-    const labelText = tile.label || tile.metric;
+    const hasLabel = !!tile.label;
+    const labelText = tile.label || "";
     const labelScale = scales.label;
     const valueScale = fitFontScale(preview.text, maxW, scales.value);
     const labelH = overlayLineHeight(labelScale);
     const valueH = overlayLineHeight(valueScale);
     const hasIcon = !!(tile.icon && iconUrl(tile.icon));
-    const iconSize = hasIcon ? Math.min(pxW, pxH) * 0.38 : 0;
+    const iconSize = hasIcon ? metricIconSize(pxW, pxH, hasLabel, valueH) : 0;
     const blockH = hasIcon
-      ? iconSize + labelH * 0.35 + labelH + valueH
-      : labelH + valueH * 1.1;
+      ? hasLabel
+        ? iconSize + labelH * 0.35 + labelH + valueH
+        : iconSize + valueH * 0.25 + valueH
+      : hasLabel
+        ? labelH + valueH * 1.1
+        : valueH;
     let y = (pxH - blockH) * 0.5;
 
     if (hasIcon) {
@@ -513,10 +530,12 @@ function fillTileBody(body, tile, pxW, pxH) {
         iconSize,
         tile.label
       );
-      y += iconSize + labelH * 0.25;
+      y += iconSize + (hasLabel ? labelH * 0.25 : valueH * 0.25);
     }
 
-    y += appendTileText(body, labelText, y, labelScale, "tile-label", maxW);
+    if (hasLabel) {
+      y += appendTileText(body, labelText, y, labelScale, "tile-label", maxW);
+    }
     appendTileText(body, preview.text, y, valueScale, "tile-value", maxW);
     return { complete: preview.complete };
   }
@@ -1171,11 +1190,11 @@ function exportToml() {
       lines.push(`kind = "${tile.kind}"`);
       if (tile.kind === "metric") {
         lines.push(`metric = "${tile.metric}"`);
-        lines.push(`label = "${tile.label}"`);
+        if (tile.label) lines.push(`label = "${tile.label}"`);
         if (tile.show_max) lines.push("show_max = true");
         if (tile.icon) lines.push(`icon = "${tile.icon}"`);
       } else if (tile.kind === "label") {
-        lines.push(`label = "${tile.label}"`);
+        if (tile.label) lines.push(`label = "${tile.label}"`);
       } else if (tile.kind === "item") {
         lines.push(`key = "${tile.key}"`);
       }

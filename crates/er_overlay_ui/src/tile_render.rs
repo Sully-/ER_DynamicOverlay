@@ -102,21 +102,36 @@ pub fn draw_metric_tile(
     let pad_x = size[0] * 0.1;
     let max_text_w = (size[0] - pad_x * 2.0).max(8.0);
 
-    let has_icon = icon_key.is_some() && config.use_item_icons;
-    let icon_size = if has_icon {
-        size[0].min(size[1]) * 0.38
-    } else {
-        0.0
-    };
-
+    let has_label = !label.is_empty();
     let label_h = label_scale * 18.0;
     let fitted_value_scale = fit_font_scale(ui, value_text, max_text_w, value_scale);
     let value_h = fitted_value_scale * 18.0;
 
-    let block_h = if has_icon {
-        icon_size + label_h * 0.35 + label_h + value_h
+    let has_icon = icon_key.is_some() && config.use_item_icons;
+    let min_dim = size[0].min(size[1]);
+    let icon_size = if has_icon {
+        if has_label {
+            min_dim * 0.38
+        } else {
+            let vertical_pad = min_dim * 0.06;
+            let value_gap = value_h * 0.25;
+            let max_from_height = size[1] - value_h - value_gap - vertical_pad * 2.0;
+            min_dim.min(max_from_height).clamp(min_dim * 0.38, min_dim * 0.72)
+        }
     } else {
+        0.0
+    };
+
+    let block_h = if has_icon {
+        if has_label {
+            icon_size + label_h * 0.35 + label_h + value_h
+        } else {
+            icon_size + value_h * 0.25 + value_h
+        }
+    } else if has_label {
         label_h + value_h * 1.1
+    } else {
+        value_h
     };
 
     let block_top = pos[1] + (size[1] - block_h) * 0.5;
@@ -125,14 +140,16 @@ pub fn draw_metric_tile(
     if let Some(key) = icon_key {
         let ix = pos[0] + (size[0] - icon_size) * 0.5;
         draw_icon_key_at(ui, key, [ix, y], icon_size, 1.0, *atlas, config);
-        y += icon_size + label_h * 0.25;
+        y += icon_size + if has_label { label_h * 0.25 } else { value_h * 0.25 };
     }
 
-    ui.set_window_font_scale(label_scale);
-    let label_w = ui.calc_text_size(label)[0].min(max_text_w);
-    ui.set_cursor_screen_pos([pos[0] + (size[0] - label_w) * 0.5, y]);
-    ui.text_colored(label_color, label);
-    y += label_h;
+    if has_label {
+        ui.set_window_font_scale(label_scale);
+        let label_w = ui.calc_text_size(label)[0].min(max_text_w);
+        ui.set_cursor_screen_pos([pos[0] + (size[0] - label_w) * 0.5, y]);
+        ui.text_colored(label_color, label);
+        y += label_h;
+    }
 
     ui.set_window_font_scale(fitted_value_scale);
     let value_w = ui.calc_text_size(value_text)[0].min(max_text_w);
@@ -152,6 +169,10 @@ pub fn draw_label_tile(
     radius: f32,
 ) {
     draw_tile_frame(ui, pos, size, style.border_default, style.tile_bg, radius);
+
+    if label.is_empty() {
+        return;
+    }
 
     let base_scale = (config.text_size * config.scale / 18.0).max(0.5);
     let text_scale = base_scale * style.value_scale;

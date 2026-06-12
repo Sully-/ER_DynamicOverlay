@@ -140,6 +140,7 @@ pub enum TileDef {
         metric: String,
         #[serde(flatten)]
         position: TilePosition,
+        #[serde(default)]
         label: String,
         #[serde(default)]
         show_max: bool,
@@ -162,6 +163,7 @@ pub enum TileDef {
         id: Option<String>,
         #[serde(flatten)]
         position: TilePosition,
+        #[serde(default)]
         label: String,
     },
 }
@@ -431,20 +433,14 @@ impl LayoutConfig {
                 TileDef::Label {
                     position,
                     id,
-                    label,
                     ..
-                } => {
-                    if label.is_empty() {
-                        bail!("label tile '{id:?}' label must not be empty");
-                    }
-                    (
-                        position.col,
-                        position.row,
-                        position.col_span,
-                        position.row_span,
-                        id.as_deref().unwrap_or("label"),
-                    )
-                }
+                } => (
+                    position.col,
+                    position.row,
+                    position.col_span,
+                    position.row_span,
+                    id.as_deref().unwrap_or("label"),
+                ),
             };
 
             if col_span == 0 || row_span == 0 {
@@ -696,6 +692,36 @@ metric = "igt"
 col = 0
 row = 0
 label = "IGT"
+"#;
+        let layout: LayoutConfig = toml::from_str(raw).unwrap();
+        layout.validate().unwrap();
+    }
+
+    #[test]
+    fn parse_metric_without_label() {
+        let raw = r#"
+[[tile]]
+kind = "metric"
+metric = "igt"
+col = 0
+row = 0
+"#;
+        let layout: LayoutConfig = toml::from_str(raw).unwrap();
+        match &layout.tiles[0] {
+            TileDef::Metric { label, .. } => assert!(label.is_empty()),
+            _ => panic!("expected metric"),
+        }
+        layout.validate().unwrap();
+    }
+
+    #[test]
+    fn parse_label_tile_empty_label() {
+        let raw = r#"
+[[tile]]
+kind = "label"
+col = 0
+row = 0
+label = ""
 "#;
         let layout: LayoutConfig = toml::from_str(raw).unwrap();
         layout.validate().unwrap();
