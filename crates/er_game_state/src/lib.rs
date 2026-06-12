@@ -1,11 +1,24 @@
+mod boss_table;
 mod inventory;
 mod tables;
 
 #[cfg(feature = "game")]
+mod field_area;
+
+#[cfg(feature = "game")]
+mod game_language;
+
+#[cfg(feature = "game")]
 mod reader;
 
+pub use boss_table::{
+    active_boss_locale, bosses_total_count, load_boss_table_from_path,
+    normalize_locale_id, reload_boss_table_if_modified, resolve_boss_table_path,
+    resolve_locale_id, BossTableData, DEFAULT_LOCALE_ID,
+};
 pub use tables::{
-    good_by_key, group_members, group_names, group_progress, group_size, item_owned, GoodEntry,
+    boss_entries_full, bosses_in_region, good_by_key, group_members, group_names, group_progress,
+    group_size, item_owned, region_label_for_subregion, region_names, BossEntry, GoodEntry,
     ItemKind, BOSSES_TOTAL,
 };
 
@@ -35,6 +48,8 @@ pub trait GameStateSource {
     fn is_item_equipped(&self, item_id: u32, category: ItemKind) -> Option<bool>;
     /// State of an event flag.
     fn get_flag(&self, flag_id: u32) -> Option<bool>;
+    /// Raw map / subregion id from `FieldArea` (divide by 1000 for region lookup).
+    fn get_current_subregion_id(&self) -> Option<u32>;
     fn get_status(&self) -> GameStateDiagnostics;
     fn bosses_total(&self) -> u32;
 }
@@ -50,6 +65,7 @@ pub mod mock {
         pub ng_cycle: Option<u32>,
         pub scadutree_blessing: Option<u32>,
         pub bosses_killed: Option<u32>,
+        pub subregion_id: Option<u32>,
     }
 
     impl Default for MockGameState {
@@ -60,6 +76,7 @@ pub mod mock {
                 ng_cycle: Some(2),
                 scadutree_blessing: Some(12),
                 bosses_killed: Some(8),
+                subregion_id: Some(6_100_000),
             }
         }
     }
@@ -92,16 +109,19 @@ pub mod mock {
         fn get_flag(&self, _flag_id: u32) -> Option<bool> {
             Some(false)
         }
+        fn get_current_subregion_id(&self) -> Option<u32> {
+            self.subregion_id
+        }
         fn get_status(&self) -> GameStateDiagnostics {
             GameStateDiagnostics {
                 backend: BackendKind::Unavailable,
-                boss_flags_loaded: super::BOSSES_TOTAL as u32,
+                boss_flags_loaded: super::bosses_total_count() as u32,
                 great_rune_flags_loaded: super::group_size("great_runes"),
                 ..Default::default()
             }
         }
         fn bosses_total(&self) -> u32 {
-            super::BOSSES_TOTAL as u32
+            super::bosses_total_count() as u32
         }
     }
 }

@@ -7,7 +7,8 @@ use er_overlay_common::{BackendKind, GameStateDiagnostics, GameTime};
 use fromsoftware_shared::{program::Program, FromStatic};
 use tracing::{debug, warn};
 
-use crate::tables::{boss_entries, group_size, BOSSES_TOTAL};
+use crate::boss_table::bosses_total_count;
+use crate::tables::{boss_entries, group_size};
 use crate::{GameStateSource, ItemKind};
 
 /// Per-poll budget spent waiting for the FromSoftware system to come up. Kept
@@ -22,6 +23,7 @@ pub struct GameStateReader {
     owned_item_ids: Option<HashSet<u32>>,
     equipped_item_ids: Option<HashSet<u32>>,
     killed_boss_count: Option<u32>,
+    current_subregion_id: Option<u32>,
 }
 
 impl Default for GameStateReader {
@@ -39,6 +41,7 @@ impl GameStateReader {
             owned_item_ids: None,
             equipped_item_ids: None,
             killed_boss_count: None,
+            current_subregion_id: None,
         }
     }
 
@@ -94,8 +97,9 @@ impl GameStateReader {
         self.diagnostics.gamedata_man_resolved = unsafe { GameDataMan::instance().is_ok() };
         self.diagnostics.event_flag_man_resolved = unsafe { CSEventFlagMan::instance().is_ok() };
         self.diagnostics.world_chr_man_resolved = crate::inventory::game::inventory_available();
-        self.diagnostics.boss_flags_loaded = boss_entries().len() as u32;
+        self.diagnostics.boss_flags_loaded = boss_entries().bosses.len() as u32;
         self.diagnostics.great_rune_flags_loaded = group_size("great_runes");
+        self.diagnostics.field_area_resolved = crate::field_area::field_area_available();
     }
 
     fn read_flag(flag_id: u32) -> Option<bool> {
@@ -108,7 +112,7 @@ impl GameStateReader {
     fn refresh_boss_cache(&mut self) {
         let mut any = false;
         let mut killed = 0u32;
-        for b in boss_entries() {
+        for b in &boss_entries().bosses {
             match Self::read_flag(b.flag_id) {
                 Some(true) => {
                     any = true;
@@ -162,6 +166,10 @@ impl GameStateSource for GameStateReader {
         Self::read_flag(flag_id)
     }
 
+    fn get_current_subregion_id(&self) -> Option<u32> {
+        self.current_subregion_id
+    }
+
     fn get_killed_boss_count(&self) -> Option<u32> {
         self.killed_boss_count
     }
@@ -175,16 +183,26 @@ impl GameStateSource for GameStateReader {
     }
 
     fn bosses_total(&self) -> u32 {
-        BOSSES_TOTAL as u32
+        bosses_total_count() as u32
     }
 }
 
 impl GameStateReader {
+    /// Clears cached boss kill counts after `bosses.toml` is reloaded at runtime.
+    pub fn invalidate_boss_cache(&mut self) {
+        self.killed_boss_count = None;
+    }
+
+    fn refresh_subregion(&mut self) {
+        self.current_subregion_id = crate::field_area::read_current_subregion_id();
+    }
+
     pub fn poll(&mut self) {
         self.ensure_initialized();
         if self.initialized {
             self.refresh_inventory_cache();
             self.refresh_boss_cache();
+            self.refresh_subregion();
         }
         self.refresh_diag_flags();
     }
@@ -197,6 +215,6 @@ mod tests {
     #[test]
     fn reader_constructed() {
         let r = GameStateReader::new();
-        assert_eq!(r.bosses_total(), BOSSES_TOTAL as u32);
+        assert_eq!(r.bosses_total(), bosses_total_count() as u32);
     }
 }

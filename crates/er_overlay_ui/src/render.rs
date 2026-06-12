@@ -1,7 +1,11 @@
 use er_overlay_common::{LayoutConfig, OverlayConfig};
 use imgui::{Condition, MouseButton, Ui};
 
-use crate::hud_window::{debug_window_flags, hud_window_flags, hud_window_placement, HudDragState};
+use crate::boss_panel::{render_boss_panel, BossPanelState};
+use crate::hud_window::{
+    debug_window_flags, hud_window_flags, hud_window_placement, top_left_from_placement,
+    HudBounds, HudDragState,
+};
 use crate::icon_atlas::IconAtlas;
 use crate::layout_engine::render_layout_dashboard;
 use crate::tile_render::rgba;
@@ -15,14 +19,41 @@ pub fn render_overlay(
     layout: Option<&LayoutConfig>,
     active_section_index: usize,
     drag: &mut HudDragState,
+    show_boss_panel: bool,
+    boss_panel: &mut BossPanelState,
 ) {
+    let hud_anchor = layout.as_ref().map(|layout| {
+        drag.sync_anchor(config);
+        minimalist_hud_bounds(ui, config, layout, drag)
+    });
+
     if let Some(layout) = layout {
         render_overlay_layout(ui, config, vm, atlas, layout, active_section_index, drag);
+    }
+
+    if show_boss_panel {
+        render_boss_panel(ui, config, vm, boss_panel, hud_anchor);
     }
 
     if config.show_debug {
         render_debug_window(ui, vm, drag);
     }
+}
+
+/// Bounds of the minimalist HUD section — used to anchor the boss panel underneath.
+fn minimalist_hud_bounds(
+    ui: &Ui,
+    config: &OverlayConfig,
+    layout: &LayoutConfig,
+    drag: &HudDragState,
+) -> HudBounds {
+    let idx = layout.section_index("minimalist").unwrap_or(0);
+    let tiles = layout.tiles_for_section(idx);
+    let size = layout.grid_pixel_size_for(tiles, config.scale);
+    let placement = hud_window_placement(ui, config, drag);
+    let pivot = placement.pivot.unwrap_or([0.0, 0.0]);
+    let pos = top_left_from_placement(placement.pos, pivot, size);
+    HudBounds { pos, size }
 }
 
 fn render_overlay_layout(
@@ -68,9 +99,6 @@ fn render_overlay_layout(
             let inner_h = (height - pad * 2.0).max(1.0);
             ui.dummy([inner_w, inner_h]);
             render_layout_dashboard(ui, config, layout, tiles, vm, atlas, origin);
-            // Only persist a manual position while the user is actively dragging the
-            // window. Capturing every frame would freeze the top-left corner and
-            // defeat the anchor re-pinning (the cause of the clipped last column).
             if ui.is_window_hovered() && ui.is_mouse_dragging(MouseButton::Left) {
                 drag.capture_pos(ui);
             }
@@ -101,6 +129,19 @@ fn render_debug(ui: &Ui, vm: &OverlayViewModel) {
     ui.text(format!("WorldChrMan: {}", d.world_chr_man_resolved));
     ui.text(format!("Boss flags: {}", d.boss_flags_loaded));
     ui.text(format!("Rune flags: {}", d.great_rune_flags_loaded));
+    ui.text(format!("FieldArea: {}", d.field_area_resolved));
+    if let Some(id) = vm.current_subregion_id {
+        ui.text(format!("Map id: {id} (key: {})", id / 1000));
+    } else {
+        ui.text("Map id: (unavailable)");
+    }
+    if let Some(ref region) = vm.current_region {
+        ui.text(format!("Current region: {region}"));
+    }
+    ui.text(format!(
+        "Boss panel: {:?} ({}/{})",
+        vm.boss_panel_scope, vm.boss_panel_killed, vm.boss_panel_total
+    ));
 }
 
 #[cfg(test)]
@@ -114,7 +155,12 @@ mod tests {
     #[test]
     fn view_model_builds() {
         let mock = MockGameState::default();
-        let vm = build_view_model(&mock, &[], &HashSet::new());
+        let vm = build_view_model(
+            &mock,
+            &[],
+            &HashSet::new(),
+            er_overlay_common::BossPanelScope::CurrentRegion,
+        );
         assert!(vm.igt.is_some());
         assert_eq!(vm.deaths, Some(42));
     }

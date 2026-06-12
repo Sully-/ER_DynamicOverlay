@@ -1,6 +1,13 @@
 use er_overlay_common::{Anchor, OverlayConfig};
 use imgui::{Condition, Ui, WindowFlags};
 
+/// Top-left corner and size of a positioned window.
+#[derive(Debug, Clone, Copy)]
+pub struct HudBounds {
+    pub pos: [f32; 2],
+    pub size: [f32; 2],
+}
+
 /// Position remembered when the user moves the overlay.
 #[derive(Debug, Clone)]
 pub struct HudDragState {
@@ -43,6 +50,14 @@ pub struct HudWindowPlacement {
     pub pos: [f32; 2],
     pub condition: Condition,
     pub pivot: Option<[f32; 2]>,
+}
+
+/// Converts an anchored pivot position into a top-left corner.
+pub fn top_left_from_placement(pos: [f32; 2], pivot: [f32; 2], size: [f32; 2]) -> [f32; 2] {
+    [
+        pos[0] - pivot[0] * size[0],
+        pos[1] - pivot[1] * size[1],
+    ]
 }
 
 pub fn hud_window_placement(

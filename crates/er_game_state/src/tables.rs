@@ -3,12 +3,17 @@ use std::sync::LazyLock;
 
 use serde::Deserialize;
 
+use crate::boss_table::boss_table;
 use crate::GameStateSource;
 
-#[cfg(any(feature = "game", test))]
 #[derive(Debug, Clone)]
-pub(crate) struct BossEntry {
-    pub(crate) flag_id: u32,
+pub struct BossEntry {
+    pub flag_id: u32,
+    pub name: String,
+    pub region: String,
+    pub icon: String,
+    pub place: Option<String>,
+    pub dlc: bool,
 }
 
 /// Inventory category a tracked good lives in. Mirrors the relevant subset of
@@ -57,18 +62,6 @@ struct GroupDef {
     members: Vec<String>,
 }
 
-#[cfg(any(feature = "game", test))]
-#[derive(Debug, Deserialize)]
-struct BossTable {
-    boss: Vec<BossRow>,
-}
-
-#[cfg(any(feature = "game", test))]
-#[derive(Debug, Deserialize)]
-struct BossRow {
-    flag_id: u32,
-}
-
 #[derive(Debug, Deserialize)]
 struct GoodsTable {
     #[serde(default)]
@@ -92,8 +85,6 @@ struct GoodRow {
 }
 
 const GOODS_TOML: &str = include_str!("../tables/goods.toml");
-#[cfg(any(feature = "game", test))]
-const BOSSES_TOML: &str = include_str!("../tables/bosses.toml");
 
 /// `name -> member good keys` for every aggregate group in `goods.toml`.
 static GROUPS: LazyLock<HashMap<String, Vec<String>>> = LazyLock::new(|| {
@@ -123,24 +114,42 @@ static GOODS: LazyLock<Vec<ParsedGood>> = LazyLock::new(|| {
         .collect()
 });
 
-#[cfg(any(feature = "game", test))]
-static BOSSES: LazyLock<Vec<BossEntry>> = LazyLock::new(|| {
-    let table: BossTable = toml::from_str(BOSSES_TOML).expect("bosses.toml must parse");
-    table
-        .boss
-        .into_iter()
-        .map(|row| BossEntry {
-            flag_id: row.flag_id,
-        })
-        .collect()
-});
-
-/// Official boss checklist: 165 base + 42 Shadow of the Erdtree.
+/// Official boss checklist size in the embedded `bosses.toml` (fallback when no external file).
 pub const BOSSES_TOTAL: usize = 207;
 
-#[cfg(any(feature = "game", test))]
-pub(crate) fn boss_entries() -> &'static [BossEntry] {
-    &BOSSES
+pub(crate) fn boss_entries() -> std::sync::Arc<crate::boss_table::BossTableData> {
+    boss_table()
+}
+
+pub fn boss_entries_full() -> std::sync::Arc<crate::boss_table::BossTableData> {
+    boss_table()
+}
+
+/// Resolves the bosses.toml region label for a live map id.
+/// Keys match bosses.json: usually `map_id / 1000`, with a direct lookup fallback.
+pub fn region_label_for_subregion(map_id: u32) -> Option<String> {
+    let table = boss_table();
+    let key = map_id / 1000;
+    table
+        .subregion_to_region
+        .get(&key)
+        .or_else(|| table.subregion_to_region.get(&map_id))
+        .cloned()
+}
+
+/// Boss entries whose `region` label matches `region`.
+pub fn bosses_in_region(region: &str) -> Vec<BossEntry> {
+    boss_table()
+        .bosses
+        .iter()
+        .filter(|b| b.region == region)
+        .cloned()
+        .collect()
+}
+
+/// Region labels in bosses.json display order.
+pub fn region_names() -> Vec<String> {
+    boss_table().region_names.clone()
 }
 
 fn good_entry(g: &ParsedGood) -> GoodEntry {
@@ -219,12 +228,12 @@ mod tests {
 
     #[test]
     fn boss_table_non_empty() {
-        assert_eq!(boss_entries().len(), BOSSES_TOTAL);
+        assert_eq!(boss_entries().bosses.len(), BOSSES_TOTAL);
     }
 
     #[test]
     fn boss_table_unique_flags() {
-        let all = boss_entries();
+        let all = &boss_entries().bosses;
         let mut ids: Vec<u32> = all.iter().map(|b| b.flag_id).collect();
         ids.sort_unstable();
         ids.dedup();
@@ -291,5 +300,64 @@ mod tests {
     fn group_progress_counts_owned_members() {
         let source = MockGameState::default();
         assert_eq!(group_progress(&source, "great_runes"), Some((0, 6)));
+    }
+
+    #[test]
+    fn boss_entries_have_metadata() {
+        let table = boss_entries_full();
+        let b = table.bosses.first().unwrap();
+        assert!(!b.name.is_empty());
+        assert!(!b.region.is_empty());
+        assert!(!b.icon.is_empty());
+    }
+
+    #[test]
+    fn region_map_resolves_limgrave() {
+        assert_eq!(
+            region_label_for_subregion(6_100_000).as_deref(),
+            Some("LIMGRAVE")
+        );
+        assert_eq!(
+            region_label_for_subregion(3_002_000).as_deref(),
+            Some("LIMGRAVE")
+        );
+        assert_eq!(
+            region_label_for_subregion(6100).as_deref(),
+            Some("LIMGRAVE")
+        );
+    }
+
+    #[test]
+    fn bosses_in_region_non_empty() {
+        assert!(!bosses_in_region("LIMGRAVE").is_empty());
+    }
+
+    #[test]
+    fn region_names_non_empty() {
+        assert!(!region_names().is_empty());
+    }
+
+    #[test]
+    fn region_names_follow_bosses_json_order() {
+        let names = region_names();
+        assert_eq!(names.first().map(String::as_str), Some("LIMGRAVE"));
+        assert_eq!(names.get(1).map(String::as_str), Some("WEEPING PENINSULA"));
+        let limgrave_pos = names.iter().position(|r| r == "LIMGRAVE").unwrap();
+        let liurnia_pos = names
+            .iter()
+            .position(|r| r == "LIURNIA OF THE LAKES")
+            .unwrap();
+        assert!(limgrave_pos < liurnia_pos);
+    }
+
+    #[test]
+    fn tree_sentinel_has_place() {
+        let table = boss_entries_full();
+        let sentinel = table
+            .bosses
+            .iter()
+            .find(|b| b.flag_id == 1042360800)
+            .expect("Tree Sentinel");
+        assert_eq!(sentinel.place.as_deref(), Some("Church of Elleh"));
     }
 }

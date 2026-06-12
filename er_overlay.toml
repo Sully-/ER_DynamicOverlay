@@ -11,4 +11,18 @@ use_item_icons = true
 # icons_dir = "assets/icons"   # relative to the er_overlay.dll directory
 layout_file = "layouts/dashboard.toml"
 layout_section_hotkey = "F8"
+boss_panel_hotkey = "F7"
+# current-region = current area bosses only
+# all-regions = all bosses grouped by region (scrollable)
+boss_panel_scope = "current-region"
+boss_panel_visible = true
+# Boss panel position and size (optional). Format: x, y, width, height
+# auto or omitted = -5, 10, 25%, 92% (below the minimalist HUD)
+# Pixels:         32, 120, 480, 900
+# Percent:        75%, 8%, 22%, 45%
+# Negative edges: -5, 10, 25%, 92%   (x=-5 → 5px from the right edge)
+# Y is shifted down automatically if it would cover the minimalist HUD.
+# boss_panel_layout = "-5, 10, 25%, 92%"
 default_layout_section = "minimalist"
+# Boss table language (hot-reloaded). auto = game language (Steam), or en, fr, …
+# boss_locale = "auto"

@@ -1,13 +1,13 @@
 use std::path::PathBuf;
-use std::time::{Duration, Instant};
+use std::time::{Duration, Instant, SystemTime};
 
-use er_game_state::GameStateReader;
+use er_game_state::{reload_boss_table_if_modified, resolve_locale_id, GameStateReader};
 use er_overlay_common::{
     load_layout, parse_hotkey, resolve_configured_path, resolve_layout_path, HotkeyBinding,
     LayoutConfig, OverlayConfig, OverlayKey,
 };
 use er_overlay_ui::{
-    build_view_model, render_overlay, setup_overlay_fonts, HudDragState, IconAtlas,
+    build_view_model, render_overlay, setup_overlay_fonts, BossPanelState, HudDragState, IconAtlas,
 };
 use hudhook::ImguiRenderLoop;
 use hudhook::RenderContext;
@@ -26,6 +26,10 @@ pub struct OverlayApp {
     section_state: LayoutSectionState,
     parsed_hotkey: Option<HotkeyBinding>,
     hotkey_raw: Option<String>,
+    parsed_boss_hotkey: Option<HotkeyBinding>,
+    boss_hotkey_raw: Option<String>,
+    show_boss_panel: bool,
+    boss_panel: BossPanelState,
     last_config_reload: Instant,
     reader: GameStateReader,
     font_bytes: Vec<u8>,
@@ -37,6 +41,8 @@ pub struct OverlayApp {
     hud_drag: HudDragState,
     view_model: er_overlay_ui::OverlayViewModel,
     last_state_poll: Instant,
+    boss_table_mtime: Option<SystemTime>,
+    active_boss_locale: Option<String>,
 }
 
 impl OverlayApp {
@@ -47,6 +53,11 @@ impl OverlayApp {
         if hotkey_raw.is_some() && parsed_hotkey.is_none() {
             warn!("Invalid layout_section_hotkey: {:?}", hotkey_raw);
         }
+        let boss_hotkey_raw = config.boss_panel_hotkey.clone();
+        let parsed_boss_hotkey = boss_hotkey_raw.as_deref().and_then(parse_hotkey);
+        if boss_hotkey_raw.is_some() && parsed_boss_hotkey.is_none() {
+            warn!("Invalid boss_panel_hotkey: {:?}", boss_hotkey_raw);
+        }
         let reader = GameStateReader::new();
         let data_refs = layout
             .as_ref()
@@ -56,7 +67,14 @@ impl OverlayApp {
             .as_ref()
             .map(|l| l.collect_equipped_refs())
             .unwrap_or_default();
-        let view_model = build_view_model(&reader, &data_refs, &equipped_refs);
+        let boss_panel = BossPanelState::default();
+        let view_model = build_view_model(
+            &reader,
+            &data_refs,
+            &equipped_refs,
+            config.boss_panel_scope,
+        );
+        let show_boss_panel = config.boss_panel_visible;
         let icon_signature = Self::icon_signature_for(&config, layout.as_ref());
         let mut app = Self {
             config,
@@ -68,6 +86,10 @@ impl OverlayApp {
             },
             parsed_hotkey,
             hotkey_raw,
+            parsed_boss_hotkey,
+            boss_hotkey_raw,
+            show_boss_panel,
+            boss_panel,
             last_config_reload: Instant::now(),
             reader,
             font_bytes: Vec::new(),
@@ -77,8 +99,11 @@ impl OverlayApp {
             hud_drag: HudDragState::default(),
             view_model,
             last_state_poll: Instant::now(),
+            boss_table_mtime: None,
+            active_boss_locale: None,
         };
         app.sync_section_state();
+        app.maybe_reload_boss_table();
         app
     }
 
@@ -103,7 +128,12 @@ impl OverlayApp {
             .as_ref()
             .map(|l| l.collect_equipped_refs())
             .unwrap_or_default();
-        self.view_model = build_view_model(&self.reader, &data_refs, &equipped_refs);
+        self.view_model = build_view_model(
+            &self.reader,
+            &data_refs,
+            &equipped_refs,
+            self.config.boss_panel_scope,
+        );
         self.last_state_poll = Instant::now();
     }
 
@@ -135,13 +165,21 @@ impl OverlayApp {
 
     fn sync_hotkey(&mut self) {
         let raw = self.config.layout_section_hotkey.clone();
-        if self.hotkey_raw.as_ref() == raw.as_ref() {
-            return;
+        if self.hotkey_raw.as_ref() != raw.as_ref() {
+            self.hotkey_raw = raw.clone();
+            self.parsed_hotkey = raw.as_deref().and_then(parse_hotkey);
+            if raw.is_some() && self.parsed_hotkey.is_none() {
+                warn!("Invalid layout_section_hotkey: {:?}", raw);
+            }
         }
-        self.hotkey_raw = raw.clone();
-        self.parsed_hotkey = raw.as_deref().and_then(parse_hotkey);
-        if raw.is_some() && self.parsed_hotkey.is_none() {
-            warn!("Invalid layout_section_hotkey: {:?}", raw);
+
+        let boss_raw = self.config.boss_panel_hotkey.clone();
+        if self.boss_hotkey_raw.as_ref() != boss_raw.as_ref() {
+            self.boss_hotkey_raw = boss_raw.clone();
+            self.parsed_boss_hotkey = boss_raw.as_deref().and_then(parse_hotkey);
+            if boss_raw.is_some() && self.parsed_boss_hotkey.is_none() {
+                warn!("Invalid boss_panel_hotkey: {:?}", boss_raw);
+            }
         }
     }
 
@@ -198,6 +236,52 @@ impl OverlayApp {
         }
     }
 
+    fn maybe_toggle_boss_panel(&mut self, ui: &imgui::Ui) {
+        let Some(hk) = self.parsed_boss_hotkey else {
+            return;
+        };
+        if !modifiers_match(ui, hk) {
+            return;
+        }
+        let key = overlay_key_to_imgui(hk.key);
+        if ui.is_key_pressed_no_repeat(key) {
+            if !self.section_allows_boss_panel(self.section_state.active_index) {
+                return;
+            }
+            let opening = !self.show_boss_panel;
+            self.show_boss_panel = !self.show_boss_panel;
+            if opening {
+                self.boss_panel.on_reopened();
+                self.refresh_view_model();
+            }
+            debug!("Boss panel toggled: {}", self.show_boss_panel);
+        }
+    }
+
+    /// Index of the compact HUD section (minimalist tracker); boss panel stays with it only.
+    fn compact_layout_section_index(&self) -> usize {
+        let Some(layout) = self.layout.as_ref() else {
+            return 0;
+        };
+        if let Some(name) = self.config.default_layout_section.as_deref() {
+            if let Some(idx) = layout.section_index(name) {
+                return idx;
+            }
+        }
+        layout.resolve_default_section_index(None)
+    }
+
+    fn section_allows_boss_panel(&self, section_index: usize) -> bool {
+        section_index == self.compact_layout_section_index()
+    }
+
+    fn hide_boss_panel_for_layout(&mut self) {
+        if self.show_boss_panel {
+            self.show_boss_panel = false;
+            debug!("Boss panel hidden (extended layout)");
+        }
+    }
+
     fn maybe_cycle_section(&mut self, ui: &imgui::Ui) {
         let Some(hk) = self.parsed_hotkey else {
             return;
@@ -215,6 +299,22 @@ impl OverlayApp {
         if ui.is_key_pressed_no_repeat(key) {
             self.section_state.active_index =
                 (self.section_state.active_index + 1) % layout.section_count();
+            if !self.section_allows_boss_panel(self.section_state.active_index) {
+                self.hide_boss_panel_for_layout();
+            }
+        }
+    }
+
+    fn maybe_reload_boss_table(&mut self) {
+        let locale_id = resolve_locale_id(self.config.boss_locale.as_deref());
+        if reload_boss_table_if_modified(
+            &er_overlay_common::default_base_dir(),
+            &locale_id,
+            &mut self.boss_table_mtime,
+            &mut self.active_boss_locale,
+        ) {
+            self.reader.invalidate_boss_cache();
+            self.refresh_view_model();
         }
     }
 
@@ -225,11 +325,16 @@ impl OverlayApp {
         self.last_config_reload = Instant::now();
         match er_overlay_common::load_or_create_config(&self.config_path) {
             Ok(cfg) => {
+                let locale_settings_changed = self.config.boss_locale != cfg.boss_locale;
                 self.layout = Self::load_layout_from_config(&cfg);
                 self.config = cfg;
+                if locale_settings_changed {
+                    self.boss_table_mtime = None;
+                    self.active_boss_locale = None;
+                }
+                self.maybe_reload_boss_table();
                 self.sync_hotkey();
                 self.sync_section_state();
-
                 // Reload icons only when the referenced keys (or the toggle)
                 // actually changed — avoids reloading textures every reload tick.
                 let new_signature = Self::icon_signature_for(&self.config, self.layout.as_ref());
@@ -321,6 +426,17 @@ fn overlay_key_to_imgui(key: OverlayKey) -> Key {
         OverlayKey::Key7 => Key::Alpha7,
         OverlayKey::Key8 => Key::Alpha8,
         OverlayKey::Key9 => Key::Alpha9,
+        OverlayKey::GraveAccent => Key::GraveAccent,
+        OverlayKey::Minus => Key::Minus,
+        OverlayKey::Equal => Key::Equal,
+        OverlayKey::LeftBracket => Key::LeftBracket,
+        OverlayKey::RightBracket => Key::RightBracket,
+        OverlayKey::Backslash => Key::Backslash,
+        OverlayKey::Semicolon => Key::Semicolon,
+        OverlayKey::Apostrophe => Key::Apostrophe,
+        OverlayKey::Comma => Key::Comma,
+        OverlayKey::Period => Key::Period,
+        OverlayKey::Slash => Key::Slash,
     }
 }
 
@@ -349,6 +465,7 @@ impl ImguiRenderLoop for OverlayApp {
     fn render(&mut self, ui: &mut imgui::Ui) {
         self.maybe_reload_config();
         self.maybe_cycle_section(ui);
+        self.maybe_toggle_boss_panel(ui);
         self.maybe_refresh_view_model();
         let vm = &self.view_model;
         let atlas = if self.config.use_item_icons && self.icon_atlas.is_loaded() {
@@ -356,6 +473,9 @@ impl ImguiRenderLoop for OverlayApp {
         } else {
             None
         };
+        let show_boss_panel = self.show_boss_panel
+            && self.section_allows_boss_panel(self.section_state.active_index);
+
         render_overlay(
             ui,
             &self.config,
@@ -364,6 +484,8 @@ impl ImguiRenderLoop for OverlayApp {
             self.layout.as_ref(),
             self.section_state.active_index,
             &mut self.hud_drag,
+            show_boss_panel,
+            &mut self.boss_panel,
         );
     }
 }

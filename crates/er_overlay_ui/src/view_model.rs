@@ -1,9 +1,10 @@
 use std::collections::{HashMap, HashSet};
 
 use er_game_state::{
-    good_by_key, group_names, group_progress, group_size, item_owned, GameStateSource,
+    bosses_in_region, good_by_key, group_names, group_progress, group_size, item_owned,
+    region_label_for_subregion, region_names, GameStateSource,
 };
-use er_overlay_common::{GameStateDiagnostics, GameTime, TrackKind};
+use er_overlay_common::{BossPanelScope, GameStateDiagnostics, GameTime, TrackKind};
 
 #[derive(Debug, Clone)]
 pub struct TrackedEntryRow {
@@ -24,6 +25,23 @@ pub struct GroupValue {
 }
 
 #[derive(Debug, Clone)]
+pub struct BossPanelRow {
+    pub name: String,
+    pub place: Option<String>,
+    pub killed: Option<bool>,
+    pub dlc: bool,
+}
+
+#[derive(Debug, Clone)]
+pub struct BossPanelSection {
+    pub region: String,
+    pub is_current: bool,
+    pub bosses: Vec<BossPanelRow>,
+    pub killed: u32,
+    pub total: u32,
+}
+
+#[derive(Debug, Clone)]
 pub struct OverlayViewModel {
     pub igt: Option<GameTime>,
     pub bosses_killed: Option<u32>,
@@ -34,6 +52,12 @@ pub struct OverlayViewModel {
     pub groups: HashMap<String, GroupValue>,
     pub tracked_by_key: HashMap<String, TrackedEntryRow>,
     pub diagnostics: GameStateDiagnostics,
+    pub current_subregion_id: Option<u32>,
+    pub current_region: Option<String>,
+    pub boss_panel_scope: BossPanelScope,
+    pub boss_panel_sections: Vec<BossPanelSection>,
+    pub boss_panel_killed: u32,
+    pub boss_panel_total: u32,
 }
 
 impl OverlayViewModel {
@@ -46,6 +70,74 @@ impl OverlayViewModel {
     }
 }
 
+fn boss_rows_for_region(
+    source: &dyn GameStateSource,
+    region: &str,
+) -> (Vec<BossPanelRow>, u32, u32) {
+    let mut rows = Vec::new();
+    let mut killed = 0u32;
+    for boss in bosses_in_region(region) {
+        let is_killed = source.get_flag(boss.flag_id);
+        if is_killed == Some(true) {
+            killed += 1;
+        }
+        rows.push(BossPanelRow {
+            name: boss.name.clone(),
+            place: boss.place.clone(),
+            killed: is_killed,
+            dlc: boss.dlc,
+        });
+    }
+    let total = rows.len() as u32;
+    (rows, killed, total)
+}
+
+fn build_boss_panel_sections(
+    source: &dyn GameStateSource,
+    scope: BossPanelScope,
+    current_region: Option<&str>,
+) -> (Vec<BossPanelSection>, u32, u32) {
+    let mut sections = Vec::new();
+    let mut killed_total = 0u32;
+    let mut boss_total = 0u32;
+
+    match scope {
+        BossPanelScope::CurrentRegion => {
+            if let Some(region) = current_region {
+                let (bosses, killed, total) = boss_rows_for_region(source, region);
+                killed_total = killed;
+                boss_total = total;
+                sections.push(BossPanelSection {
+                    region: region.to_string(),
+                    is_current: true,
+                    bosses,
+                    killed,
+                    total,
+                });
+            }
+        }
+        BossPanelScope::AllRegions => {
+            for region in region_names() {
+                let (bosses, killed, total) = boss_rows_for_region(source, &region);
+                if bosses.is_empty() {
+                    continue;
+                }
+                killed_total += killed;
+                boss_total += total;
+                sections.push(BossPanelSection {
+                    region: region.clone(),
+                    is_current: matches!(current_region, Some(r) if r == region),
+                    bosses,
+                    killed,
+                    total,
+                });
+            }
+        }
+    }
+
+    (sections, killed_total, boss_total)
+}
+
 /// Builds the view model. `referenced_keys` are the good keys / metric refs used by the active
 /// layout (from `LayoutConfig::collect_data_refs`); only those goods are resolved against the
 /// inventory. Aggregate groups are always resolved (there are few, with few members).
@@ -53,6 +145,7 @@ pub fn build_view_model(
     source: &dyn GameStateSource,
     referenced_keys: &[String],
     equipped_keys: &HashSet<String>,
+    boss_panel_scope: BossPanelScope,
 ) -> OverlayViewModel {
     let mut tracked_by_key = HashMap::new();
     for key in referenced_keys {
@@ -92,6 +185,12 @@ pub fn build_view_model(
         groups.insert(name, GroupValue { owned, total });
     }
 
+    let current_subregion_id = source.get_current_subregion_id();
+    let current_region = current_subregion_id.and_then(region_label_for_subregion);
+
+    let (boss_panel_sections, boss_panel_killed, boss_panel_total) =
+        build_boss_panel_sections(source, boss_panel_scope, current_region.as_deref());
+
     OverlayViewModel {
         igt: source.get_igt(),
         bosses_killed: source.get_killed_boss_count(),
@@ -102,5 +201,37 @@ pub fn build_view_model(
         groups,
         tracked_by_key,
         diagnostics: source.get_status(),
+        current_subregion_id,
+        current_region,
+        boss_panel_scope,
+        boss_panel_sections,
+        boss_panel_killed,
+        boss_panel_total,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use er_game_state::mock::MockGameState;
+
+    #[test]
+    fn current_region_scope_filters_bosses() {
+        let mock = MockGameState::default();
+        let vm = build_view_model(&mock, &[], &HashSet::new(), BossPanelScope::CurrentRegion);
+        assert_eq!(vm.boss_panel_sections.len(), 1);
+        assert_eq!(vm.boss_panel_sections[0].region, "LIMGRAVE");
+    }
+
+    #[test]
+    fn all_regions_scope_lists_every_region() {
+        let mock = MockGameState::default();
+        let vm = build_view_model(&mock, &[], &HashSet::new(), BossPanelScope::AllRegions);
+        assert!(vm.boss_panel_sections.len() > 1);
+        assert_eq!(
+            vm.boss_panel_total,
+            er_game_state::bosses_total_count() as u32
+        );
+        assert!(vm.boss_panel_sections.iter().any(|s| s.is_current));
     }
 }

@@ -6,6 +6,19 @@ use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use tracing::{info, warn};
 
+use crate::panel_layout::parse_panel_layout;
+
+/// Which bosses appear in the checklist panel. Region detection always follows the player.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum BossPanelScope {
+    /// Only bosses belonging to the player's current region.
+    #[default]
+    CurrentRegion,
+    /// Every boss, grouped by region (scrollable).
+    AllRegions,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Anchor {
@@ -45,9 +58,24 @@ pub struct OverlayConfig {
     /// Hotkey to cycle layout sections (e.g. `"F8"`, `"Ctrl+Shift+F1"`).
     #[serde(default)]
     pub layout_section_hotkey: Option<String>,
+    /// Hotkey to toggle the regional boss checklist panel (e.g. `"F7"`).
+    #[serde(default = "default_boss_panel_hotkey")]
+    pub boss_panel_hotkey: Option<String>,
+    /// Boss panel filter: `current-region` or `all-regions` (player location is always tracked).
+    #[serde(default)]
+    pub boss_panel_scope: BossPanelScope,
+    /// Show the boss panel when the overlay starts.
+    #[serde(default = "default_true")]
+    pub boss_panel_visible: bool,
+    /// Boss panel placement: `x,y,width,height` (pixels or `%`). Use `auto` or omit to follow the HUD.
+    #[serde(default)]
+    pub boss_panel_layout: Option<String>,
     /// Initial layout section name; overrides `default_section` in the layout file.
     #[serde(default)]
     pub default_layout_section: Option<String>,
+    /// Boss table language (`en`, `fr`, …). Use `auto` or omit to detect from the game.
+    #[serde(default)]
+    pub boss_locale: Option<String>,
 }
 
 fn default_true() -> bool {
@@ -82,6 +110,10 @@ fn default_layout_file() -> Option<String> {
     Some("layouts/dashboard.toml".into())
 }
 
+fn default_boss_panel_hotkey() -> Option<String> {
+    Some("F7".into())
+}
+
 impl Default for OverlayConfig {
     fn default() -> Self {
         Self {
@@ -98,7 +130,12 @@ impl Default for OverlayConfig {
             icons_dir: None,
             layout_file: default_layout_file(),
             layout_section_hotkey: None,
+            boss_panel_hotkey: default_boss_panel_hotkey(),
+            boss_panel_scope: BossPanelScope::default(),
+            boss_panel_visible: true,
+            boss_panel_layout: None,
             default_layout_section: None,
+            boss_locale: None,
         }
     }
 }
@@ -127,6 +164,26 @@ impl OverlayConfig {
                 self.background_opacity
             );
             self.background_opacity = 0.65;
+        }
+        if let Some(ref raw) = self.boss_panel_layout {
+            if parse_panel_layout(raw).is_none() && !raw.trim().is_empty() {
+                if !raw.trim().eq_ignore_ascii_case("auto") {
+                    warn!(
+                        "Invalid boss_panel_layout {:?}, falling back to auto placement",
+                        raw
+                    );
+                }
+                self.boss_panel_layout = None;
+            }
+        }
+    }
+}
+
+impl BossPanelScope {
+    pub fn parse_loose(raw: &str) -> Self {
+        match raw.trim().to_ascii_lowercase().as_str() {
+            "all" | "all-regions" | "all_regions" | "allregions" => Self::AllRegions,
+            _ => Self::CurrentRegion,
         }
     }
 }

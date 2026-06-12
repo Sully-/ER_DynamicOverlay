@@ -1,0 +1,1737 @@
+# Elden Ring ΓÇö 207 boss encounters (full health bar).
+# Names: fromsoft-boss-checker/eldenRingRegions.json
+# Flags: SoulSplitter (SoulMemory/EldenRing/Boss.cs) + optional overrides.
+# Mapped: 207 / 207
+
+# Region display order (bosses.json progression, deduplicated to bosses.toml labels).
+region_display_order = [
+  """LIMGRAVE""",
+  """WEEPING PENINSULA""",
+  """LIURNIA OF THE LAKES""",
+  """POST LIURNIA""",
+  """CAELID""",
+  """DRAGONBARROW""",
+  """ALTUS PLATEAU""",
+  """LEYNDELL""",
+  """MT. GELMIR""",
+  """FORBIDDEN LANDS""",
+  """MOUNTAINTOPS OF THE GIANTS""",
+  """CRUMBLING FARUM AZULA + LEYNDELL, ASHEN CAPITAL""",
+  """CONSECRATED SNOWFIELD""",
+  """HALIGTREE""",
+  """SIOFRA RIVER""",
+  """NOKRON, ETERNAL CITY""",
+  """MOHGWYN PALACE""",
+  """AINSEL RIVER""",
+  """LAKE OF ROT""",
+  """DEEPROOT DEPTHS""",
+  """The Land of Shadow""",
+]
+
+[[boss]]
+flag_id = 10000800
+name = """Godrick the Grafted"""
+region = """LIMGRAVE"""
+icon = "godrick_the_grafted"
+place = """Stormveil Castle"""
+dlc = false
+
+[[boss]]
+flag_id = 10000850
+name = """Margit, the Fell Omen"""
+region = """LIMGRAVE"""
+icon = "margit_the_fell_omen"
+place = """Stormveil Castle"""
+dlc = false
+
+[[boss]]
+flag_id = 10010800
+name = """Grafted Scion (Four Belfries)"""
+region = """LIURNIA OF THE LAKES"""
+icon = "grafted_scion_four_belfries"
+place = """Chapel of Anticipation"""
+dlc = false
+
+[[boss]]
+flag_id = 11000800
+name = """Morgott, the Omen King"""
+region = """LEYNDELL"""
+icon = "morgott_the_omen_king"
+place = """Elden Throne"""
+dlc = false
+
+[[boss]]
+flag_id = 11000850
+name = """Godfrey, First Elden Lord (golden shade)"""
+region = """LEYNDELL"""
+icon = "godfrey_first_elden_lord_golden_shade"
+place = """Erdtree Sanctuary"""
+dlc = false
+
+[[boss]]
+flag_id = 11050800
+name = """Godfrey, First Elden Lord / Hoarah Loux"""
+region = """CRUMBLING FARUM AZULA + LEYNDELL, ASHEN CAPITAL"""
+icon = "godfrey_first_elden_lord_hoarah_loux"
+place = """Elden Throne"""
+dlc = false
+
+[[boss]]
+flag_id = 11050850
+name = """Sir Gideon Ofnir, the All-Knowing"""
+region = """CRUMBLING FARUM AZULA + LEYNDELL, ASHEN CAPITAL"""
+icon = "sir_gideon_ofnir_the_all_knowing"
+place = """Erdtree Sanctuary"""
+dlc = false
+
+[[boss]]
+flag_id = 12010800
+name = """Dragonkin Soldier of Nokstella"""
+region = """AINSEL RIVER"""
+icon = "dragonkin_soldier_of_nokstella"
+dlc = false
+
+[[boss]]
+flag_id = 12010850
+name = """Dragonkin Soldier"""
+region = """LAKE OF ROT"""
+icon = "dragonkin_soldier"
+dlc = false
+
+[[boss]]
+flag_id = 12020800
+name = """Valiant Gargoyles"""
+region = """NOKRON, ETERNAL CITY"""
+icon = "valiant_gargoyles"
+place = """Siofra Aqueduct"""
+dlc = false
+
+[[boss]]
+flag_id = 12020830
+name = """Dragonkin Soldier"""
+region = """SIOFRA RIVER"""
+icon = "dragonkin_soldier"
+place = """Siofra River Bank"""
+dlc = false
+
+[[boss]]
+flag_id = 12020850
+name = """Mimic Tear"""
+region = """NOKRON, ETERNAL CITY"""
+icon = "mimic_tear"
+dlc = false
+
+[[boss]]
+flag_id = 12030390
+name = """Crucible Knight Siluria"""
+region = """DEEPROOT DEPTHS"""
+icon = "crucible_knight_siluria"
+dlc = false
+
+[[boss]]
+flag_id = 12030800
+name = """Fia's Champions"""
+region = """DEEPROOT DEPTHS"""
+icon = "fia_s_champions"
+dlc = false
+
+[[boss]]
+flag_id = 12030850
+name = """Lichdragon Fortissax"""
+region = """DEEPROOT DEPTHS"""
+icon = "lichdragon_fortissax"
+dlc = false
+
+[[boss]]
+flag_id = 12040800
+name = """Astel, Naturalborn of the Void"""
+region = """LAKE OF ROT"""
+icon = "astel_naturalborn_of_the_void"
+place = """Grand Cloister"""
+dlc = false
+
+[[boss]]
+flag_id = 12050800
+name = """Mohg, Lord of Blood"""
+region = """MOHGWYN PALACE"""
+icon = "mohg_lord_of_blood"
+dlc = false
+
+[[boss]]
+flag_id = 12080800
+name = """Ancestor Spirit"""
+region = """SIOFRA RIVER"""
+icon = "ancestor_spirit"
+place = """Siofra River Bank"""
+dlc = false
+
+[[boss]]
+flag_id = 12090800
+name = """Regal Ancestor Spirit"""
+region = """NOKRON, ETERNAL CITY"""
+icon = "regal_ancestor_spirit"
+place = """Hallowhorn Grounds"""
+dlc = false
+
+[[boss]]
+flag_id = 13000800
+name = """Beast Clergyman / Maliketh Black Blade"""
+region = """CRUMBLING FARUM AZULA + LEYNDELL, ASHEN CAPITAL"""
+icon = "beast_clergyman_maliketh_black_blade"
+dlc = false
+
+[[boss]]
+flag_id = 13000830
+name = """Dragonlord Placidusax"""
+region = """CRUMBLING FARUM AZULA + LEYNDELL, ASHEN CAPITAL"""
+icon = "dragonlord_placidusax"
+place = """Beside the Great Bridge"""
+dlc = false
+
+[[boss]]
+flag_id = 13000850
+name = """Godskin Duo"""
+region = """CRUMBLING FARUM AZULA + LEYNDELL, ASHEN CAPITAL"""
+icon = "godskin_duo"
+place = """Dragon Temple Altar"""
+dlc = false
+
+[[boss]]
+flag_id = 14000800
+name = """Rennala, Queen of the Full Moon"""
+region = """LIURNIA OF THE LAKES"""
+icon = "rennala_queen_of_the_full_moon"
+dlc = false
+
+[[boss]]
+flag_id = 14000850
+name = """Red Wolf of Radagon"""
+region = """LIURNIA OF THE LAKES"""
+icon = "red_wolf_of_radagon"
+dlc = false
+
+[[boss]]
+flag_id = 15000800
+name = """Malenia, Blade of Miquella"""
+region = """HALIGTREE"""
+icon = "malenia_blade_of_miquella"
+dlc = false
+
+[[boss]]
+flag_id = 15000850
+name = """Loretta, Knight of the Haligtree"""
+region = """HALIGTREE"""
+icon = "loretta_knight_of_the_haligtree"
+dlc = false
+
+[[boss]]
+flag_id = 16000800
+name = """God-Devouring Serpent / Rykard"""
+region = """MT. GELMIR"""
+icon = "god_devouring_serpent_rykard"
+place = """Volcano Manor"""
+dlc = false
+
+[[boss]]
+flag_id = 16000850
+name = """Godskin Noble"""
+region = """MT. GELMIR"""
+icon = "godskin_noble"
+place = """Temple of Eiglay"""
+dlc = false
+
+[[boss]]
+flag_id = 16000860
+name = """Abductor Virgins"""
+region = """MT. GELMIR"""
+icon = "abductor_virgins"
+place = """Subterranean Inquisition Chamber"""
+dlc = false
+
+[[boss]]
+flag_id = 18000800
+name = """Ulcerated Tree Spirit"""
+region = """LIMGRAVE"""
+icon = "ulcerated_tree_spirit"
+place = """Fringefolk Hero's Grave"""
+dlc = false
+
+[[boss]]
+flag_id = 18000850
+name = """Soldier of Godrick"""
+region = """LIMGRAVE"""
+icon = "soldier_of_godrick"
+place = """Stranded Graveyard"""
+dlc = false
+
+[[boss]]
+flag_id = 19000800
+name = """Radagon of the Golden Order / Elden Beast"""
+region = """CRUMBLING FARUM AZULA + LEYNDELL, ASHEN CAPITAL"""
+icon = "radagon_of_the_golden_order_elden_beast"
+place = """Fractured Marika"""
+dlc = false
+
+[[boss]]
+flag_id = 30000800
+name = """Cemetery Shade"""
+region = """WEEPING PENINSULA"""
+icon = "cemetery_shade"
+place = """Tombsward Catacombs"""
+dlc = false
+
+[[boss]]
+flag_id = 30010800
+name = """Erdtree Burial Watchdog"""
+region = """WEEPING PENINSULA"""
+icon = "erdtree_burial_watchdog"
+place = """Impaler's Catacombs"""
+dlc = false
+
+[[boss]]
+flag_id = 30020800
+name = """Erdtree Burial Watchdog"""
+region = """LIMGRAVE"""
+icon = "erdtree_burial_watchdog"
+place = """Stormfoot Catacombs"""
+dlc = false
+
+[[boss]]
+flag_id = 30030800
+name = """Spirit-Caller Snail"""
+region = """LIURNIA OF THE LAKES"""
+icon = "spirit_caller_snail"
+place = """Road's End Catacombs"""
+dlc = false
+
+[[boss]]
+flag_id = 30040800
+name = """Grave Warden Duelist"""
+region = """LIMGRAVE"""
+icon = "grave_warden_duelist"
+place = """Murkwater Catacombs"""
+dlc = false
+
+[[boss]]
+flag_id = 30050800
+name = """Cemetery Shade"""
+region = """LIURNIA OF THE LAKES"""
+icon = "cemetery_shade"
+place = """Black Knife Catacombs"""
+dlc = false
+
+[[boss]]
+flag_id = 30050850
+name = """Black Knife Assassin"""
+region = """LIURNIA OF THE LAKES"""
+icon = "black_knife_assassin"
+place = """Black Knife Catacombs"""
+dlc = false
+
+[[boss]]
+flag_id = 30060800
+name = """Erdtree Burial Watchdog"""
+region = """LIURNIA OF THE LAKES"""
+icon = "erdtree_burial_watchdog"
+place = """Cliffbottom Catacombs"""
+dlc = false
+
+[[boss]]
+flag_id = 30070800
+name = """Erdtree Burial Watchdog"""
+region = """MT. GELMIR"""
+icon = "erdtree_burial_watchdog"
+place = """Wyndham Catacombs"""
+dlc = false
+
+[[boss]]
+flag_id = 30080800
+name = """Ancient Hero of Zamor"""
+region = """ALTUS PLATEAU"""
+icon = "ancient_hero_of_zamor"
+place = """Sainted Hero's Grave"""
+dlc = false
+
+[[boss]]
+flag_id = 30090800
+name = """Red Wolf of the Champion"""
+region = """MT. GELMIR"""
+icon = "red_wolf_of_the_champion"
+place = """Gelmir Hero's Grave"""
+dlc = false
+
+[[boss]]
+flag_id = 30100800
+name = """Crucible Knight Ordovis / Crucible Knight"""
+region = """LEYNDELL"""
+icon = "crucible_knight_ordovis_crucible_knight"
+place = """Auriza Hero's Grave"""
+dlc = false
+
+[[boss]]
+flag_id = 30110800
+name = """Black Knife Assassin"""
+region = """LIMGRAVE"""
+icon = "black_knife_assassin"
+place = """Deathtouched Catacombs"""
+dlc = false
+
+[[boss]]
+flag_id = 30120800
+name = """Perfumer Tricia / Misbegotten Warrior"""
+region = """ALTUS PLATEAU"""
+icon = "perfumer_tricia_misbegotten_warrior"
+place = """Unsightly Catacombs"""
+dlc = false
+
+[[boss]]
+flag_id = 30130800
+name = """Grave Warden Duelist"""
+region = """LEYNDELL"""
+icon = "grave_warden_duelist"
+place = """Auriza Side Tomb"""
+dlc = false
+
+[[boss]]
+flag_id = 30140800
+name = """Erdtree Burial Watchdog"""
+region = """CAELID"""
+icon = "erdtree_burial_watchdog"
+place = """Minor Erdtree Catacombs"""
+dlc = false
+
+[[boss]]
+flag_id = 30150800
+name = """Cemetery Shade"""
+region = """CAELID"""
+icon = "cemetery_shade"
+place = """Caelid Catacombs"""
+dlc = false
+
+[[boss]]
+flag_id = 30160800
+name = """Putrid Tree Spirit"""
+region = """CAELID"""
+icon = "putrid_tree_spirit"
+place = """War-Dead Catacombs"""
+dlc = false
+
+[[boss]]
+flag_id = 30170800
+name = """Ancient Hero of Zamor"""
+region = """MOUNTAINTOPS OF THE GIANTS"""
+icon = "ancient_hero_of_zamor"
+place = """Giant-Conquering Hero's Grave"""
+dlc = false
+
+[[boss]]
+flag_id = 30180800
+name = """Ulcerated Tree Spirit"""
+region = """MOUNTAINTOPS OF THE GIANTS"""
+icon = "ulcerated_tree_spirit"
+place = """Giants' Mountaintop Catacombs"""
+dlc = false
+
+[[boss]]
+flag_id = 30190800
+name = """Putrid Grave Warden Duelist"""
+region = """CONSECRATED SNOWFIELD"""
+icon = "putrid_grave_warden_duelist"
+place = """Consecrated Snowfield Catacombs"""
+dlc = false
+
+[[boss]]
+flag_id = 30202800
+name = """Mimic Tear"""
+region = """CONSECRATED SNOWFIELD"""
+icon = "mimic_tear"
+dlc = false
+
+[[boss]]
+flag_id = 31000800
+name = """Patches"""
+region = """LIMGRAVE"""
+icon = "patches"
+place = """Murkwater Cave"""
+dlc = false
+
+[[boss]]
+flag_id = 31010800
+name = """Runebear"""
+region = """WEEPING PENINSULA"""
+icon = "runebear"
+place = """Earthbore Cave"""
+dlc = false
+
+[[boss]]
+flag_id = 31020800
+name = """Miranda the Blighted Bloom"""
+region = """WEEPING PENINSULA"""
+icon = "miranda_the_blighted_bloom"
+place = """Tombsward Cave"""
+dlc = false
+
+[[boss]]
+flag_id = 31030800
+name = """Beastman of Farum Azula"""
+region = """LIMGRAVE"""
+icon = "beastman_of_farum_azula"
+place = """Groveside Cave"""
+dlc = false
+
+[[boss]]
+flag_id = 31040800
+name = """Cleanrot Knight"""
+region = """LIURNIA OF THE LAKES"""
+icon = "cleanrot_knight"
+place = """Stillwater Cave"""
+dlc = false
+
+[[boss]]
+flag_id = 31050800
+name = """Bloodhound Knight"""
+region = """LIURNIA OF THE LAKES"""
+icon = "bloodhound_knight"
+place = """Lakeside Crystal Cave"""
+dlc = false
+
+[[boss]]
+flag_id = 31060800
+name = """Crystalian Spear & Crystalian Staff"""
+region = """LIURNIA OF THE LAKES"""
+icon = "crystalian_spear_crystalian_staff"
+place = """Academy Crystal Cave"""
+dlc = false
+
+[[boss]]
+flag_id = 31070800
+name = """Kindred of Rot"""
+region = """MT. GELMIR"""
+icon = "kindred_of_rot"
+place = """Seethewater Cave"""
+dlc = false
+
+[[boss]]
+flag_id = 31090800
+name = """Demi-Human Queen Margot"""
+region = """MT. GELMIR"""
+icon = "demi_human_queen_margot"
+place = """Volcano Cave"""
+dlc = false
+
+[[boss]]
+flag_id = 31100800
+name = """Beastman of Farum Azula"""
+region = """DRAGONBARROW"""
+icon = "beastman_of_farum_azula"
+place = """Dragonbarrow Cave"""
+dlc = false
+
+[[boss]]
+flag_id = 31110800
+name = """Putrid Crystallian Trio"""
+region = """CAELID"""
+icon = "putrid_crystallian_trio"
+place = """Sellia Hideaway"""
+dlc = false
+
+[[boss]]
+flag_id = 31120800
+name = """Misbegotten Crusader"""
+region = """CONSECRATED SNOWFIELD"""
+icon = "misbegotten_crusader"
+place = """Cave of the Forlorn"""
+dlc = false
+
+[[boss]]
+flag_id = 31150800
+name = """Demi-Human Chief"""
+region = """LIMGRAVE"""
+icon = "demi_human_chief"
+place = """Coastal Cave"""
+dlc = false
+
+[[boss]]
+flag_id = 31170800
+name = """Guardian Golem"""
+region = """LIMGRAVE"""
+icon = "guardian_golem"
+place = """Highroad Cave"""
+dlc = false
+
+[[boss]]
+flag_id = 31180800
+name = """Omenkiller / Miranda"""
+region = """ALTUS PLATEAU"""
+icon = "omenkiller_miranda"
+place = """Perfumer's Grotto"""
+dlc = false
+
+[[boss]]
+flag_id = 31190800
+name = """Black Knife Assassin (Sage's Cave)"""
+region = """ALTUS PLATEAU"""
+icon = "black_knife_assassin_sage_s_cave"
+place = """Sage's Cave"""
+dlc = false
+
+[[boss]]
+flag_id = 31190850
+name = """Necromancer Garris"""
+region = """ALTUS PLATEAU"""
+icon = "necromancer_garris"
+place = """Sage's Cave"""
+dlc = false
+
+[[boss]]
+flag_id = 31200800
+name = """Cleanrot Knight"""
+region = """CAELID"""
+icon = "cleanrot_knight"
+place = """Abandoned Cave"""
+dlc = false
+
+[[boss]]
+flag_id = 31210800
+name = """Frenzied Duelist"""
+region = """CAELID"""
+icon = "frenzied_duelist"
+place = """Gaol Cave"""
+dlc = false
+
+[[boss]]
+flag_id = 31220800
+name = """Godskins (Summoner Snail)"""
+region = """MOUNTAINTOPS OF THE GIANTS"""
+icon = "godskins_summoner_snail"
+place = """Spiritcaller Cave"""
+dlc = false
+
+[[boss]]
+flag_id = 32000800
+name = """Scaly Misbegotten"""
+region = """WEEPING PENINSULA"""
+icon = "scaly_misbegotten"
+place = """Morne Tunnel"""
+dlc = false
+
+[[boss]]
+flag_id = 32010800
+name = """Stonedigger Troll"""
+region = """LIMGRAVE"""
+icon = "stonedigger_troll"
+place = """Limgrave Tunnels"""
+dlc = false
+
+[[boss]]
+flag_id = 32020800
+name = """Crystalian Ringblade"""
+region = """LIURNIA OF THE LAKES"""
+icon = "crystalian_ringblade"
+place = """Raya Lucaria Crystal Tunnel"""
+dlc = false
+
+[[boss]]
+flag_id = 32040800
+name = """Stonedigger Troll"""
+region = """ALTUS PLATEAU"""
+icon = "stonedigger_troll"
+place = """Old Altus Tunnel"""
+dlc = false
+
+[[boss]]
+flag_id = 32050800
+name = """Crystalian Spear & Crystalian Ringblade"""
+region = """ALTUS PLATEAU"""
+icon = "crystalian_spear_crystalian_ringblade"
+place = """Altus Tunnel"""
+dlc = false
+
+[[boss]]
+flag_id = 32070800
+name = """Magma Wyrm"""
+region = """CAELID"""
+icon = "magma_wyrm"
+place = """Gael Tunnel"""
+dlc = false
+
+[[boss]]
+flag_id = 32080800
+name = """Fallingstar Beast"""
+region = """CAELID"""
+icon = "fallingstar_beast"
+place = """Sellia Crystal Tunnel"""
+dlc = false
+
+[[boss]]
+flag_id = 32110800
+name = """Astel, Stars of Darkness"""
+region = """CONSECRATED SNOWFIELD"""
+icon = "astel_stars_of_darkness"
+place = """Yelough Anix Tunnel"""
+dlc = false
+
+[[boss]]
+flag_id = 34120800
+name = """Onyx Lord"""
+region = """LEYNDELL"""
+icon = "onyx_lord"
+place = """Sealed Tunnel"""
+dlc = false
+
+[[boss]]
+flag_id = 34130800
+name = """Godskin Apostle"""
+region = """DRAGONBARROW"""
+icon = "godskin_apostle"
+place = """Divine Tower of Caelid"""
+dlc = false
+
+[[boss]]
+flag_id = 34140850
+name = """Fell Twins"""
+region = """LEYNDELL"""
+icon = "fell_twins"
+place = """Divine Tower of East Altus"""
+dlc = false
+
+[[boss]]
+flag_id = 35000800
+name = """Mohg, The Omen"""
+region = """LEYNDELL"""
+icon = "mohg_the_omen"
+place = """Cathedral of the Forsaken"""
+dlc = false
+
+[[boss]]
+flag_id = 35000850
+name = """Esgar, Priest of Blood"""
+region = """LEYNDELL"""
+icon = "esgar_priest_of_blood"
+place = """Leyndell Catacombs"""
+dlc = false
+
+[[boss]]
+flag_id = 39200800
+name = """Magma Wyrm Makar"""
+region = """LIURNIA OF THE LAKES"""
+icon = "magma_wyrm_makar"
+place = """Ruin-Strewn Precipice"""
+dlc = false
+
+[[boss]]
+flag_id = 1033420800
+name = """Alecto, Black Knife Ringleader"""
+region = """POST LIURNIA"""
+icon = "alecto_black_knife_ringleader"
+place = """Ringleader's Evergaol"""
+dlc = false
+
+[[boss]]
+flag_id = 1033430800
+name = """Erdtree Avatar (Northeast)"""
+region = """LIURNIA OF THE LAKES"""
+icon = "erdtree_avatar_northeast"
+place = """Converted Tower"""
+dlc = false
+
+[[boss]]
+flag_id = 1033450800
+name = """Bols, Carian Knight"""
+region = """LIURNIA OF THE LAKES"""
+icon = "bols_carian_knight"
+place = """Cuckoo's Evergaol"""
+dlc = false
+
+[[boss]]
+flag_id = 1034420800
+name = """Glintstone Dragon Adula"""
+region = """POST LIURNIA"""
+icon = "glintstone_dragon_adula"
+place = """Moonlight Altar"""
+dlc = false
+
+[[boss]]
+flag_id = 1034450800
+name = """Glintstone Dragon Smarag"""
+region = """LIURNIA OF THE LAKES"""
+icon = "glintstone_dragon_smarag"
+place = """Temple Quarter"""
+dlc = false
+
+[[boss]]
+flag_id = 1034480800
+name = """Royal Revenant"""
+region = """LIURNIA OF THE LAKES"""
+icon = "royal_revenant"
+place = """Kingsrealm Ruins"""
+dlc = false
+
+[[boss]]
+flag_id = 1035420800
+name = """Omenkiller"""
+region = """LIURNIA OF THE LAKES"""
+icon = "omenkiller"
+place = """Village of the Albinaurics"""
+dlc = false
+
+[[boss]]
+flag_id = 1035500800
+name = """Royal Knight Loretta"""
+region = """LIURNIA OF THE LAKES"""
+icon = "royal_knight_loretta"
+place = """Caria Manor"""
+dlc = false
+
+[[boss]]
+flag_id = 1035530800
+name = """Magma Wyrm"""
+region = """MT. GELMIR"""
+icon = "magma_wyrm"
+place = """Fort Laiedd"""
+dlc = false
+
+[[boss]]
+flag_id = 1036450800
+name = """Death Rite Bird"""
+region = """LIURNIA OF THE LAKES"""
+icon = "death_rite_bird"
+place = """Gate Town North"""
+dlc = false
+
+[[boss]]
+flag_id = 1036480800
+name = """Night's Cavalry (South)"""
+region = """LIURNIA OF THE LAKES"""
+icon = "night_s_cavalry_south"
+place = """Bellum Church"""
+dlc = false
+
+[[boss]]
+flag_id = 1036500800
+name = """Alabaster Lord"""
+region = """LIURNIA OF THE LAKES"""
+icon = "alabaster_lord"
+place = """Royal Grave Evergaol"""
+dlc = false
+
+[[boss]]
+flag_id = 1036540800
+name = """Full-Grown Fallingstar Beast"""
+region = """MT. GELMIR"""
+icon = "full_grown_fallingstar_beast"
+place = """Ninth Mt. Gelmir Campsite"""
+dlc = false
+
+[[boss]]
+flag_id = 1037420800
+name = """Deathbird"""
+region = """LIURNIA OF THE LAKES"""
+icon = "deathbird"
+place = """Scenic Isle"""
+dlc = false
+
+[[boss]]
+flag_id = 1037460800
+name = """Bell Bearing Hunter"""
+region = """LIURNIA OF THE LAKES"""
+icon = "bell_bearing_hunter"
+place = """Church of Vows"""
+dlc = false
+
+[[boss]]
+flag_id = 1037510800
+name = """Ancient Dragon Lansseax"""
+region = """ALTUS PLATEAU"""
+icon = "ancient_dragon_lansseax"
+dlc = false
+
+[[boss]]
+flag_id = 1037530800
+name = """Demi-Human Queen Maggie"""
+region = """MT. GELMIR"""
+icon = "demi_human_queen_maggie"
+place = """Hermit Village"""
+dlc = false
+
+[[boss]]
+flag_id = 1037540810
+name = """Ulcerated Tree Spirit"""
+region = """MT. GELMIR"""
+icon = "ulcerated_tree_spirit"
+place = """Minor Erdtree"""
+dlc = false
+
+[[boss]]
+flag_id = 1038410800
+name = """Adan, Thief of Fire"""
+region = """LIURNIA OF THE LAKES"""
+icon = "adan_thief_of_fire"
+place = """Malefactor's Evergaol"""
+dlc = false
+
+[[boss]]
+flag_id = 1038480800
+name = """Erdtree Avatar (Southwest)"""
+region = """LIURNIA OF THE LAKES"""
+icon = "erdtree_avatar_southwest"
+place = """Mausoleum Compound"""
+dlc = false
+
+[[boss]]
+flag_id = 1038510800
+name = """Demi-Human Queen Gilika"""
+region = """ALTUS PLATEAU"""
+icon = "demi_human_queen_gilika"
+place = """Lux Ruins"""
+dlc = false
+
+[[boss]]
+flag_id = 1038520800
+name = """Tibia Mariner"""
+region = """MT. GELMIR"""
+icon = "tibia_mariner"
+place = """Wyndham Ruins"""
+dlc = false
+
+[[boss]]
+flag_id = 1039430800
+name = """Night's Cavalry (North)"""
+region = """LIURNIA OF THE LAKES"""
+icon = "night_s_cavalry_north"
+place = """Gate Town Bridge"""
+dlc = false
+
+[[boss]]
+flag_id = 1039440800
+name = """Tibia Mariner"""
+region = """LIURNIA OF THE LAKES"""
+icon = "tibia_mariner"
+dlc = false
+
+[[boss]]
+flag_id = 1039500800
+name = """Godefroy The Grafted"""
+region = """ALTUS PLATEAU"""
+icon = "godefroy_the_grafted"
+place = """Golden Lineage Evergaol"""
+dlc = false
+
+[[boss]]
+flag_id = 1039510800
+name = """Night's Cavalry"""
+region = """ALTUS PLATEAU"""
+icon = "night_s_cavalry"
+place = """Altus Highway Junction"""
+dlc = false
+
+[[boss]]
+flag_id = 1039540800
+name = """Elemer of the Briar"""
+region = """ALTUS PLATEAU"""
+icon = "elemer_of_the_briar"
+place = """The Shaded Castle"""
+dlc = false
+
+[[boss]]
+flag_id = 1040520800
+name = """Black Knife Assassin (Sainted Hero's Grave)"""
+region = """ALTUS PLATEAU"""
+icon = "black_knife_assassin_sainted_hero_s_grave"
+place = """Sainted Hero's Grave"""
+dlc = false
+
+[[boss]]
+flag_id = 1040530800
+name = """Sanguine Noble"""
+region = """ALTUS PLATEAU"""
+icon = "sanguine_noble"
+place = """Writheblood Ruins"""
+dlc = false
+
+[[boss]]
+flag_id = 1041500800
+name = """Fallingstar Beast"""
+region = """ALTUS PLATEAU"""
+icon = "fallingstar_beast"
+place = """Starfall Crater"""
+dlc = false
+
+[[boss]]
+flag_id = 1041510800
+name = """Tree Sentinel Duo"""
+region = """ALTUS PLATEAU"""
+icon = "tree_sentinel_duo"
+dlc = false
+
+[[boss]]
+flag_id = 1041530800
+name = """Wormface"""
+region = """ALTUS PLATEAU"""
+icon = "wormface"
+place = """Minor Erdtree"""
+dlc = false
+
+[[boss]]
+flag_id = 1042330800
+name = """Ancient Hero of Zamor"""
+region = """WEEPING PENINSULA"""
+icon = "ancient_hero_of_zamor"
+place = """Weeping Evergaol"""
+dlc = false
+
+[[boss]]
+flag_id = 1042360800
+name = """Tree Sentinel"""
+region = """LIMGRAVE"""
+icon = "tree_sentinel"
+place = """Church of Elleh"""
+dlc = false
+
+[[boss]]
+flag_id = 1042370800
+name = """Crucible Knight"""
+region = """LIMGRAVE"""
+icon = "crucible_knight"
+place = """Stormhill Evergaol"""
+dlc = false
+
+[[boss]]
+flag_id = 1042380800
+name = """Deathbird"""
+region = """LIMGRAVE"""
+icon = "deathbird"
+dlc = false
+
+[[boss]]
+flag_id = 1042380850
+name = """Bell Bearing Hunter"""
+region = """LIMGRAVE"""
+icon = "bell_bearing_hunter"
+place = """Warmaster's Shack"""
+dlc = false
+
+[[boss]]
+flag_id = 1042550800
+name = """Godskin Apostle"""
+region = """ALTUS PLATEAU"""
+icon = "godskin_apostle"
+place = """Dominula, Windmill Village"""
+dlc = false
+
+[[boss]]
+flag_id = 1043300800
+name = """Leonine Misbegotten"""
+region = """WEEPING PENINSULA"""
+icon = "leonine_misbegotten"
+place = """Morne Moangrave"""
+dlc = false
+
+[[boss]]
+flag_id = 1043330800
+name = """Erdtree Avatar"""
+region = """WEEPING PENINSULA"""
+icon = "erdtree_avatar"
+place = """Minor Erdtree"""
+dlc = false
+
+[[boss]]
+flag_id = 1043360800
+name = """Flying Dragon Agheel"""
+region = """LIMGRAVE"""
+icon = "flying_dragon_agheel"
+place = """Agheel Lake"""
+dlc = false
+
+[[boss]]
+flag_id = 1043370800
+name = """Night's Cavalry (duo)"""
+region = """CONSECRATED SNOWFIELD"""
+icon = "night_s_cavalry_duo"
+dlc = false
+
+[[boss]]
+flag_id = 1043530800
+name = """Bell Bearing Hunter"""
+region = """LEYNDELL"""
+icon = "bell_bearing_hunter"
+place = """Hermit Merchant's Shack"""
+dlc = false
+
+[[boss]]
+flag_id = 1044320800
+name = """Deathbird"""
+region = """WEEPING PENINSULA"""
+icon = "deathbird"
+dlc = false
+
+[[boss]]
+flag_id = 1044320850
+name = """Night's Cavalry"""
+region = """WEEPING PENINSULA"""
+icon = "night_s_cavalry"
+place = """Castle Morne Rampart"""
+dlc = false
+
+[[boss]]
+flag_id = 1044350800
+name = """Bloodhound Knight Darriwil"""
+region = """LIMGRAVE"""
+icon = "bloodhound_knight_darriwil"
+place = """Forlorn Hound Evergaol"""
+dlc = false
+
+[[boss]]
+flag_id = 1044360800
+name = """Mad Pumpkin Head"""
+region = """LIMGRAVE"""
+icon = "mad_pumpkin_head"
+place = """Waypoint Ruins"""
+dlc = false
+
+[[boss]]
+flag_id = 1044530800
+name = """Deathbird"""
+region = """LEYNDELL"""
+icon = "deathbird"
+dlc = false
+
+[[boss]]
+flag_id = 1045390800
+name = """Tibia Mariner"""
+region = """LIMGRAVE"""
+icon = "tibia_mariner"
+place = """Summonwater Village"""
+dlc = false
+
+[[boss]]
+flag_id = 1045520800
+name = """Draconic Tree Sentinel"""
+region = """LEYNDELL"""
+icon = "draconic_tree_sentinel"
+place = """Capital Rampart"""
+dlc = false
+
+[[boss]]
+flag_id = 1047400800
+name = """Erdtree Avatar"""
+region = """CAELID"""
+icon = "erdtree_avatar"
+place = """Minor Erdtree"""
+dlc = false
+
+[[boss]]
+flag_id = 1048370800
+name = """Decaying Ekzykes"""
+region = """CAELID"""
+icon = "decaying_ekzykes"
+place = """Church of the Plague"""
+dlc = false
+
+[[boss]]
+flag_id = 1048400800
+name = """Mad Pumpkin Heads"""
+region = """CAELID"""
+icon = "mad_pumpkin_heads"
+place = """Caelem Ruins"""
+dlc = false
+
+[[boss]]
+flag_id = 1048410800
+name = """Bell Bearing Hunter"""
+region = """DRAGONBARROW"""
+icon = "bell_bearing_hunter"
+place = """Isolated Merchant's Shack"""
+dlc = false
+
+[[boss]]
+flag_id = 1048510800
+name = """Night's Cavalry"""
+region = """FORBIDDEN LANDS"""
+icon = "night_s_cavalry"
+dlc = false
+
+[[boss]]
+flag_id = 1048570800
+name = """Death Rite Bird"""
+region = """CONSECRATED SNOWFIELD"""
+icon = "death_rite_bird"
+dlc = false
+
+[[boss]]
+flag_id = 1049370800
+name = """Night's Cavalry"""
+region = """LIMGRAVE"""
+icon = "night_s_cavalry"
+place = """Caelid Highway South"""
+dlc = false
+
+[[boss]]
+flag_id = 1049370850
+name = """Death Rite Bird"""
+region = """CAELID"""
+icon = "death_rite_bird"
+place = """Southern Aeonia Swamp Bank"""
+dlc = false
+
+[[boss]]
+flag_id = 1049380800
+name = """Commander O'Neil"""
+region = """CAELID"""
+icon = "commander_o_neil"
+place = """Swamp of Aeonia"""
+dlc = false
+
+[[boss]]
+flag_id = 1049390800
+name = """Nox Swordstress & Nox Priest"""
+region = """CAELID"""
+icon = "nox_swordstress_nox_priest"
+place = """Sellia, Town of Sorcery"""
+dlc = false
+
+[[boss]]
+flag_id = 1049390850
+name = """Battlemage Hugues"""
+region = """DRAGONBARROW"""
+icon = "battlemage_hugues"
+place = """Sellia Evergaol"""
+dlc = false
+
+[[boss]]
+flag_id = 1049520800
+name = """Black Blade Kindred"""
+region = """FORBIDDEN LANDS"""
+icon = "black_blade_kindred"
+dlc = false
+
+[[boss]]
+flag_id = 1050560800
+name = """Great Wrym Theodorix"""
+region = """CONSECRATED SNOWFIELD"""
+icon = "great_wrym_theodorix"
+dlc = false
+
+[[boss]]
+flag_id = 1050570800
+name = """Death Rite Bird"""
+region = """MOUNTAINTOPS OF THE GIANTS"""
+icon = "death_rite_bird"
+dlc = false
+
+[[boss]]
+flag_id = 1050570850
+name = """Putrid Avatar"""
+region = """CONSECRATED SNOWFIELD"""
+icon = "putrid_avatar"
+place = """Minor Erdtree"""
+dlc = false
+
+[[boss]]
+flag_id = 1051360800
+name = """Crucible Knight / Misbegotten Warrior"""
+region = """CAELID"""
+icon = "crucible_knight_misbegotten_warrior"
+place = """Redmane Castle"""
+dlc = false
+
+[[boss]]
+flag_id = 1051400800
+name = """Putrid Avatar"""
+region = """DRAGONBARROW"""
+icon = "putrid_avatar"
+place = """Minor Erdtree"""
+dlc = false
+
+[[boss]]
+flag_id = 1051430800
+name = """Black Blade Kindred (Bestial Sanctum)"""
+region = """DRAGONBARROW"""
+icon = "black_blade_kindred_bestial_sanctum"
+place = """Bestial Sanctum"""
+dlc = false
+
+[[boss]]
+flag_id = 1051570800
+name = """Commander Niall"""
+region = """MOUNTAINTOPS OF THE GIANTS"""
+icon = "commander_niall"
+place = """Castle Sol"""
+dlc = false
+
+[[boss]]
+flag_id = 1052410800
+name = """Flying Dragon Greyll"""
+region = """DRAGONBARROW"""
+icon = "flying_dragon_greyll"
+place = """Greyoll's Dragonbarrow"""
+dlc = false
+
+[[boss]]
+flag_id = 1052410850
+name = """Night's Cavalry"""
+region = """DRAGONBARROW"""
+icon = "night_s_cavalry"
+place = """Lenne's Rise"""
+dlc = false
+
+[[boss]]
+flag_id = 1052520800
+name = """Fire Giant"""
+region = """MOUNTAINTOPS OF THE GIANTS"""
+icon = "fire_giant"
+place = """Flame Peak"""
+dlc = false
+
+[[boss]]
+flag_id = 1052560800
+name = """Erdtree Avatar"""
+region = """MOUNTAINTOPS OF THE GIANTS"""
+icon = "erdtree_avatar"
+place = """Minor Erdtree"""
+dlc = false
+
+[[boss]]
+flag_id = 1053560800
+name = """Vyke, Knight of the Roundtable"""
+region = """MOUNTAINTOPS OF THE GIANTS"""
+icon = "vyke_knight_of_the_roundtable"
+place = """Lord Contender's Evergaol"""
+dlc = false
+
+[[boss]]
+flag_id = 1248550800
+name = """Night's Cavalry"""
+region = """CAELID"""
+icon = "night_s_cavalry"
+place = """Inner Consecrated Snowfield"""
+dlc = false
+
+[[boss]]
+flag_id = 1252380800
+name = """Starscourge Radahn"""
+region = """CAELID"""
+icon = "starscourge_radahn"
+place = """Wailing Dunes"""
+dlc = false
+
+[[boss]]
+flag_id = 1254560800
+name = """Borealis the Freezing Fog"""
+region = """MOUNTAINTOPS OF THE GIANTS"""
+icon = "borealis_the_freezing_fog"
+place = """Freezing Lake"""
+dlc = false
+
+[[boss]]
+flag_id = 20000800
+name = """Divine Beast Dancing Lion"""
+region = """The Land of Shadow"""
+icon = "divine_beast_dancing_lion"
+place = """Belurat, Tower Settlement"""
+dlc = true
+
+[[boss]]
+flag_id = 20010800
+name = """Promised Consort Radahn"""
+region = """The Land of Shadow"""
+icon = "promised_consort_radahn"
+dlc = true
+
+[[boss]]
+flag_id = 21000850
+name = """Golden Hippopotamus"""
+region = """The Land of Shadow"""
+icon = "golden_hippopotamus"
+place = """Shadow Keep"""
+dlc = true
+
+[[boss]]
+flag_id = 21010800
+name = """Messmer the Impaler"""
+region = """The Land of Shadow"""
+icon = "messmer_the_impaler"
+place = """Shadow Keep"""
+dlc = true
+
+[[boss]]
+flag_id = 22000800
+name = """Putrescent Knight"""
+region = """The Land of Shadow"""
+icon = "putrescent_knight"
+place = """Stone Coffin Fissure"""
+dlc = true
+
+[[boss]]
+flag_id = 25000800
+name = """Metyr, Mother of Fingers"""
+region = """The Land of Shadow"""
+icon = "metyr_mother_of_fingers"
+place = """Cathedral of Manus Metyr"""
+dlc = true
+
+[[boss]]
+flag_id = 28000800
+name = """Midra, Lord of Frenzied Flame"""
+region = """The Land of Shadow"""
+icon = "midra_lord_of_frenzied_flame"
+place = """Midra's Manse"""
+dlc = true
+
+[[boss]]
+flag_id = 40000800
+name = """Death Knight"""
+region = """The Land of Shadow"""
+icon = "death_knight"
+place = """Fog Rift Catacombs"""
+dlc = true
+
+[[boss]]
+flag_id = 40010800
+name = """Death Knight"""
+region = """The Land of Shadow"""
+icon = "death_knight"
+place = """Scorpion River Catacombs"""
+dlc = true
+
+[[boss]]
+flag_id = 41000800
+name = """Demi-Human Swordmaster Onze"""
+region = """The Land of Shadow"""
+icon = "demi_human_swordmaster_onze"
+place = """Belurat Gaol"""
+dlc = true
+
+[[boss]]
+flag_id = 41010800
+name = """Curseblade Labirith"""
+region = """The Land of Shadow"""
+icon = "curseblade_labirith"
+place = """Bonny Gaol"""
+dlc = true
+
+[[boss]]
+flag_id = 41020800
+name = """Lamenter"""
+region = """The Land of Shadow"""
+icon = "lamenter"
+place = """Lamenter's Gaol"""
+dlc = true
+
+[[boss]]
+flag_id = 43000800
+name = """Chief Bloodfiend"""
+region = """The Land of Shadow"""
+icon = "chief_bloodfiend"
+place = """Rivermouth Cave"""
+dlc = true
+
+[[boss]]
+flag_id = 43010800
+name = """Ancient Dragon-Man"""
+region = """The Land of Shadow"""
+icon = "ancient_dragon_man"
+place = """Dragon's Pit"""
+dlc = true
+
+[[boss]]
+flag_id = 2044450800
+name = """Romina, Saint of the Bud"""
+region = """The Land of Shadow"""
+icon = "romina_saint_of_the_bud"
+place = """Church of the Bud"""
+dlc = true
+
+[[boss]]
+flag_id = 2044470800
+name = """Rugalea the Great Red Bear"""
+region = """The Land of Shadow"""
+icon = "rugalea_the_great_red_bear"
+place = """Rauh Base"""
+dlc = true
+
+[[boss]]
+flag_id = 2045440800
+name = """Ghostflame Dragon"""
+region = """The Land of Shadow"""
+icon = "ghostflame_dragon"
+dlc = true
+
+[[boss]]
+flag_id = 2046380800
+name = """Dancer Of Ranah"""
+region = """The Land of Shadow"""
+icon = "dancer_of_ranah"
+place = """Southern Nameless Mausoleum"""
+dlc = true
+
+[[boss]]
+flag_id = 2046400800
+name = """Demi-Human Queen Marigga"""
+region = """The Land of Shadow"""
+icon = "demi_human_queen_marigga"
+dlc = true
+
+[[boss]]
+flag_id = 2046410800
+name = """Blackgaol Knight"""
+region = """The Land of Shadow"""
+icon = "blackgaol_knight"
+place = """Western Nameless Mausoleum"""
+dlc = true
+
+[[boss]]
+flag_id = 2046450800
+name = """Red Bear"""
+region = """The Land of Shadow"""
+icon = "red_bear"
+place = """Northern Nameless Mausoleum"""
+dlc = true
+
+[[boss]]
+flag_id = 2046460800
+name = """Divine Beast Dancing Lion"""
+region = """The Land of Shadow"""
+icon = "divine_beast_dancing_lion"
+dlc = true
+
+[[boss]]
+flag_id = 2047390800
+name = """Death Rite Bird"""
+region = """The Land of Shadow"""
+icon = "death_rite_bird"
+dlc = true
+
+[[boss]]
+flag_id = 2047450800
+name = """Black Knight Garrew"""
+region = """The Land of Shadow"""
+icon = "black_knight_garrew"
+place = """Fog Rift Fort"""
+dlc = true
+
+[[boss]]
+flag_id = 2048380850
+name = """Ghostflame Dragon"""
+region = """The Land of Shadow"""
+icon = "ghostflame_dragon"
+dlc = true
+
+[[boss]]
+flag_id = 2048440800
+name = """Rellana, Twin Moon Knight"""
+region = """The Land of Shadow"""
+icon = "rellana_twin_moon_knight"
+place = """Castle Ensis"""
+dlc = true
+
+[[boss]]
+flag_id = 2049410800
+name = """Jagged Peak Drake x2"""
+region = """The Land of Shadow"""
+icon = "jagged_peak_drake_x2"
+place = """Foot of the Jagged Peak"""
+dlc = true
+
+[[boss]]
+flag_id = 2049430800
+name = """Ghostflame Dragon"""
+region = """The Land of Shadow"""
+icon = "ghostflame_dragon"
+dlc = true
+
+[[boss]]
+flag_id = 2049430850
+name = """Black Knight Edredd"""
+region = """The Land of Shadow"""
+icon = "black_knight_edredd"
+place = """Fort of Reprimand"""
+dlc = true
+
+[[boss]]
+flag_id = 2049440800
+name = """Dryleaf Dane"""
+region = """The Land of Shadow"""
+icon = "dryleaf_dane"
+place = """Moorth Ruins"""
+dlc = true
+
+[[boss]]
+flag_id = 2049450800
+name = """Ralva The Great Red Bear"""
+region = """The Land of Shadow"""
+icon = "ralva_the_great_red_bear"
+dlc = true
+
+[[boss]]
+flag_id = 2049480800
+name = """Commander Gaius"""
+region = """The Land of Shadow"""
+icon = "commander_gaius"
+dlc = true
+
+[[boss]]
+flag_id = 2050470800
+name = """Tree Sentinel (1)"""
+region = """The Land of Shadow"""
+icon = "tree_sentinel_1"
+place = """Hinterland"""
+dlc = true
+
+[[boss]]
+flag_id = 2050480800
+name = """Scadutree Avatar"""
+region = """The Land of Shadow"""
+icon = "scadutree_avatar"
+place = """Scadutree Base"""
+dlc = true
+
+[[boss]]
+flag_id = 2050480860
+name = """Tree Sentinel (2)"""
+region = """The Land of Shadow"""
+icon = "tree_sentinel_2"
+place = """Hinterland Bridge"""
+dlc = true
+
+[[boss]]
+flag_id = 2051440800
+name = """Rakshasa"""
+region = """The Land of Shadow"""
+icon = "rakshasa"
+place = """Eastern Nameless Mausoleum"""
+dlc = true
+
+[[boss]]
+flag_id = 2051450800
+name = """Count Ymir, High Priest"""
+region = """The Land of Shadow"""
+icon = "count_ymir_high_priest"
+place = """Cathedral of Manus Metyr"""
+dlc = true
+
+[[boss]]
+flag_id = 2052400800
+name = """Jagged Peak Drake"""
+region = """The Land of Shadow"""
+icon = "jagged_peak_drake"
+place = """Jagged Peak Mountainside"""
+dlc = true
+
+[[boss]]
+flag_id = 2052430800
+name = """Jori, Elder Inquisitor"""
+region = """The Land of Shadow"""
+icon = "jori_elder_inquisitor"
+place = """Darklight Catacombs"""
+dlc = true
+
+[[boss]]
+flag_id = 2052480800
+name = """Fallingstar Beast"""
+region = """The Land of Shadow"""
+icon = "fallingstar_beast"
+place = """Fingerstone Hill"""
+dlc = true
+
+[[boss]]
+flag_id = 2054390800
+name = """Bayle The Dread"""
+region = """The Land of Shadow"""
+icon = "bayle_the_dread"
+place = """Jagged Peak Summit"""
+dlc = true
+
+[[boss]]
+flag_id = 2054390850
+name = """Ancient Dragon Senessax"""
+region = """The Land of Shadow"""
+icon = "ancient_dragon_senessax"
+place = """Jagged Peak Mountainside"""
+dlc = true
+
+# Region -> subregion IDs (player map id / 1000). Derived from bosses.json.
+
+[[region]]
+name = """AINSEL RIVER"""
+subregions = [1201, 1204]
+
+[[region]]
+name = """ALTUS PLATEAU"""
+subregions = [3007, 3008, 3012, 3118, 3119, 3204, 3205, 6300]
+
+[[region]]
+name = """CAELID"""
+subregions = [3014, 3015, 3111, 3121, 3207, 3208, 6400]
+
+[[region]]
+name = """CONSECRATED SNOWFIELD"""
+subregions = [3019, 3020, 3112, 3211, 6503]
+
+[[region]]
+name = """CRUMBLING FARUM AZULA + LEYNDELL, ASHEN CAPITAL"""
+subregions = [1105, 1300, 1900]
+
+[[region]]
+name = """DEEPROOT DEPTHS"""
+subregions = [1203]
+
+[[region]]
+name = """DRAGONBARROW"""
+subregions = [3016, 3110, 3120, 3413, 6402]
+
+[[region]]
+name = """FORBIDDEN LANDS"""
+subregions = [6500]
+
+[[region]]
+name = """HALIGTREE"""
+subregions = [1500]
+
+[[region]]
+name = """LAKE OF ROT"""
+subregions = [1204]
+
+[[region]]
+name = """LEYNDELL"""
+subregions = [1100, 3010, 3013, 3412, 3414, 3415, 3500, 6301]
+
+[[region]]
+name = """LIMGRAVE"""
+subregions = [1000, 1800, 3002, 3004, 3011, 3100, 3103, 3115, 3117, 3201, 3410, 6100, 6101]
+
+[[region]]
+name = """LIURNIA OF THE LAKES"""
+subregions = [1400, 3003, 3005, 3006, 3104, 3105, 3106, 3202, 3411, 3900, 3920, 6200, 6201]
+
+[[region]]
+name = """MOHGWYN PALACE"""
+subregions = [1205]
+
+[[region]]
+name = """MOUNTAINTOPS OF THE GIANTS"""
+subregions = [3017, 3018, 3122, 6501, 6502]
+
+[[region]]
+name = """MT. GELMIR"""
+subregions = [1600, 3009, 3107, 3109, 6302]
+
+[[region]]
+name = """NOKRON, ETERNAL CITY"""
+subregions = [1202]
+
+[[region]]
+name = """POST LIURNIA"""
+subregions = [6202]
+
+[[region]]
+name = """SIOFRA RIVER"""
+subregions = [1202, 1207]
+
+[[region]]
+name = """The Land of Shadow"""
+subregions = [2001, 2200, 2800, 4000, 4001, 4002, 4100, 4101, 4102, 4300, 4301, 6800, 6801, 6804, 6805, 6806, 6810, 6815, 6820, 6830, 6835, 6840, 6841, 6850, 6860, 6900, 6901, 6902, 6903, 6904, 6905, 6906, 6920, 6930, 6940, 6960]
+
+[[region]]
+name = """WEEPING PENINSULA"""
+subregions = [3000, 3001, 3101, 3102, 3200, 6102]

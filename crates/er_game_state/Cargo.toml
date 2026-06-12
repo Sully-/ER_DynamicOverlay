@@ -8,7 +8,12 @@ rust-version.workspace = true
 
 [features]
 default = ["game", "mock"]
-game = ["dep:eldenring", "dep:fromsoftware-shared"]
+game = [
+    "dep:eldenring",
+    "dep:fromsoftware-shared",
+    "dep:pelite",
+    "dep:windows",
+]
 mock = []
 
 [dependencies]
@@ -18,5 +23,10 @@ toml.workspace = true
 tracing.workspace = true
 eldenring = { workspace = true, optional = true }
 fromsoftware-shared = { workspace = true, optional = true }
+pelite = { workspace = true, optional = true }
+windows = { workspace = true, optional = true, features = [
+    "Win32_Foundation",
+    "Win32_System_LibraryLoader",
+] }
 
 [dev-dependencies]

@@ -243,7 +243,7 @@ row = 3
 
 [[section.tile]]
 kind = "item"
-key = "ancient_dragon_smithing_stone"
+key = "smithing_stone_8"
 col = 7
 row = 3
 
@@ -297,14 +297,20 @@ row = 4
 
 [[section.tile]]
 kind = "item"
-key = "somber_smithing_stone_9"
+key = "ancient_dragon_smithing_stone"
 col = 0
 row = 5
 
 [[section.tile]]
 kind = "item"
-key = "somber_ancient_dragon_smithing_stone"
+key = "somber_smithing_stone_9"
 col = 1
+row = 5
+
+[[section.tile]]
+kind = "item"
+key = "somber_ancient_dragon_smithing_stone"
+col = 2
 row = 5
 
 [[section.tile]]

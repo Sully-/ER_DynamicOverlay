@@ -324,9 +324,11 @@ dependencies = [
  "eldenring",
  "er_overlay_common",
  "fromsoftware-shared",
+ "pelite",
  "serde",
  "toml",
  "tracing",
+ "windows 0.62.2",
 ]
 
 [[package]]

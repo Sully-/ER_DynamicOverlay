@@ -1,3 +1,4 @@
+mod boss_panel;
 mod fonts;
 mod hud_window;
 mod icon_atlas;
@@ -9,7 +10,8 @@ mod tracked_icon;
 mod view_model;
 
 pub use fonts::setup_overlay_fonts;
-pub use hud_window::HudDragState;
+pub use boss_panel::BossPanelState;
+pub use hud_window::{HudBounds, HudDragState};
 pub use icon_atlas::IconAtlas;
 pub use render::render_overlay;
 pub use view_model::{build_view_model, OverlayViewModel};

@@ -117,7 +117,12 @@ mod tests {
             "smithing_stone_1",
             "somber_ancient_dragon_smithing_stone",
         ]);
-        let vm = build_view_model(&MockGameState::default(), &refs, &HashSet::new());
+        let vm = build_view_model(
+            &MockGameState::default(),
+            &refs,
+            &HashSet::new(),
+            er_overlay_common::BossPanelScope::CurrentRegion,
+        );
         assert!(matches!(resolve_metric("igt", &vm), MetricValue::Time(_)));
         assert!(resolve_tracked_key("godrick_rune", &vm).is_some());
         assert!(resolve_tracked_key("smithing_stone_1", &vm).is_some());
@@ -126,7 +131,12 @@ mod tests {
 
     #[test]
     fn great_runes_group_resolves_as_count() {
-        let vm = build_view_model(&MockGameState::default(), &[], &HashSet::new());
+        let vm = build_view_model(
+            &MockGameState::default(),
+            &[],
+            &HashSet::new(),
+            er_overlay_common::BossPanelScope::CurrentRegion,
+        );
         assert_eq!(
             resolve_metric("great_runes", &vm),
             MetricValue::Count {
@@ -138,7 +148,12 @@ mod tests {
 
     #[test]
     fn scadutree_blessing_resolves_from_mock() {
-        let vm = build_view_model(&MockGameState::default(), &[], &HashSet::new());
+        let vm = build_view_model(
+            &MockGameState::default(),
+            &[],
+            &HashSet::new(),
+            er_overlay_common::BossPanelScope::CurrentRegion,
+        );
         assert_eq!(
             resolve_metric("scadutree_blessing", &vm),
             MetricValue::Count {
@@ -160,7 +175,12 @@ mod tests {
 
     #[test]
     fn ng_cycle_formats_as_ng_plus() {
-        let vm = build_view_model(&MockGameState::default(), &[], &HashSet::new());
+        let vm = build_view_model(
+            &MockGameState::default(),
+            &[],
+            &HashSet::new(),
+            er_overlay_common::BossPanelScope::CurrentRegion,
+        );
         assert_eq!(
             resolve_metric("ng_cycle", &vm),
             MetricValue::NgCycle(Some(2))
@@ -178,7 +198,12 @@ mod tests {
     #[test]
     fn talisman_item_resolves_from_mock() {
         let refs = keys(&["daedicar_s_woe"]);
-        let vm = build_view_model(&MockGameState::default(), &refs, &HashSet::new());
+        let vm = build_view_model(
+            &MockGameState::default(),
+            &refs,
+            &HashSet::new(),
+            er_overlay_common::BossPanelScope::CurrentRegion,
+        );
         assert!(resolve_tracked_key("daedicar_s_woe", &vm).is_some());
     }
 
@@ -186,7 +211,12 @@ mod tests {
     fn equipped_tracking_populates_row_when_requested() {
         let refs = keys(&["daedicar_s_woe"]);
         let equipped = equipped_keys(&["daedicar_s_woe"]);
-        let vm = build_view_model(&MockGameState::default(), &refs, &equipped);
+        let vm = build_view_model(
+            &MockGameState::default(),
+            &refs,
+            &equipped,
+            er_overlay_common::BossPanelScope::CurrentRegion,
+        );
         let row = resolve_tracked_key("daedicar_s_woe", &vm).unwrap();
         assert_eq!(row.equipped, Some(false));
     }

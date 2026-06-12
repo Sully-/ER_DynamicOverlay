@@ -43,6 +43,7 @@ pub struct GameStateDiagnostics {
     pub inventory_readable: bool,
     pub boss_flags_loaded: u32,
     pub great_rune_flags_loaded: u32,
+    pub field_area_resolved: bool,
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]

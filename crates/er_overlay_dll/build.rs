@@ -28,6 +28,20 @@ fn main() {
         let _ = copy_dir_all(&layouts_src, &layouts_dest);
     }
 
+    let boss_tables_src = workspace_root
+        .join("crates")
+        .join("er_game_state")
+        .join("tables");
+    for lang in ["en", "fr"] {
+        let src = boss_tables_src.join(lang).join("bosses.toml");
+        println!("cargo:rerun-if-changed={}", src.display());
+        if src.is_file() {
+            let dest_dir = out_dir.join("tables").join(lang);
+            let _ = fs::create_dir_all(&dest_dir);
+            let _ = fs::copy(&src, dest_dir.join("bosses.toml"));
+        }
+    }
+
     let icons_src = workspace_root.join("assets").join("icons");
     if icons_src.is_dir() {
         for entry in fs::read_dir(&icons_src).into_iter().flatten().flatten() {

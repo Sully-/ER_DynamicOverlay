@@ -105,6 +105,11 @@ Read next to the DLL, **hot-reloaded every 2 seconds** (you can edit it while th
 | `use_item_icons` | bool | `true` | `true` = real PNG icons when present, otherwise colored dots. |
 | `icons_dir` | path | `assets/icons` | PNG folder (relative to the DLL). |
 | `show_debug` | bool | `false` | Shows a diagnostics window (backend, resolved pointers, loaded flags). |
+| `boss_panel_hotkey` | string | `F7` | Toggle the boss checklist panel. |
+| `boss_panel_scope` | enum | `current-region` | `current-region` or `all-regions`. |
+| `boss_panel_visible` | bool | `true` | Show the boss panel at startup. |
+| `boss_panel_layout` | string | — | Panel `x,y,width,height` (pixels or `%`). Omit or `auto` = `"-5, 10, 25%, 92%"` (right-aligned), shifted below the minimalist HUD. Negative x/y = offset from right/bottom edge. |
+| `boss_locale` | string | `auto` | Boss table language (`en`, `fr`, …). `auto` reads the game language via Steam; falls back to `en`. |
 
 ## Customizing the display
 
@@ -133,18 +138,18 @@ Provided layout: `layouts/dashboard.toml` (two sections: `minimalist` and `exten
 
 ## Layout editor
 
-Instead of writing TOML by hand, use the **visual editor** in `tools/layout-editor/`.
+Instead of writing TOML by hand, use the **visual editor** in `tools/layout_editor/`.
 
 ![Layout editor](docs/layout-editor.png)
 
-1. Open `tools/layout-editor/index.html` in a browser.
-   *(If file import/export is blocked by the browser, serve the folder: `python -m http.server` from `tools/layout-editor/`, then open `http://localhost:8000`.)*
+1. Open `tools/layout_editor/layout_editor.html` in a browser.
+   *(If file import/export is blocked by the browser, serve the folder: `python -m http.server` from `tools/layout_editor/`, then open `http://localhost:8000/layout_editor.html`.)*
 2. **Drag** items from the palette (metrics, text, items) onto the grid.
 3. Adjust the grid (columns, rows, unit size, gap) and each tile's properties in the right-hand panel (item tiles: optional **track_equipped** checkbox for equipped highlight).
 4. Click **Export TOML**.
 5. Put the exported file in `layouts/` and point `layout_file` at it in `er_overlay.toml`.
 
-The item palette is generated from `goods.toml`; if you add items to that table, regenerate it (see `tools/layout-editor/README.md`).
+The item palette is generated from `goods.toml`; if you add items to that table, regenerate it (see `tools/layout_editor/layout_editor_assets/README.md`).
 
 ## Troubleshooting
 
@@ -249,9 +254,9 @@ Any unknown key renders `---` (unavailable).
 
 ## Game data (tables)
 
-### Bosses — `crates/er_game_state/tables/bosses.toml`
+### Bosses — `tables/<lang>/bosses.toml`
 
-207 entries (165 base + 42 Shadow of the Erdtree), one per boss with its `flag_id`. Bundled with the repo.
+One complete boss table per language (`tables/en/bosses.toml`, `tables/fr/bosses.toml`, …): 207 entries (165 base + 42 Shadow of the Erdtree), regions, display order, flags, icons. Copied next to the DLL at build time. **Hot-reloaded** when the file changes (same 2 s poll as `er_overlay.toml`); if the locale file is missing, falls back to `tables/en/bosses.toml` (embedded in the DLL). Set `boss_locale = "auto"` to match the in-game language, or override with `fr`. Regenerate a locale with `python tools/gen_boss_locale_toml.py fr` (from `en/bosses.toml` + ER_boss_checklist_R JSON).
 
 ### Goods — `crates/er_game_state/tables/goods.toml`
 
