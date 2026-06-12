@@ -4,7 +4,7 @@ import json
 import re
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 TABLES = ROOT / "crates" / "er_game_state" / "tables"
 OUT_JS = Path(__file__).resolve().parent / "catalog.js"
 

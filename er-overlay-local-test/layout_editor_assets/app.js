@@ -18,11 +18,11 @@ const DEFAULT_STYLE = {
   value_scale: 1.15,
 };
 
-/** Dev repo and release zip: tools/layout-editor/ → ../../assets/icons/; legacy release root layout-editor/ → ../assets/icons/ */
+/** Dev: tools/layout_editor/ → ../../assets/icons/; release zip root → assets/icons/ */
 const ICON_BASE = (() => {
   const pageDir = new URL(".", location.href);
   const path = decodeURIComponent(pageDir.pathname).replace(/\\/g, "/").toLowerCase();
-  const rel = path.includes("/tools/layout-editor/") ? "../../assets/icons/" : "../assets/icons/";
+  const rel = path.includes("/tools/layout_editor/") ? "../../assets/icons/" : "assets/icons/";
   return new URL(rel, pageDir).href;
 })();
 
@@ -40,12 +40,11 @@ const PREVIEW_ITEM_COUNT = "3";
 
 const SECTION_NAMES = ["minimalist", "extended"];
 
-const ITEM_CATEGORIES = [
-  { id: "runes", label: "Runes" },
-  { id: "key_items", label: "Key items" },
-  { id: "talismans", label: "Talismans" },
-  { id: "consumables", label: "Consumables" },
-];
+const ITEM_CATEGORY_IDS = ["runes", "key_items", "talismans", "consumables"];
+
+function categoryLabel(id) {
+  return t(`cat_${id}`);
+}
 
 function defaultSectionGrid(name) {
   return {
@@ -200,10 +199,24 @@ function parseLayoutToml(text) {
 
 // ── Init ────────────────────────────────────────────────────────────
 
+function rebuildLocalizedPalette() {
+  els.paletteLabel.innerHTML = "";
+  els.paletteLabel.appendChild(
+    makePaletteEl("label", t("labelPalette"), { label: t("defaultTitle") })
+  );
+  buildItemSections();
+  renderItemPalette();
+}
+
 function init() {
   catalog = Array.isArray(window.LAYOUT_CATALOG) ? window.LAYOUT_CATALOG : [];
   catalogByKey = new Map(catalog.map((e) => [e.key, e]));
   els.catalogCount.textContent = catalog.length;
+
+  window.onLocaleChange = () => {
+    rebuildLocalizedPalette();
+    render();
+  };
 
   buildPalette();
   bindEvents();
@@ -315,7 +328,7 @@ function fillPaletteThumb(thumb, kind, data) {
     const val = document.createElement("span");
     val.className = "palette-thumb-value";
     val.style.fontSize = "0.62rem";
-    val.textContent = data.label || "TITRE";
+    val.textContent = data.label || t("defaultTitle");
     thumb.appendChild(val);
     return;
   }
@@ -341,7 +354,7 @@ function fillTileBody(body, tile, pxW, pxH) {
     const val = document.createElement("div");
     val.className = "tile-value tile-value--solo";
     val.style.fontSize = `${sizes.solo}px`;
-    val.textContent = tile.label || "TITRE";
+    val.textContent = tile.label || t("defaultTitle");
     body.appendChild(val);
     return;
   }
@@ -394,7 +407,7 @@ function buildPalette() {
 
   els.paletteLabel.innerHTML = "";
   els.paletteLabel.appendChild(
-    makePaletteEl("label", "Label (texte)", { label: "TITRE" })
+    makePaletteEl("label", t("labelPalette"), { label: t("defaultTitle") })
   );
 
   buildItemSections();
@@ -421,10 +434,10 @@ function makePaletteEl(kind, title, data, subtitle = "") {
 
   const meta = document.createElement("div");
   meta.className = "palette-meta";
-  const t = document.createElement("div");
-  t.className = "palette-title";
-  t.textContent = title;
-  meta.appendChild(t);
+  const titleEl = document.createElement("div");
+  titleEl.className = "palette-title";
+  titleEl.textContent = title;
+  meta.appendChild(titleEl);
   if (subtitle) {
     const sub = document.createElement("div");
     sub.className = "pi-key";
@@ -442,7 +455,8 @@ function makePaletteEl(kind, title, data, subtitle = "") {
 
 function buildItemSections() {
   els.paletteItemSections.innerHTML = "";
-  for (const cat of ITEM_CATEGORIES) {
+  for (const catId of ITEM_CATEGORY_IDS) {
+    const cat = { id: catId, label: categoryLabel(catId) };
     const section = document.createElement("div");
     section.className = "item-section";
     section.dataset.category = cat.id;
@@ -459,7 +473,7 @@ function buildItemSections() {
     const search = document.createElement("input");
     search.type = "search";
     search.className = "input item-section-search";
-    search.placeholder = `Search ${cat.label.toLowerCase()}…`;
+    search.placeholder = t("searchCategory", { category: cat.label.toLowerCase() });
     search.addEventListener("input", () => renderItemSection(cat.id));
     search.addEventListener("click", (e) => e.stopPropagation());
 
@@ -500,7 +514,7 @@ function renderItemSection(categoryId) {
 }
 
 function renderItemPalette() {
-  for (const cat of ITEM_CATEGORIES) renderItemSection(cat.id);
+  for (const catId of ITEM_CATEGORY_IDS) renderItemSection(catId);
 }
 
 // ── Render ──────────────────────────────────────────────────────────
@@ -590,9 +604,9 @@ function attachGridResizeHandles(canvas, gm) {
     el.addEventListener("mousedown", (e) => startGridResize(e, axis));
     return el;
   };
-  canvas.appendChild(mk("grid-resize-e", "e", "Élargir colonnes"));
-  canvas.appendChild(mk("grid-resize-s", "s", "Élargir lignes"));
-  canvas.appendChild(mk("grid-resize-se", "se", "Élargir la grille"));
+  canvas.appendChild(mk("grid-resize-e", "e", t("resizeWiderCols")));
+  canvas.appendChild(mk("grid-resize-s", "s", t("resizeWiderRows")));
+  canvas.appendChild(mk("grid-resize-se", "se", t("resizeGrid")));
   if (dragState?.mode === "grid") canvas.classList.add("grid-canvas--resizing");
 }
 
@@ -623,13 +637,13 @@ function renderTileEl(tile, gm, overlap) {
   if (tile._id === selectedTileId) {
     const zone = document.createElement("div");
     zone.className = "resize-zone";
-    zone.title = "Redimensionner";
+    zone.title = t("resize");
     zone.addEventListener("mousedown", (e) => startResize(e, tile._id));
     el.appendChild(zone);
 
     const handle = document.createElement("div");
     handle.className = "resize-handle";
-    handle.title = "Redimensionner";
+    handle.title = t("resize");
     handle.addEventListener("mousedown", (e) => startResize(e, tile._id));
     el.appendChild(handle);
   }
@@ -715,7 +729,11 @@ function syncConfigInputs() {
 function updateGridInfo() {
   const gm = gridMetrics();
   const n = activeSection().tiles.length;
-  els.gridInfo.textContent = `${gm.columns}×${gm.rows} · ${n} tuile${n !== 1 ? "s" : ""}`;
+  els.gridInfo.textContent = t("gridInfo", {
+    cols: gm.columns,
+    rows: gm.rows,
+    count: tileCountLabel(n),
+  });
 }
 
 // ── Tile CRUD ───────────────────────────────────────────────────────
@@ -723,7 +741,7 @@ function updateGridInfo() {
 function createTile(kind, data, col, row) {
   const base = { _id: uid(), kind, col, row, w: 1, h: 1 };
   if (kind === "label") {
-    return { ...base, label: data.label || "TITRE" };
+    return { ...base, label: data.label || t("defaultTitle") };
   }
   if (kind === "metric") {
     const m = METRICS.find((x) => x.id === data.id) || data;
@@ -937,26 +955,30 @@ function collectLayoutExportErrors() {
       const name = t.label || t.key || t.metric || t.kind;
       if (t.col + t.w > columns) {
         errors.push(
-          `${sec.name} : « ${name} » dépasse la grille (${t.col} + ${t.w} > ${columns} colonnes)`
+          t("exportOverflow", {
+            section: sec.name,
+            name,
+            col: t.col,
+            w: t.w,
+            columns,
+          })
         );
       }
     }
     const overlaps = findOverlaps(sec.tiles);
     if (overlaps.size > 0) {
-      errors.push(`${sec.name} : tuiles qui se chevauchent`);
+      errors.push(t("exportOverlap", { section: sec.name }));
     }
   }
   const nonEmpty = state.sections.filter((s) => s.tiles.length > 0);
   if (nonEmpty.length === 0) {
-    errors.push("Aucune tuile à exporter");
+    errors.push(t("exportNoTiles"));
   }
   if (
     state.default_section &&
     !nonEmpty.some((s) => s.name === state.default_section)
   ) {
-    errors.push(
-      `Section par défaut « ${state.default_section} » vide — ajoutez une tuile ou changez la section par défaut`
-    );
+    errors.push(t("exportDefaultSectionEmpty", { name: state.default_section }));
   }
   return errors;
 }
@@ -964,7 +986,7 @@ function collectLayoutExportErrors() {
 function exportToml() {
   const columns = globalGridColumns();
   const lines = [];
-  lines.push("# Généré par ER Overlay Layout Editor");
+  lines.push(t("exportComment"));
   lines.push("# Square grid units: 1 unit = 1 icon square.");
   lines.push("");
   lines.push("[grid]");
@@ -1015,7 +1037,7 @@ function exportToml() {
 function downloadToml() {
   const errors = collectLayoutExportErrors();
   if (errors.length > 0) {
-    alert(`Export impossible :\n\n${errors.join("\n")}`);
+    alert(`${t("exportImpossible")}\n\n${errors.join("\n")}`);
     return;
   }
   const blob = new Blob([exportToml()], { type: "text/plain;charset=utf-8" });
@@ -1108,7 +1130,7 @@ function bindEvents() {
 
   $("#btn-export").addEventListener("click", downloadToml);
   $("#btn-new").addEventListener("click", () => {
-    if (state.sections.some((s) => s.tiles.length) && !confirm("Effacer le layout actuel ?")) return;
+    if (state.sections.some((s) => s.tiles.length) && !confirm(t("confirmClear"))) return;
     state = createDefaultState();
     selectedTileId = null;
     render();
@@ -1197,7 +1219,7 @@ function boot() {
     const banner = document.createElement("div");
     banner.style.cssText =
       "position:fixed;inset:0 auto auto 0;right:0;background:#e05050;color:#fff;padding:12px 16px;z-index:9999;font:14px sans-serif";
-    banner.textContent = `Erreur au démarrage : ${err.message}`;
+    banner.textContent = t("bootError", { message: err.message });
     document.body.prepend(banner);
   }
 }

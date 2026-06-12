@@ -76,7 +76,42 @@ body {
 
 .topbar-actions {
   display: flex;
+  align-items: center;
   gap: 8px;
+}
+
+.lang-switch {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.lang-btn {
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 6px 10px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.lang-btn:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.lang-btn.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.lang-btn + .lang-btn {
+  border-left: 1px solid var(--border);
 }
 
 /* ── Buttons ─────────────────────────────────────── */

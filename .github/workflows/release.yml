@@ -41,13 +41,9 @@ jobs:
           Copy-Item target/release/assets  $out/ -Recurse
           Copy-Item README.md, LICENSE     $out/
 
-          # Layout editor (static web app) — same path as dev repo so icon paths resolve
-          New-Item -ItemType Directory -Force "$out/tools/layout-editor" | Out-Null
-          Copy-Item tools/layout-editor/index.html   "$out/tools/layout-editor/"
-          Copy-Item tools/layout-editor/app.js        "$out/tools/layout-editor/"
-          Copy-Item tools/layout-editor/catalog.js    "$out/tools/layout-editor/"
-          Copy-Item tools/layout-editor/style.css     "$out/tools/layout-editor/"
-          Copy-Item tools/layout-editor/README.md     "$out/tools/layout-editor/"
+          # Layout editor — HTML at zip root, assets in layout_editor_assets/
+          Copy-Item tools/layout_editor/layout_editor.html $out/
+          Copy-Item tools/layout_editor/layout_editor_assets $out/layout_editor_assets -Recurse
 
           Compress-Archive -Path "$out/*" -DestinationPath "$out.zip" -Force
 
