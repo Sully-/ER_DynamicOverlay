@@ -58,6 +58,39 @@ pub mod game {
         }
     }
 
+    fn collect_equipped_ids(entries: &eldenring::cs::ChrAsmEquipEntries) -> HashSet<u32> {
+        let mut ids = HashSet::new();
+        for slot in entries
+            .accessories
+            .iter()
+            .chain(std::iter::once(&entries.covenant))
+            .chain(entries.quick_tems.iter())
+            .chain(entries.pouch.iter())
+        {
+            if let Some(id) = slot.as_valid() {
+                ids.insert(id.into_inner());
+            }
+        }
+        ids
+    }
+
+    /// All currently equipped item ids (accessories, covenant, quick slots, pouch).
+    pub fn equipped_item_ids() -> Option<HashSet<u32>> {
+        let wcm = unsafe { WorldChrMan::instance().ok()? };
+        let player = wcm.main_player.as_ref()?;
+        let pgd = unsafe { player.player_game_data.as_ref() };
+        Some(collect_equipped_ids(&pgd.equipment.equipment_entries))
+    }
+
+    /// Whether `param_id` of the given `kind` is present in `equipped`
+    /// (a set produced by [`equipped_item_ids`]).
+    pub fn equipped_contains(equipped: &HashSet<u32>, param_id: u32, kind: ItemKind) -> bool {
+        match ItemId::new(item_category(kind), param_id) {
+            Ok(id) => equipped.contains(&id.into_inner()),
+            Err(_) => false,
+        }
+    }
+
     pub fn inventory_available() -> bool {
         unsafe { WorldChrMan::instance().is_ok() }
     }

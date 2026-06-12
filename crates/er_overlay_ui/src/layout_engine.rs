@@ -62,7 +62,10 @@ pub fn render_layout_dashboard(
                 }
             }
             TileDef::Item {
-                good_key, position, ..
+                good_key,
+                position,
+                track_equipped,
+                ..
             } => {
                 let origin = layout.tile_origin(position.col, position.row, scale);
                 let pos = [window_origin[0] + origin[0], window_origin[1] + origin[1]];
@@ -79,7 +82,7 @@ pub fn render_layout_dashboard(
                 };
 
                 if let Some(row) = resolve_tracked_key(good_key, vm) {
-                    draw_item_tile(&ctx, row, None);
+                    draw_item_tile(&ctx, row, None, *track_equipped);
                 } else {
                     draw_unavailable_metric_tile(&ctx, "?", Some(good_key.as_str()));
                 }

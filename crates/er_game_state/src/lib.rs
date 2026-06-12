@@ -31,6 +31,8 @@ pub trait GameStateSource {
     /// Whether an item id is present in the inventory, scoped to its category
     /// (goods vs accessory/talisman) to avoid cross-category param-id collisions.
     fn has_item(&self, item_id: u32, category: ItemKind) -> Option<bool>;
+    /// Whether an item is currently equipped (talismans, covenant, quick slots, pouch).
+    fn is_item_equipped(&self, item_id: u32, category: ItemKind) -> Option<bool>;
     /// State of an event flag.
     fn get_flag(&self, flag_id: u32) -> Option<bool>;
     fn get_status(&self) -> GameStateDiagnostics;
@@ -82,6 +84,9 @@ pub mod mock {
             Some(0)
         }
         fn has_item(&self, _item_id: u32, _category: ItemKind) -> Option<bool> {
+            Some(false)
+        }
+        fn is_item_equipped(&self, _item_id: u32, _category: ItemKind) -> Option<bool> {
             Some(false)
         }
         fn get_flag(&self, _flag_id: u32) -> Option<bool> {

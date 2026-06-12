@@ -105,6 +105,8 @@ fn render_debug(ui: &Ui, vm: &OverlayViewModel) {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashSet;
+
     use crate::view_model::build_view_model;
 
     use er_game_state::mock::MockGameState;
@@ -112,7 +114,7 @@ mod tests {
     #[test]
     fn view_model_builds() {
         let mock = MockGameState::default();
-        let vm = build_view_model(&mock, &[]);
+        let vm = build_view_model(&mock, &[], &HashSet::new());
         assert!(vm.igt.is_some());
         assert_eq!(vm.deaths, Some(42));
     }

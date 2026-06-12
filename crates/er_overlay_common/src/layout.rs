@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::fs;
 use std::path::Path;
 
@@ -156,6 +157,9 @@ pub enum TileDef {
         good_key: String,
         #[serde(flatten)]
         position: TilePosition,
+        /// When true, highlight the tile border while this item is equipped.
+        #[serde(default)]
+        track_equipped: bool,
     },
     /// Decorative text (header, separator…) — no game data.
     Label {
@@ -354,6 +358,38 @@ impl LayoutConfig {
         }
     }
 
+    /// Good keys for `item` tiles that request equipped-state tracking.
+    pub fn collect_equipped_refs(&self) -> HashSet<String> {
+        let mut keys = HashSet::new();
+        let mut push = |key: &str| {
+            if !key.is_empty() {
+                keys.insert(key.to_string());
+            }
+        };
+
+        if self.sections.is_empty() {
+            Self::collect_equipped_refs_from_tiles(&self.tiles, &mut push);
+        } else {
+            for section in &self.sections {
+                Self::collect_equipped_refs_from_tiles(&section.tiles, &mut push);
+            }
+        }
+        keys
+    }
+
+    fn collect_equipped_refs_from_tiles(tiles: &[TileDef], push: &mut impl FnMut(&str)) {
+        for tile in tiles {
+            if let TileDef::Item {
+                good_key,
+                track_equipped: true,
+                ..
+            } = tile
+            {
+                push(good_key);
+            }
+        }
+    }
+
     pub fn validate(&self) -> Result<()> {
         if self.grid.columns == 0 {
             bail!("grid.columns must be > 0");
@@ -430,11 +466,7 @@ impl LayoutConfig {
                         id.as_deref().unwrap_or(good_key.as_str()),
                     )
                 }
-                TileDef::Label {
-                    position,
-                    id,
-                    ..
-                } => (
+                TileDef::Label { position, id, .. } => (
                     position.col,
                     position.row,
                     position.col_span,
@@ -582,6 +614,7 @@ mod tests {
                         col_span: 1,
                         row_span: 1,
                     },
+                    track_equipped: false,
                 },
             ],
             sections: vec![],
@@ -815,5 +848,71 @@ label = "X"
         let raw = include_str!("../../../layouts/dashboard.toml");
         let layout: LayoutConfig = toml::from_str(raw).expect("dashboard.toml should parse");
         layout.validate().expect("dashboard.toml should validate");
+    }
+
+    #[test]
+    fn track_equipped_parses_and_defaults_false() {
+        let with_flag = r#"
+[[tile]]
+kind = "item"
+key = "green_turtle_talisman"
+track_equipped = true
+col = 0
+row = 0
+"#;
+        let layout: LayoutConfig = toml::from_str(with_flag).unwrap();
+        match &layout.tiles[0] {
+            TileDef::Item {
+                good_key,
+                track_equipped,
+                ..
+            } => {
+                assert_eq!(good_key, "green_turtle_talisman");
+                assert!(*track_equipped);
+            }
+            _ => panic!("expected item"),
+        }
+
+        let without_flag = r#"
+[[tile]]
+kind = "item"
+key = "godrick_rune"
+col = 0
+row = 0
+"#;
+        let layout: LayoutConfig = toml::from_str(without_flag).unwrap();
+        match &layout.tiles[0] {
+            TileDef::Item { track_equipped, .. } => assert!(!*track_equipped),
+            _ => panic!("expected item"),
+        }
+    }
+
+    #[test]
+    fn collect_equipped_refs_deduplicates() {
+        let raw = r#"
+[[tile]]
+kind = "item"
+key = "green_turtle_talisman"
+track_equipped = true
+col = 0
+row = 0
+
+[[tile]]
+kind = "item"
+key = "green_turtle_talisman"
+track_equipped = true
+col = 1
+row = 0
+
+[[tile]]
+kind = "item"
+key = "godrick_rune"
+col = 2
+row = 0
+"#;
+        let layout: LayoutConfig = toml::from_str(raw).unwrap();
+        let refs = layout.collect_equipped_refs();
+        assert_eq!(refs.len(), 1);
+        assert!(refs.contains("green_turtle_talisman"));
     }
 }

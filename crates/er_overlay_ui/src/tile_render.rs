@@ -116,7 +116,9 @@ pub fn draw_metric_tile(
             let vertical_pad = min_dim * 0.06;
             let value_gap = value_h * 0.25;
             let max_from_height = size[1] - value_h - value_gap - vertical_pad * 2.0;
-            min_dim.min(max_from_height).clamp(min_dim * 0.38, min_dim * 0.72)
+            min_dim
+                .min(max_from_height)
+                .clamp(min_dim * 0.38, min_dim * 0.72)
         }
     } else {
         0.0
@@ -140,7 +142,12 @@ pub fn draw_metric_tile(
     if let Some(key) = icon_key {
         let ix = pos[0] + (size[0] - icon_size) * 0.5;
         draw_icon_key_at(ui, key, [ix, y], icon_size, 1.0, *atlas, config);
-        y += icon_size + if has_label { label_h * 0.25 } else { value_h * 0.25 };
+        y += icon_size
+            + if has_label {
+                label_h * 0.25
+            } else {
+                value_h * 0.25
+            };
     }
 
     if has_label {
@@ -200,7 +207,12 @@ pub fn draw_unavailable_metric_tile(ctx: &TileDrawCtx<'_>, label: &str, icon_key
 }
 
 /// One box per yes/no item: centered icon, colored when owned, grayed out otherwise.
-pub fn draw_item_tile(ctx: &TileDrawCtx<'_>, row: &TrackedEntryRow, icon_override: Option<&str>) {
+pub fn draw_item_tile(
+    ctx: &TileDrawCtx<'_>,
+    row: &TrackedEntryRow,
+    icon_override: Option<&str>,
+    track_equipped: bool,
+) {
     let TileDrawCtx {
         ui,
         pos,
@@ -211,8 +223,11 @@ pub fn draw_item_tile(ctx: &TileDrawCtx<'_>, row: &TrackedEntryRow, icon_overrid
         radius,
     } = ctx;
     let (acquired, unknown) = crate::tracked_icon::track_status(&row.kind);
-    // Neutral border: state is read from the icon (color vs transparent gray), not the frame.
-    let border = style.border_default;
+    let border = if track_equipped && row.equipped == Some(true) {
+        style.border_complete
+    } else {
+        style.border_default
+    };
     let mut bg = style.tile_bg;
     if !acquired || unknown {
         bg[3] = (f32::from(bg[3]) * 0.55) as u8;

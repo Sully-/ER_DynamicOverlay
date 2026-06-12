@@ -20,6 +20,7 @@ pub struct GameStateReader {
     initialized: bool,
     init_timed_out_logged: bool,
     owned_item_ids: Option<HashSet<u32>>,
+    equipped_item_ids: Option<HashSet<u32>>,
     killed_boss_count: Option<u32>,
 }
 
@@ -36,18 +37,27 @@ impl GameStateReader {
             initialized: false,
             init_timed_out_logged: false,
             owned_item_ids: None,
+            equipped_item_ids: None,
             killed_boss_count: None,
         }
     }
 
     fn refresh_inventory_cache(&mut self) {
         self.owned_item_ids = crate::inventory::game::owned_item_ids();
+        self.equipped_item_ids = crate::inventory::game::equipped_item_ids();
     }
 
     fn has_param(&self, param_id: u32, category: ItemKind) -> Option<bool> {
         let owned = self.owned_item_ids.as_ref()?;
         Some(crate::inventory::game::owned_contains(
             owned, param_id, category,
+        ))
+    }
+
+    fn is_equipped(&self, param_id: u32, category: ItemKind) -> Option<bool> {
+        let equipped = self.equipped_item_ids.as_ref()?;
+        Some(crate::inventory::game::equipped_contains(
+            equipped, param_id, category,
         ))
     }
 
@@ -142,6 +152,10 @@ impl GameStateSource for GameStateReader {
 
     fn has_item(&self, item_id: u32, category: ItemKind) -> Option<bool> {
         self.has_param(item_id, category)
+    }
+
+    fn is_item_equipped(&self, item_id: u32, category: ItemKind) -> Option<bool> {
+        self.is_equipped(item_id, category)
     }
 
     fn get_flag(&self, flag_id: u32) -> Option<bool> {

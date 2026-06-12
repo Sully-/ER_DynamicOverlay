@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use er_game_state::{
     good_by_key, group_names, group_progress, group_size, item_owned, GameStateSource,
@@ -12,6 +12,8 @@ pub struct TrackedEntryRow {
     pub icon_key: String,
     /// Optional display cap for a countable good (e.g. scadutree → "N/50").
     pub max: Option<u32>,
+    /// Present when the layout requests equipped tracking for this good key.
+    pub equipped: Option<bool>,
 }
 
 /// Owned / total members of an aggregate group (e.g. great runes).
@@ -50,6 +52,7 @@ impl OverlayViewModel {
 pub fn build_view_model(
     source: &dyn GameStateSource,
     referenced_keys: &[String],
+    equipped_keys: &HashSet<String>,
 ) -> OverlayViewModel {
     let mut tracked_by_key = HashMap::new();
     for key in referenced_keys {
@@ -65,6 +68,11 @@ pub fn build_view_model(
                 acquired: item_owned(source, good.item_id, good.category, good.pickup_flag),
             }
         };
+        let equipped = if equipped_keys.contains(key) {
+            source.is_item_equipped(good.item_id, good.category)
+        } else {
+            None
+        };
         tracked_by_key.insert(
             good.key.clone(),
             TrackedEntryRow {
@@ -72,6 +80,7 @@ pub fn build_view_model(
                 kind,
                 icon_key: good.key,
                 max: good.max,
+                equipped,
             },
         );
     }

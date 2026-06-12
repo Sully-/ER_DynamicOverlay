@@ -115,7 +115,7 @@ Three tile kinds:
 | Kind | Shows |
 |------|-------|
 | `metric` | A counter or time: IGT, deaths, NG+, bosses killed, group progress, item quantity. |
-| `item` | A tracked item (icon **in color** if owned, **greyed out** otherwise; quantity for consumables). |
+| `item` | A tracked item (icon **in color** if owned, **greyed out** otherwise; quantity for consumables). Optional `track_equipped = true` adds a **green border** while the item is equipped. |
 | `label` | Plain decorative text (heading, separator). |
 
 ### Sections
@@ -140,7 +140,7 @@ Instead of writing TOML by hand, use the **visual editor** in `tools/layout-edit
 1. Open `tools/layout-editor/index.html` in a browser.
    *(If file import/export is blocked by the browser, serve the folder: `python -m http.server` from `tools/layout-editor/`, then open `http://localhost:8000`.)*
 2. **Drag** items from the palette (metrics, text, items) onto the grid.
-3. Adjust the grid (columns, rows, unit size, gap) and each tile's properties in the right-hand panel.
+3. Adjust the grid (columns, rows, unit size, gap) and each tile's properties in the right-hand panel (item tiles: optional **track_equipped** checkbox for equipped highlight).
 4. Click **Export TOML**.
 5. Put the exported file in `layouts/` and point `layout_file` at it in `er_overlay.toml`.
 
@@ -226,7 +226,7 @@ label = "RUN"
 **Fields per tile kind** (all: `col`, `row`, `w`/`col_span`, `h`/`row_span`, optional `id`):
 
 - `metric`: `metric` (metric id), `label`, `show_max` (bool, shows `N/total`), `icon` (optional PNG key shown above the text).
-- `item`: `key` (a good key from `goods.toml`). Colored icon if owned, greyed out otherwise, quantity for consumables.
+- `item`: `key` (a good key from `goods.toml`). Colored icon if owned, greyed out otherwise, quantity for consumables. Optional `track_equipped = true` adds a green border highlight while the item is equipped (talismans, great runes, quick-slot consumables).
 - `label`: `label` (text).
 
 **Validation rules**: `columns > 0`, spans `> 0`, no overlapping tiles *within the same section*, `col + col_span ≤ columns`, unique and non-empty section names, non-empty sections. The file is re-validated on every reload (every 2 s).
@@ -241,6 +241,7 @@ The `metric` field of a `metric` tile accepts:
 | `deaths` | Death count. |
 | `ng_cycle` | New Game cycle (`NG+N`). |
 | `bosses` | Bosses killed out of 207. |
+| `scadutree_blessing` | Scadutree Blessing level spent at Sites of Grace (`N/20`). Distinct from the `scadutree` good key (fragment inventory count). |
 | *group name* | `owned/total` progress of an aggregate group from `goods.toml` (e.g. `great_runes`). |
 | *good key* | Quantity (consumable `count = true`) or `0/1` owned state for a unique item. |
 

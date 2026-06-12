@@ -124,11 +124,13 @@ const els = {
   propW: $("#prop-w"),
   propH: $("#prop-h"),
   propShowMax: $("#prop-show-max"),
+  propTrackEquipped: $("#prop-track-equipped"),
   propIcon: $("#prop-icon"),
   fieldLabel: $("#field-label"),
   fieldMetric: $("#field-metric"),
   fieldKey: $("#field-key"),
   fieldShowMax: $("#field-show-max"),
+  fieldTrackEquipped: $("#field-track-equipped"),
   fieldIcon: $("#field-icon"),
   cfgColumns: $("#cfg-columns"),
   cfgRows: $("#cfg-rows"),
@@ -566,6 +568,7 @@ function fillTileBody(body, tile, pxW, pxH) {
         pxW * 0.9
       );
     }
+    return tile.track_equipped ? { complete: true } : {};
   }
   return {};
 }
@@ -877,6 +880,7 @@ function renderProperties() {
   els.fieldMetric.classList.toggle("hidden", tile.kind !== "metric");
   els.fieldKey.classList.toggle("hidden", tile.kind !== "item");
   els.fieldShowMax.classList.toggle("hidden", tile.kind !== "metric");
+  els.fieldTrackEquipped.classList.toggle("hidden", tile.kind !== "item");
   els.fieldIcon.classList.toggle("hidden", tile.kind !== "metric");
 
   els.propLabel.value = tile.label || "";
@@ -887,6 +891,7 @@ function renderProperties() {
   els.propW.value = tile.w;
   els.propH.value = tile.h;
   els.propShowMax.checked = !!tile.show_max;
+  els.propTrackEquipped.checked = !!tile.track_equipped;
   els.propIcon.value = tile.icon || "";
 }
 
@@ -931,7 +936,7 @@ function createTile(kind, data, col, row) {
     };
   }
   if (kind === "item") {
-    return { ...base, key: data.key || "godrick_rune" };
+    return { ...base, key: data.key || "godrick_rune", track_equipped: !!data.track_equipped };
   }
   return base;
 }
@@ -954,7 +959,10 @@ function applyPropChanges() {
     const icon = els.propIcon.value.trim();
     tile.icon = icon || undefined;
   }
-  if (tile.kind === "item") tile.key = els.propKey.value.trim() || tile.key;
+  if (tile.kind === "item") {
+    tile.key = els.propKey.value.trim() || tile.key;
+    tile.track_equipped = els.propTrackEquipped.checked;
+  }
   tile.col = Math.max(0, Number(els.propCol.value) || 0);
   tile.row = Math.max(0, Number(els.propRow.value) || 0);
   tile.w = Math.max(1, Number(els.propW.value) || 1);
@@ -1199,6 +1207,7 @@ function exportToml() {
         if (tile.label) lines.push(`label = "${tile.label}"`);
       } else if (tile.kind === "item") {
         lines.push(`key = "${tile.key}"`);
+        if (tile.track_equipped) lines.push("track_equipped = true");
       }
       lines.push(`col = ${tile.col}`);
       lines.push(`row = ${tile.row}`);
@@ -1294,7 +1303,7 @@ function parseTileDef(t) {
     return { ...base, label: t.label || "" };
   }
   if (t.kind === "item") {
-    return { ...base, key: t.key || "" };
+    return { ...base, key: t.key || "", track_equipped: !!t.track_equipped };
   }
   return base;
 }
@@ -1329,6 +1338,7 @@ function bindEvents() {
     els.propW,
     els.propH,
     els.propShowMax,
+    els.propTrackEquipped,
     els.propIcon,
   ]) {
     input.addEventListener("input", applyPropChanges);

@@ -52,7 +52,11 @@ impl OverlayApp {
             .as_ref()
             .map(|l| l.collect_data_refs())
             .unwrap_or_default();
-        let view_model = build_view_model(&reader, &data_refs);
+        let equipped_refs = layout
+            .as_ref()
+            .map(|l| l.collect_equipped_refs())
+            .unwrap_or_default();
+        let view_model = build_view_model(&reader, &data_refs, &equipped_refs);
         let icon_signature = Self::icon_signature_for(&config, layout.as_ref());
         let mut app = Self {
             config,
@@ -94,7 +98,12 @@ impl OverlayApp {
             .as_ref()
             .map(|l| l.collect_data_refs())
             .unwrap_or_default();
-        self.view_model = build_view_model(&self.reader, &data_refs);
+        let equipped_refs = self
+            .layout
+            .as_ref()
+            .map(|l| l.collect_equipped_refs())
+            .unwrap_or_default();
+        self.view_model = build_view_model(&self.reader, &data_refs, &equipped_refs);
         self.last_state_poll = Instant::now();
     }
 

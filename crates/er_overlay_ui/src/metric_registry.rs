@@ -95,12 +95,18 @@ pub fn format_metric_value(value: &MetricValue, show_max: bool) -> String {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashSet;
+
     use er_game_state::mock::MockGameState;
 
     use super::*;
     use crate::view_model::build_view_model;
 
     fn keys(list: &[&str]) -> Vec<String> {
+        list.iter().map(|s| s.to_string()).collect()
+    }
+
+    fn equipped_keys(list: &[&str]) -> HashSet<String> {
         list.iter().map(|s| s.to_string()).collect()
     }
 
@@ -111,7 +117,7 @@ mod tests {
             "smithing_stone_1",
             "somber_ancient_dragon_smithing_stone",
         ]);
-        let vm = build_view_model(&MockGameState::default(), &refs);
+        let vm = build_view_model(&MockGameState::default(), &refs, &HashSet::new());
         assert!(matches!(resolve_metric("igt", &vm), MetricValue::Time(_)));
         assert!(resolve_tracked_key("godrick_rune", &vm).is_some());
         assert!(resolve_tracked_key("smithing_stone_1", &vm).is_some());
@@ -120,7 +126,7 @@ mod tests {
 
     #[test]
     fn great_runes_group_resolves_as_count() {
-        let vm = build_view_model(&MockGameState::default(), &[]);
+        let vm = build_view_model(&MockGameState::default(), &[], &HashSet::new());
         assert_eq!(
             resolve_metric("great_runes", &vm),
             MetricValue::Count {
@@ -132,7 +138,7 @@ mod tests {
 
     #[test]
     fn scadutree_blessing_resolves_from_mock() {
-        let vm = build_view_model(&MockGameState::default(), &[]);
+        let vm = build_view_model(&MockGameState::default(), &[], &HashSet::new());
         assert_eq!(
             resolve_metric("scadutree_blessing", &vm),
             MetricValue::Count {
@@ -154,7 +160,7 @@ mod tests {
 
     #[test]
     fn ng_cycle_formats_as_ng_plus() {
-        let vm = build_view_model(&MockGameState::default(), &[]);
+        let vm = build_view_model(&MockGameState::default(), &[], &HashSet::new());
         assert_eq!(
             resolve_metric("ng_cycle", &vm),
             MetricValue::NgCycle(Some(2))
@@ -172,7 +178,16 @@ mod tests {
     #[test]
     fn talisman_item_resolves_from_mock() {
         let refs = keys(&["daedicar_s_woe"]);
-        let vm = build_view_model(&MockGameState::default(), &refs);
+        let vm = build_view_model(&MockGameState::default(), &refs, &HashSet::new());
         assert!(resolve_tracked_key("daedicar_s_woe", &vm).is_some());
+    }
+
+    #[test]
+    fn equipped_tracking_populates_row_when_requested() {
+        let refs = keys(&["daedicar_s_woe"]);
+        let equipped = equipped_keys(&["daedicar_s_woe"]);
+        let vm = build_view_model(&MockGameState::default(), &refs, &equipped);
+        let row = resolve_tracked_key("daedicar_s_woe", &vm).unwrap();
+        assert_eq!(row.equipped, Some(false));
     }
 }
