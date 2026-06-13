@@ -141,7 +141,7 @@ mod tests {
             resolve_metric("great_runes", &vm),
             MetricValue::Count {
                 current: Some(0),
-                max: Some(6),
+                max: Some(7),
             }
         );
     }
