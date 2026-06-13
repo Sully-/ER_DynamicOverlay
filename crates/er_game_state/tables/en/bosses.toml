@@ -441,10 +441,11 @@ place = """Consecrated Snowfield Catacombs"""
 dlc = false
 
 [[boss]]
-flag_id = 30202800
-name = """Mimic Tear"""
+flag_id = 30200800
+name = """Stray Mimic Tear"""
 region = """CONSECRATED SNOWFIELD"""
 icon = "mimic_tear"
+place = """Hidden Path to the Haligtree"""
 dlc = false
 
 [[boss]]
@@ -840,10 +841,11 @@ place = """Church of Vows"""
 dlc = false
 
 [[boss]]
-flag_id = 1037510800
+flag_id = 1041520800
 name = """Ancient Dragon Lansseax"""
 region = """ALTUS PLATEAU"""
 icon = "ancient_dragon_lansseax"
+place = """Rampartside Path"""
 dlc = false
 
 [[boss]]

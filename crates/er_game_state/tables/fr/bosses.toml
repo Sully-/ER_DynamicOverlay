@@ -439,10 +439,11 @@ place = """Crypte des Champs enneigés consacrés"""
 dlc = false
 
 [[boss]]
-flag_id = 30202800
-name = """Mimic Tear"""
+flag_id = 30200800
+name = """Larme imitatrice égarée"""
 region = """Champs enneigés consacrés"""
 icon = "mimic_tear"
+place = """Chemin secret vers l'Arbre-Sacré"""
 dlc = false
 
 [[boss]]
@@ -838,10 +839,11 @@ place = """Église des vœux"""
 dlc = false
 
 [[boss]]
-flag_id = 1037510800
-name = """Ancient Dragon Lansseax"""
+flag_id = 1041520800
+name = """Lansseax le Dragon ancien"""
 region = """Plateau Altus"""
 icon = "ancient_dragon_lansseax"
+place = """Chemin des remparts"""
 dlc = false
 
 [[boss]]
