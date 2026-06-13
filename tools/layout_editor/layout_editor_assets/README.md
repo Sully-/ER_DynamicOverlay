@@ -18,15 +18,14 @@ See the "Layout editor" section of the [main README](../../../README.md). In sho
 | `app.js` | Logic: grid, drag & drop, properties, layout import/export. |
 | `i18n.js` | EN/FR UI strings. |
 | `style.css` | Styles. |
-| `catalog.js` | Item palette **generated** from `goods.toml` (`window.LAYOUT_CATALOG`). Do not edit by hand. |
-| `gen_catalog.py` | Regenerates `catalog.js`. |
+| `catalog.js` | Item palette **generated** from `goods.toml`. Do not edit by hand. |
 
 ## Regenerating the palette
 
-After any change to `crates/er_game_state/tables/goods.toml` (new item, talismans, etc.):
+After any change to `goods.toml`, run from the repo root:
 
 ```powershell
-python tools/layout_editor/layout_editor_assets/gen_catalog.py
+python tools/goods/gen_catalog.py
 ```
 
-The script reads `goods.toml`, classifies each good (runes / consumables / talismans / key items) and rewrites `catalog.js`.
+See [`tools/goods/README.md`](../../goods/README.md) for the full goods workflow.

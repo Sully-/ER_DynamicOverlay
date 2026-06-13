@@ -59,7 +59,7 @@ impl IconAtlas {
 
         if self.textures.is_empty() {
             warn!(
-                "No item icons loaded from {} — run scripts/fetch_goods_icons.py or set ELDEN_RING_GAME",
+                "No item icons loaded from {} — run tools/goods/fetch_goods_icons.py or set ELDEN_RING_GAME",
                 icons_dir.display()
             );
         }

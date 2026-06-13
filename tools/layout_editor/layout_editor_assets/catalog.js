@@ -1356,5 +1356,54 @@ window.LAYOUT_CATALOG = [
     "iconKey": "haligtree_secret_medallion_right",
     "category": "key_items",
     "countable": false
+  },
+  {
+    "key": "drawing_room_key",
+    "name": "Drawing-Room Key",
+    "iconKey": "drawing_room_key",
+    "category": "key_items",
+    "countable": false
+  },
+  {
+    "key": "discarded_palace_key",
+    "name": "Discarded Palace Key",
+    "iconKey": "discarded_palace_key",
+    "category": "key_items",
+    "countable": false
+  },
+  {
+    "key": "cursemark_of_death",
+    "name": "Cursemark of Death",
+    "iconKey": "cursemark_of_death",
+    "category": "key_items",
+    "countable": false
+  },
+  {
+    "key": "dark_moon_ring",
+    "name": "Dark Moon Ring",
+    "iconKey": "dark_moon_ring",
+    "category": "key_items",
+    "countable": false
+  },
+  {
+    "key": "hole_laden_necklace",
+    "name": "Hole-Laden Necklace",
+    "iconKey": "hole_laden_necklace",
+    "category": "key_items",
+    "countable": false
+  },
+  {
+    "key": "o_mother",
+    "name": "O Mother",
+    "iconKey": "o_mother",
+    "category": "key_items",
+    "countable": false
+  },
+  {
+    "key": "pureblood_knights_medal",
+    "name": "Pureblood Knight's Medal",
+    "iconKey": "pureblood_knights_medal",
+    "category": "key_items",
+    "countable": false
   }
 ];
