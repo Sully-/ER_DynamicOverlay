@@ -61,7 +61,7 @@ name = "Great Rune of the Unborn"
 pickup_flag = 197
 icon_id = 3202
 
-# HUD icon "Great Runes X/6" — no group
+# HUD icon "Great Runes X/7" — no group
 [[good]]
 key = "great_rune_generic"
 item_id = 191

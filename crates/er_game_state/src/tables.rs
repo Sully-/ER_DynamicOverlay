@@ -256,9 +256,9 @@ mod tests {
     #[test]
     fn great_runes_group() {
         assert!(group_names().iter().any(|n| n == "great_runes"));
-        assert_eq!(group_size("great_runes"), 6);
+        assert_eq!(group_size("great_runes"), 7);
         let runes = group_members("great_runes");
-        assert_eq!(runes.len(), 6);
+        assert_eq!(runes.len(), 7);
         assert_eq!(runes[0].item_id, 191);
         assert_eq!(runes[0].pickup_flag, Some(171));
         assert!(!runes[0].countable, "runes are owned-checks, not counters");
@@ -299,7 +299,7 @@ mod tests {
     #[test]
     fn group_progress_counts_owned_members() {
         let source = MockGameState::default();
-        assert_eq!(group_progress(&source, "great_runes"), Some((0, 6)));
+        assert_eq!(group_progress(&source, "great_runes"), Some((0, 7)));
     }
 
     #[test]

@@ -13,9 +13,9 @@ A Rust overlay injected into an **already-running** `eldenring.exe`, **read-only
 ## Table of contents
 
 **User guide**
+- [Quick start (GitHub release)](#quick-start-github-release)
 - [Warnings](#warnings)
 - [Installation](#installation)
-- [Running the overlay](#running-the-overlay)
 - [Configuration (`er_overlay.toml`)](#configuration-er_overlaytoml)
 - [Customizing the display](#customizing-the-display)
 - [Layout editor](#layout-editor)
@@ -26,6 +26,7 @@ A Rust overlay injected into an **already-running** `eldenring.exe`, **read-only
 - [Layout format (reference)](#layout-format-reference)
 - [Available metrics](#available-metrics)
 - [Game data (tables)](#game-data-tables)
+- [Adding a good](#adding-a-good)
 - [Icons](#icons)
 - [Development](#development)
 - [References](#references)
@@ -33,6 +34,78 @@ A Rust overlay injected into an **already-running** `eldenring.exe`, **read-only
 ---
 
 # User guide
+
+## Quick start (GitHub release)
+
+**You don't need to compile anything.** Download a pre-built zip from the [GitHub Releases](https://github.com/Sully-/ER_DynamicOverlay/releases) page (`er-overlay-vX.X.X.zip`), extract it anywhere, and follow the steps below.
+
+### 1. Launch Elden Ring offline
+
+The overlay **does not work with EasyAntiCheat enabled**. Start the game in offline mode, for example:
+
+- Launch `eldenring.exe` directly (not through the EAC launcher), with a `steam_appid.txt` containing `1245620` next to the exe, **or**
+- Use your usual offline / no-EAC method.
+
+Keep the game running on the title screen or in a save — the injector attaches to an already-running process.
+
+### 2. Run the overlay
+
+After extracting the zip, you should have a single folder containing at least:
+
+| File / folder | Role |
+|---------------|------|
+| `er_overlay_injector.exe` | Launcher — **double-click this** |
+| `er_overlay.dll` | Overlay (injected into the game) |
+| `er_overlay.toml` | Settings (position, scale, hotkeys, layout file…) |
+| `layouts/` | Dashboard layout files |
+| `tables/` | Boss names per language |
+| `assets/` | Item icons |
+| `layout_editor.html` | Visual layout editor (see step 3) |
+
+**Do not separate these files** — they must stay in the same folder.
+
+1. With Elden Ring already running offline, **double-click `er_overlay_injector.exe`**.
+2. The overlay appears in-game (default: top-right HUD + boss panel on the right).
+
+That's it. Re-run the injector after each game restart (the overlay is not persistent across launches).
+
+**Useful hotkeys** (defaults in `er_overlay.toml`, hot-reloaded every 2 s):
+
+| Key | Action |
+|-----|--------|
+| `F8` | Switch layout section (`minimalist` ↔ `extended`) |
+| `F7` | Toggle boss checklist panel |
+
+If something goes wrong, check `logs/er_injector.log` and `logs/er_overlay.log` in the same folder.
+
+### 3. Customize your dashboard (layout editor)
+
+The release zip includes a **visual editor** — no TOML syntax to learn.
+
+![Layout editor](docs/layout-editor.png)
+
+1. Open **`layout_editor.html`** from the extracted folder in your browser (Chrome, Edge, Firefox…).
+   - If import/export is blocked, serve the folder instead: open a terminal in the folder and run `python -m http.server`, then go to `http://localhost:8000/layout_editor.html`.
+2. **Drag** metrics, labels, and items from the left palette onto the grid.
+3. Tune the grid (columns, rows, cell size, gap) and each tile in the right panel.
+4. Use **Import layout file** to edit the bundled `layouts/dashboard.toml`, or start from **New**.
+5. Click **Export layout file** and save the `.toml` into the `layouts/` folder (e.g. `layouts/my_run.toml`).
+6. Edit `er_overlay.toml` and set `layout_file = "layouts/my_run.toml"`. The overlay reloads the file automatically within ~2 seconds (even while the game is running).
+
+**Tips:** create multiple **sections** in one file (e.g. a compact view and a full view) and switch between them with `F8`. See [Customizing the display](#customizing-the-display) for what each tile type does.
+
+### 4. Tweak appearance and behavior
+
+Open `er_overlay.toml` in any text editor. Common options:
+
+- `anchor`, `offset_x`, `offset_y` — position on screen
+- `scale`, `text_size`, `icon_size` — size
+- `background_opacity`, `gray_tint` — look of unowned items
+- `boss_panel_visible`, `boss_panel_hotkey`, `boss_locale` — boss checklist
+
+Full reference: [Configuration](#configuration-er_overlaytoml).
+
+---
 
 ## Warnings
 
@@ -43,13 +116,20 @@ A Rust overlay injected into an **already-running** `eldenring.exe`, **read-only
 
 ## Installation
 
-### Requirements
+### From a GitHub release (recommended)
+
+See **[Quick start](#quick-start-github-release)** above. Requirements:
+
+- Windows **x64**
+- Elden Ring **offline**, version supported by the release (currently **2.6.2.0 (WW)** and **2.6.2.1 (JP)** — see [Troubleshooting](#troubleshooting) if values show `---`)
+
+### Build from source
+
+For developers who want to compile locally:
 
 - Windows **x64**
 - An Elden Ring version supported by [fromsoftware-rs](https://github.com/vswarte/fromsoftware-rs) (`eldenring` 0.14, e.g. 2.6.x)
-- Rust **1.85+** (only needed to build it yourself)
-
-### Build
+- Rust **1.85+**
 
 ```powershell
 cd Overlay
@@ -61,19 +141,9 @@ Artifacts in `target/release/`:
 - `er_overlay_injector.exe` — the injector
 - `er_overlay.dll` — the overlay itself
 
-The build copies `er_overlay.toml`, `layouts/`, `tables/<lang>/bosses.toml` and `assets/icons/` next to the binaries.
+The build copies `er_overlay.toml`, `layouts/`, `tables/<lang>/bosses.toml` and `assets/icons/` next to the binaries. To produce a release-style zip locally: `.\tools\bundle_release.ps1`.
 
-## Running the overlay
-
-1. Launch Elden Ring **offline** (EAC disabled).
-2. Make sure `er_overlay.dll`, `er_overlay_injector.exe`, `er_overlay.toml`, `layouts/` and `tables/` are **in the same folder**.
-3. **Double-click `er_overlay_injector.exe`.** That's it — the overlay appears in-game.
-
-The injector finds `eldenring.exe` automatically, checks it's x64, warns if EAC modules are detected, then injects.
-
-If something goes wrong, check the logs: `logs/er_injector.log` and `logs/er_overlay.log`.
-
-### Advanced (command line)
+### Advanced injector (command line)
 
 For specific cases you can run the injector from a terminal with flags:
 
@@ -138,18 +208,11 @@ Provided layout: `layouts/dashboard.toml` (two sections: `minimalist` and `exten
 
 ## Layout editor
 
-Instead of writing TOML by hand, use the **visual editor** in `tools/layout_editor/`.
+The release zip includes **`layout_editor.html`** at the root (with `layout_editor_assets/`). When building from source, the same files live under `tools/layout_editor/`.
 
-![Layout editor](docs/layout-editor.png)
+See **[Quick start § 3](#3-customize-your-dashboard-layout-editor)** for the step-by-step workflow. In short: open the HTML file in a browser, drag tiles onto the grid, export a `.toml` into `layouts/`, then set `layout_file` in `er_overlay.toml`.
 
-1. Open `tools/layout_editor/layout_editor.html` in a browser.
-   *(If file import/export is blocked by the browser, serve the folder: `python -m http.server` from `tools/layout_editor/`, then open `http://localhost:8000/layout_editor.html`.)*
-2. **Drag** items from the palette (metrics, text, items) onto the grid.
-3. Adjust the grid (columns, rows, unit size, gap) and each tile's properties in the right-hand panel (item tiles: optional **track_equipped** checkbox for equipped highlight).
-4. Click **Export TOML**.
-5. Put the exported file in `layouts/` and point `layout_file` at it in `er_overlay.toml`.
-
-The item palette is generated from `goods.toml`; if you add items to that table, regenerate it (see `tools/layout_editor/layout_editor_assets/README.md`).
+**Developers:** the item palette is generated from `goods.toml`; after edits run `python tools/goods/gen_catalog.py` (see [Goods toolkit](tools/goods/README.md)).
 
 ## Troubleshooting
 
@@ -158,9 +221,25 @@ The item palette is generated from `goods.toml`; if you add items to that table,
 | Injector: "process not found" | Launch Elden Ring first. |
 | Injection fails | EAC is active → run the game offline; try running the injector as administrator. |
 | "LoadLibraryW returned NULL" | DLL missing / missing dependency / wrong architecture — check the DLL path. |
-| All values show `---` | Game version unsupported by fromsoftware-rs; enable debug logs. |
+| All values show `---` | Game version unsupported — check `logs/er_overlay.log` for `Unsupported game executable` or set `show_debug = true`. Supported builds: **2.6.2.0 (WW), 2.6.2.1 (JP)** (`eldenring` 0.14). |
+| Game crashes on inject | Check `logs/er_overlay.log`: last line before crash pinpoints the step (`Hudhook::apply`, `build_view_model`, etc.). Update the game if the log says unsupported executable. |
 | No icons (only dots) | PNGs missing from `assets/icons` — see [Icons](#icons). |
 | Overlay crash | Conflict with another DX12 hook (RTSS, etc.). |
+
+### Logs and diagnostics
+
+All runtime output goes to **`logs/`** next to `er_overlay.dll`:
+
+| File | Contents |
+|------|----------|
+| `er_overlay.log` | DLL init, game version probe, Hudhook, pointer resolution, errors |
+| `er_injector.log` | Process lookup, EAC warning, injection result |
+
+Enable **`show_debug = true`** in `er_overlay.toml` for an in-game window (backend, game exe version, resolved pointers).
+
+Verbose logging: set env `RUST_LOG=debug` before launching the injector.
+
+Supported game builds are logged at startup (`Game executable supported` vs `Unsupported game executable`).
 
 ---
 
@@ -283,6 +362,19 @@ members = ["godrick_rune", "radahn_rune", "morgott_rune", "rykard_rune", "mohg_r
 
 Talismans (category `accessory`) live in a delimited block (`# --- talismans ---` … `# --- end talismans ---`).
 
+**Adding a new good**: see **[`tools/goods/README.md`](tools/goods/README.md)**.
+
+### Adding a good
+
+Full checklist: **[`tools/goods/README.md`](tools/goods/README.md)**.
+
+```powershell
+# after editing goods.toml
+python tools/goods/fetch_goods_icons.py --out assets/icons
+python tools/goods/gen_catalog.py
+cargo test -p er_game_state
+```
+
 ## Icons
 
 Tiles can display real in-game icons (PNG) instead of colored dots.
@@ -290,6 +382,8 @@ Tiles can display real in-game icons (PNG) instead of colored dots.
 Place PNG files in `assets/icons/`, one per good, named after its `key` (e.g. `godrick_rune.png`) or the good's `file` field. Keep `use_item_icons = true` (default) in `er_overlay.toml`. Any missing icon falls back to a colored dot.
 
 PNGs are **gitignored** (`assets/icons/*.png`). When deploying, copy `assets/icons/` next to `er_overlay.dll`.
+
+Generate missing PNGs with `python tools/goods/fetch_goods_icons.py --out assets/icons` (see [`tools/goods/README.md`](tools/goods/README.md)).
 
 ## Development
 
