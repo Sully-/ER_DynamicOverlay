@@ -114,9 +114,6 @@ static GOODS: LazyLock<Vec<ParsedGood>> = LazyLock::new(|| {
         .collect()
 });
 
-/// Official boss checklist size in the embedded `bosses.toml` (fallback when no external file).
-pub const BOSSES_TOTAL: usize = 207;
-
 pub(crate) fn boss_entries() -> std::sync::Arc<crate::boss_table::BossTableData> {
     boss_table()
 }
@@ -228,7 +225,7 @@ mod tests {
 
     #[test]
     fn boss_table_non_empty() {
-        assert_eq!(boss_entries().bosses.len(), BOSSES_TOTAL);
+        assert!(!boss_entries().bosses.is_empty());
     }
 
     #[test]
@@ -315,21 +312,21 @@ mod tests {
     fn region_map_resolves_limgrave() {
         assert_eq!(
             region_label_for_subregion(6_100_000).as_deref(),
-            Some("LIMGRAVE")
+            Some("Limgrave")
         );
         assert_eq!(
             region_label_for_subregion(3_002_000).as_deref(),
-            Some("LIMGRAVE")
+            Some("Limgrave")
         );
         assert_eq!(
             region_label_for_subregion(6100).as_deref(),
-            Some("LIMGRAVE")
+            Some("Limgrave")
         );
     }
 
     #[test]
     fn bosses_in_region_non_empty() {
-        assert!(!bosses_in_region("LIMGRAVE").is_empty());
+        assert!(!bosses_in_region("Limgrave").is_empty());
     }
 
     #[test]
@@ -340,12 +337,12 @@ mod tests {
     #[test]
     fn region_names_follow_bosses_json_order() {
         let names = region_names();
-        assert_eq!(names.first().map(String::as_str), Some("LIMGRAVE"));
-        assert_eq!(names.get(1).map(String::as_str), Some("WEEPING PENINSULA"));
-        let limgrave_pos = names.iter().position(|r| r == "LIMGRAVE").unwrap();
+        assert_eq!(names.first().map(String::as_str), Some("Limgrave"));
+        assert_eq!(names.get(1).map(String::as_str), Some("Weeping Peninsula"));
+        let limgrave_pos = names.iter().position(|r| r == "Limgrave").unwrap();
         let liurnia_pos = names
             .iter()
-            .position(|r| r == "LIURNIA OF THE LAKES")
+            .position(|r| r == "Liurnia of the Lakes")
             .unwrap();
         assert!(limgrave_pos < liurnia_pos);
     }

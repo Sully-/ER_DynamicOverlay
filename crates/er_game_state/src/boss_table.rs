@@ -96,6 +96,20 @@ pub fn resolve_boss_table_path(base: &Path, locale_id: &str) -> PathBuf {
     base.join("tables").join(locale_id).join("bosses.toml")
 }
 
+/// Optional override from `er_overlay.toml` (`boss_table = "…"`).
+pub fn resolve_boss_table_override(base: &Path, configured: Option<&str>) -> Option<PathBuf> {
+    let raw = configured?.trim();
+    if raw.is_empty() {
+        return None;
+    }
+    let path = Path::new(raw);
+    if path.is_absolute() {
+        Some(path.to_path_buf())
+    } else {
+        Some(base.join(path))
+    }
+}
+
 /// Parses and validates a boss table TOML payload.
 pub fn parse_boss_table(raw: &str) -> Result<BossTableData, String> {
     let table: BossTableFile = toml::from_str(raw).map_err(|e| e.to_string())?;
@@ -151,7 +165,35 @@ pub fn active_boss_locale() -> String {
 }
 
 pub fn bosses_total_count() -> usize {
+    // Number of `[[boss]]` rows in the currently loaded table (disk hot-reload or embedded fallback).
     boss_table().bosses.len()
+}
+
+fn resolve_load_path(base: &Path, locale_id: &str, override_path: Option<&Path>) -> PathBuf {
+    if let Some(path) = override_path.filter(|p| p.is_file()) {
+        return path.to_path_buf();
+    }
+    if let Some(path) = override_path {
+        warn!(
+            "Boss table override missing at {} — using tables/{locale_id}/bosses.toml",
+            path.display()
+        );
+    }
+
+    let path = resolve_boss_table_path(base, locale_id);
+    let fallback = resolve_boss_table_path(base, DEFAULT_LOCALE_ID);
+    if path.is_file() {
+        path
+    } else if locale_id != DEFAULT_LOCALE_ID && fallback.is_file() {
+        warn!(
+            "Boss table missing at {} (locale '{locale_id}'), falling back to {}",
+            path.display(),
+            fallback.display()
+        );
+        fallback
+    } else {
+        path
+    }
 }
 
 fn apply_boss_table(data: BossTableData, locale_id: &str) {
@@ -195,6 +237,7 @@ pub fn load_boss_table_from_path(locale_id: &str, path: &Path) -> bool {
 pub fn reload_boss_table_if_modified(
     base: &Path,
     locale_id: &str,
+    override_path: Option<&Path>,
     last_mtime: &mut Option<SystemTime>,
     active_locale: &mut Option<String>,
 ) -> bool {
@@ -204,30 +247,18 @@ pub fn reload_boss_table_if_modified(
         locale_id.to_string()
     };
 
-    let path = resolve_boss_table_path(base, &locale_id);
-    let fallback = resolve_boss_table_path(base, DEFAULT_LOCALE_ID);
-    let load_path = if path.is_file() {
-        &path
-    } else if locale_id != DEFAULT_LOCALE_ID {
-        warn!(
-            "Boss table missing at {} (locale '{}'), falling back to {}",
-            path.display(),
-            locale_id,
-            fallback.display()
-        );
-        &fallback
-    } else {
-        &path
-    };
-
-    let effective_locale = if load_path == &path {
+    let load_path = resolve_load_path(base, &locale_id, override_path);
+    let using_override = override_path.is_some_and(|p| p.is_file() && load_path == p);
+    let effective_locale = if using_override {
+        locale_id.as_str()
+    } else if load_path == resolve_boss_table_path(base, &locale_id) {
         locale_id.as_str()
     } else {
         DEFAULT_LOCALE_ID
     };
 
     let locale_changed = active_locale.as_deref() != Some(effective_locale);
-    let mtime = fs::metadata(load_path).and_then(|m| m.modified()).ok();
+    let mtime = fs::metadata(&load_path).and_then(|m| m.modified()).ok();
     let file_changed = match (mtime, last_mtime.as_ref()) {
         (Some(t), Some(prev)) => t != *prev,
         (Some(_), None) => true,
@@ -254,7 +285,7 @@ pub fn reload_boss_table_if_modified(
         return false;
     }
 
-    if load_boss_table_from_path(effective_locale, load_path) {
+    if load_boss_table_from_path(effective_locale, &load_path) {
         *active_locale = Some(effective_locale.to_string());
         *last_mtime = mtime;
         true
@@ -268,13 +299,31 @@ mod tests {
     use super::*;
 
     #[test]
+    fn parse_boss_table_counts_entries() {
+        let raw = r#"
+[[boss]]
+flag_id = 1
+name = "A"
+region = "Limgrave"
+icon = "a"
+
+[[boss]]
+flag_id = 2
+name = "B"
+region = "Limgrave"
+icon = "b"
+"#;
+        assert_eq!(parse_boss_table(raw).unwrap().bosses.len(), 2);
+    }
+
+    #[test]
     fn embedded_table_parses() {
         let data = parse_boss_table(EMBEDDED_BOSSES_TOML).unwrap();
         assert_eq!(data.bosses.len(), 207);
         assert!(!data.region_names.is_empty());
         assert_eq!(
             data.subregion_to_region.get(&6100).map(String::as_str),
-            Some("LIMGRAVE")
+            Some("Limgrave")
         );
     }
 
