@@ -19,7 +19,7 @@ pub use boss_table::{
 pub use tables::{
     boss_entries_full, bosses_in_region, good_by_key, group_members, group_names, group_progress,
     group_size, item_owned, region_label_for_subregion, region_names, BossEntry, GoodEntry,
-    ItemKind, BOSSES_TOTAL,
+    ItemKind,
 };
 
 /// Maximum Scadutree Blessing level (fragments spent at Sites of Grace in the DLC).

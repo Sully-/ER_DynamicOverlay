@@ -96,20 +96,6 @@ pub fn resolve_boss_table_path(base: &Path, locale_id: &str) -> PathBuf {
     base.join("tables").join(locale_id).join("bosses.toml")
 }
 
-/// Optional override from `er_overlay.toml` (`boss_table = "…"`).
-pub fn resolve_boss_table_override(base: &Path, configured: Option<&str>) -> Option<PathBuf> {
-    let raw = configured?.trim();
-    if raw.is_empty() {
-        return None;
-    }
-    let path = Path::new(raw);
-    if path.is_absolute() {
-        Some(path.to_path_buf())
-    } else {
-        Some(base.join(path))
-    }
-}
-
 /// Parses and validates a boss table TOML payload.
 pub fn parse_boss_table(raw: &str) -> Result<BossTableData, String> {
     let table: BossTableFile = toml::from_str(raw).map_err(|e| e.to_string())?;
@@ -249,13 +235,12 @@ pub fn reload_boss_table_if_modified(
 
     let load_path = resolve_load_path(base, &locale_id, override_path);
     let using_override = override_path.is_some_and(|p| p.is_file() && load_path == p);
-    let effective_locale = if using_override {
-        locale_id.as_str()
-    } else if load_path == resolve_boss_table_path(base, &locale_id) {
-        locale_id.as_str()
-    } else {
-        DEFAULT_LOCALE_ID
-    };
+    let effective_locale =
+        if using_override || load_path == resolve_boss_table_path(base, &locale_id) {
+            locale_id.as_str()
+        } else {
+            DEFAULT_LOCALE_ID
+        };
 
     let locale_changed = active_locale.as_deref() != Some(effective_locale);
     let mtime = fs::metadata(&load_path).and_then(|m| m.modified()).ok();
