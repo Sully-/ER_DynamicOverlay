@@ -88,9 +88,9 @@ pub fn render_boss_panel(
 
     let _no_native_border = suppress_imgui_window_border(ui);
     window.build(|| {
-        let _bg = style.has_window_background().then(|| {
-            ui.push_style_color(StyleColor::WindowBg, style.window_bg_rgba_f32())
-        });
+        let _bg = style
+            .has_window_background()
+            .then(|| ui.push_style_color(StyleColor::WindowBg, style.window_bg_rgba_f32()));
         ui.set_window_font_scale(text_scale);
 
         if ui.is_window_hovered() && ui.is_mouse_dragging(imgui::MouseButton::Left) {
@@ -111,30 +111,31 @@ pub fn render_boss_panel(
             ui.child_window("##boss_list")
                 .size(ui.content_region_avail())
                 .build(|| match vm.boss_panel_scope {
-                BossPanelScope::AllRegions => {
-                    let current_index = vm.boss_panel_sections.iter().position(|s| s.is_current);
-                    let scroll_to_current = state.should_scroll_to_section(current_index);
-                    let scroll_follow_up = state.consume_scroll_follow_up();
-                    let scroll_current = scroll_to_current || scroll_follow_up;
-                    for (i, section) in vm.boss_panel_sections.iter().enumerate() {
-                        let should_open = current_index == Some(i);
-                        if should_open && scroll_current {
-                            scroll_current_region_into_view(ui);
+                    BossPanelScope::AllRegions => {
+                        let current_index =
+                            vm.boss_panel_sections.iter().position(|s| s.is_current);
+                        let scroll_to_current = state.should_scroll_to_section(current_index);
+                        let scroll_follow_up = state.consume_scroll_follow_up();
+                        let scroll_current = scroll_to_current || scroll_follow_up;
+                        for (i, section) in vm.boss_panel_sections.iter().enumerate() {
+                            let should_open = current_index == Some(i);
+                            if should_open && scroll_current {
+                                scroll_current_region_into_view(ui);
+                            }
+                            render_region_tree(ui, section, should_open);
                         }
-                        render_region_tree(ui, section, should_open);
                     }
-                }
-                BossPanelScope::CurrentRegion => {
-                    for boss in vm
-                        .boss_panel_sections
-                        .first()
-                        .into_iter()
-                        .flat_map(|s| s.bosses.iter())
-                    {
-                        render_boss_row(ui, boss);
+                    BossPanelScope::CurrentRegion => {
+                        for boss in vm
+                            .boss_panel_sections
+                            .first()
+                            .into_iter()
+                            .flat_map(|s| s.bosses.iter())
+                        {
+                            render_boss_row(ui, boss);
+                        }
                     }
-                }
-            });
+                });
         }
 
         draw_window_border(ui, style, border_radius * config.scale, config.scale);

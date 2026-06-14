@@ -37,15 +37,7 @@ pub fn render_overlay(
 
     if show_boss_panel {
         let border_radius = layout.map(|l| l.grid.border_radius).unwrap_or(6.0);
-        render_boss_panel(
-            ui,
-            config,
-            style,
-            vm,
-            boss_panel,
-            hud_anchor,
-            border_radius,
-        );
+        render_boss_panel(ui, config, style, vm, boss_panel, hud_anchor, border_radius);
     }
 
     if config.show_debug {

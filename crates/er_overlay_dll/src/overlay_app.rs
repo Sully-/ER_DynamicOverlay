@@ -1,12 +1,15 @@
 use std::path::PathBuf;
 use std::time::{Duration, Instant, SystemTime};
 
-use er_game_state::{bosses_total_count, reload_boss_table_if_modified, resolve_locale_id, GameStateReader, GameStateSource};
+use er_game_state::{
+    bosses_total_count, reload_boss_table_if_modified, resolve_locale_id, GameStateReader,
+    GameStateSource,
+};
+use er_overlay_common::layout::LayoutStyle;
 use er_overlay_common::{
     default_challenge_state_path, load_layout, parse_hotkey, resolve_configured_path,
     resolve_layout_path, ChallengeTracker, HotkeyBinding, LayoutConfig, OverlayConfig, OverlayKey,
 };
-use er_overlay_common::layout::LayoutStyle;
 use er_overlay_ui::{
     build_view_model, empty_view_model, render_overlay, setup_overlay_fonts, BossPanelState,
     HudDragState, IconAtlas,
@@ -513,14 +516,13 @@ impl ImguiRenderLoop for OverlayApp {
             .map(|l| &l.style)
             .unwrap_or(&default_layout_style);
         let bg = layout_style.window_bg_rgba_f32();
-        imgui_style.colors[imgui::StyleColor::WindowBg as usize] =
-            imgui::ImColor32::from_rgba(
-                (bg[0] * 255.0) as u8,
-                (bg[1] * 255.0) as u8,
-                (bg[2] * 255.0) as u8,
-                (bg[3] * 255.0) as u8,
-            )
-            .into();
+        imgui_style.colors[imgui::StyleColor::WindowBg as usize] = imgui::ImColor32::from_rgba(
+            (bg[0] * 255.0) as u8,
+            (bg[1] * 255.0) as u8,
+            (bg[2] * 255.0) as u8,
+            (bg[3] * 255.0) as u8,
+        )
+        .into();
         imgui_style.colors[imgui::StyleColor::Text as usize] =
             imgui::ImColor32::from_rgba(245, 245, 250, 255).into();
     }

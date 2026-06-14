@@ -208,7 +208,10 @@ impl GameStateReader {
             return false;
         }
         let igt_ms = self.get_igt().map(|t| t.total_ms).unwrap_or(0);
-        crate::screen_state::challenge_update_ready(igt_ms, crate::screen_state::read_screen_state())
+        crate::screen_state::challenge_update_ready(
+            igt_ms,
+            crate::screen_state::read_screen_state(),
+        )
     }
 
     pub fn poll(&mut self) {

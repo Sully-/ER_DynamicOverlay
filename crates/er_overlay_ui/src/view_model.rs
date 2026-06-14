@@ -4,7 +4,9 @@ use er_game_state::{
     bosses_in_region, good_by_key, group_names, group_progress, group_size, item_owned,
     region_label_for_subregion, region_names, GameStateSource,
 };
-use er_overlay_common::{BossPanelScope, ChallengeSnapshot, GameStateDiagnostics, GameTime, TrackKind};
+use er_overlay_common::{
+    BossPanelScope, ChallengeSnapshot, GameStateDiagnostics, GameTime, TrackKind,
+};
 
 #[derive(Debug, Clone)]
 pub struct TrackedEntryRow {

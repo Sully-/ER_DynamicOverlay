@@ -37,7 +37,7 @@ impl Default for ChallengeConfig {
 }
 
 /// Persisted challenge progress (survives overlay restarts). Mirrors EROverlay `Challenge.txt`.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 struct ChallengePersisted {
     #[serde(default)]
     pb: u32,
@@ -47,17 +47,6 @@ struct ChallengePersisted {
     deaths_on_start: u32,
     #[serde(default)]
     run_failed: bool,
-}
-
-impl Default for ChallengePersisted {
-    fn default() -> Self {
-        Self {
-            pb: 0,
-            tries: 0,
-            deaths_on_start: 0,
-            run_failed: false,
-        }
-    }
 }
 
 /// Challenge metrics for the overlay UI (`pb`, `nbtries` layout tiles).
@@ -184,8 +173,7 @@ impl ChallengeTracker {
                 self.persisted.tries = self.persisted.tries.saturating_add(1);
                 debug!(
                     tries = self.persisted.tries,
-                    run_deaths,
-                    "Challenge run failed (death limit exceeded)"
+                    run_deaths, "Challenge run failed (death limit exceeded)"
                 );
                 dirty = true;
             }
