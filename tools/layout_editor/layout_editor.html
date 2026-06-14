@@ -101,6 +101,16 @@
             <span data-i18n="showMax">show_max</span>
           </label>
         </div>
+        <div class="field hidden" id="field-metric-max">
+          <label data-i18n="metricMax">max</label>
+          <div class="field-row">
+            <select id="prop-max-mode" class="input">
+              <option value="auto" data-i18n="metricMaxAuto">auto</option>
+              <option value="manual" data-i18n="metricMaxManual">manual</option>
+            </select>
+            <input id="prop-max-value" class="input input-num" type="number" min="1" />
+          </div>
+        </div>
         <div class="field hidden" id="field-track-equipped">
           <label class="checkbox-label">
             <input id="prop-track-equipped" type="checkbox" />

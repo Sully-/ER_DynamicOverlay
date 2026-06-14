@@ -179,6 +179,61 @@ fn default_span() -> u32 {
     1
 }
 
+/// Display cap for count metrics. `Auto` uses the value resolved from game data.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum MetricMax {
+    #[default]
+    Auto,
+    Manual(u32),
+}
+
+impl MetricMax {
+    pub fn is_auto(self) -> bool {
+        matches!(self, Self::Auto)
+    }
+}
+
+fn metric_max_is_auto(max: &MetricMax) -> bool {
+    max.is_auto()
+}
+
+impl Serialize for MetricMax {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match self {
+            Self::Auto => serializer.serialize_str("auto"),
+            Self::Manual(n) => serializer.serialize_u32(*n),
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for MetricMax {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        enum Raw {
+            Str(String),
+            Num(u32),
+        }
+
+        match Raw::deserialize(deserializer)? {
+            Raw::Str(s) if s == "auto" => Ok(Self::Auto),
+            Raw::Str(s) => Err(serde::de::Error::custom(format!(
+                "metric max must be \"auto\" or a positive integer, got \"{s}\""
+            ))),
+            Raw::Num(0) => Err(serde::de::Error::custom(
+                "metric max must be a positive integer",
+            )),
+            Raw::Num(n) => Ok(Self::Manual(n)),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum TileDef {
@@ -194,6 +249,9 @@ pub enum TileDef {
         label: String,
         #[serde(default)]
         show_max: bool,
+        /// Cap shown with `show_max`. `Auto` uses game data; `Manual(n)` overrides the resolved max.
+        #[serde(default, skip_serializing_if = "metric_max_is_auto")]
+        max: MetricMax,
         /// PNG key in `assets/icons` (e.g. `kindling`). If absent, no icon.
         #[serde(default)]
         icon: Option<String>,
@@ -656,6 +714,7 @@ mod tests {
                     },
                     label: "IGT".into(),
                     show_max: false,
+                    max: MetricMax::Auto,
                     icon: None,
                 },
                 TileDef::Item {
@@ -710,9 +769,45 @@ label = "IGT"
             },
             label: "DEATHS".into(),
             show_max: false,
+            max: MetricMax::Auto,
             icon: None,
         });
         assert!(layout.validate().is_err());
+    }
+
+    #[test]
+    fn metric_max_parses_auto_and_manual() {
+        let auto: LayoutConfig = toml::from_str(
+            r#"
+[[tile]]
+kind = "metric"
+metric = "bosses"
+max = "auto"
+col = 0
+row = 0
+"#,
+        )
+        .unwrap();
+        match &auto.tiles[0] {
+            TileDef::Metric { max, .. } => assert_eq!(*max, MetricMax::Auto),
+            _ => panic!("expected metric"),
+        }
+
+        let manual: LayoutConfig = toml::from_str(
+            r#"
+[[tile]]
+kind = "metric"
+metric = "bosses"
+max = 165
+col = 0
+row = 0
+"#,
+        )
+        .unwrap();
+        match &manual.tiles[0] {
+            TileDef::Metric { max, .. } => assert_eq!(*max, MetricMax::Manual(165)),
+            _ => panic!("expected metric"),
+        }
     }
 
     #[test]

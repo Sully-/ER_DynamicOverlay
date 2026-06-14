@@ -2,7 +2,7 @@ use er_overlay_common::{LayoutConfig, OverlayConfig, TileDef};
 use imgui::Ui;
 
 use crate::icon_atlas::IconAtlas;
-use crate::metric_registry::{metric_is_complete, resolve_metric, resolve_tracked_key};
+use crate::metric_registry::{apply_metric_max, metric_is_complete, resolve_metric, resolve_tracked_key};
 use crate::tile_render::{
     draw_item_tile, draw_label_tile, draw_metric_tile, draw_unavailable_metric_tile,
     metric_value_for_tile, TileDrawCtx,
@@ -35,13 +35,14 @@ pub fn render_layout_dashboard(
                 position,
                 label,
                 show_max,
+                max,
                 icon,
                 ..
             } => {
                 let origin = layout.tile_origin(position.col, position.row, scale);
                 let pos = [window_origin[0] + origin[0], window_origin[1] + origin[1]];
                 let size = layout.tile_size(position.col_span, position.row_span, scale);
-                let value = resolve_metric(metric, vm);
+                let value = apply_metric_max(resolve_metric(metric, vm), *max);
                 let icon_key = icon.as_deref();
                 let ctx = TileDrawCtx {
                     ui,

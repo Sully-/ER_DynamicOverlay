@@ -92,6 +92,20 @@ pub fn metric_is_complete(value: &MetricValue) -> bool {
     }
 }
 
+/// Applies a layout `MetricMax` override to a resolved metric value.
+pub fn apply_metric_max(value: MetricValue, max: er_overlay_common::MetricMax) -> MetricValue {
+    match max {
+        er_overlay_common::MetricMax::Auto => value,
+        er_overlay_common::MetricMax::Manual(n) => match value {
+            MetricValue::Count { current, .. } => MetricValue::Count {
+                current,
+                max: Some(n),
+            },
+            other => other,
+        },
+    }
+}
+
 pub fn format_metric_value(value: &MetricValue, show_max: bool) -> String {
     match value {
         MetricValue::Time(t) => t.format_hms(),
@@ -193,6 +207,30 @@ mod tests {
                 true
             ),
             "12/20"
+        );
+    }
+
+    #[test]
+    fn manual_max_overrides_resolved_count() {
+        let vm = build_view_model(
+            &MockGameState::default(),
+            &[],
+            &HashSet::new(),
+            er_overlay_common::BossPanelScope::CurrentRegion,
+            er_overlay_common::ChallengeSnapshot::default(),
+        );
+        let resolved = resolve_metric("bosses", &vm);
+        let current = match resolved {
+            MetricValue::Count { current, .. } => current,
+            _ => None,
+        };
+        let overridden = apply_metric_max(resolved, er_overlay_common::MetricMax::Manual(100));
+        assert_eq!(
+            overridden,
+            MetricValue::Count {
+                current,
+                max: Some(100),
+            }
         );
     }
 

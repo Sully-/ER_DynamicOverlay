@@ -4,11 +4,11 @@ const METRICS = [
   { id: "igt", label: "IGT", showMax: false },
   { id: "deaths", label: "DEATHS", showMax: false },
   { id: "ng_cycle", label: "NG", showMax: false },
-  { id: "bosses", label: "BOSS", showMax: true },
-  { id: "great_runes", label: "RUNES", showMax: true },
-  { id: "kindling", label: "KINDLING", showMax: true, icon: "kindling" },
-  { id: "scadutree", label: "SHARDS", showMax: true, icon: "scadutree" },
-  { id: "scadutree_blessing", label: "BLESSING", showMax: true, icon: "scadutree" },
+  { id: "bosses", label: "BOSS", showMax: true, defaultMax: 165 },
+  { id: "great_runes", label: "RUNES", showMax: true, defaultMax: 7 },
+  { id: "kindling", label: "KINDLING", showMax: true, icon: "kindling", defaultMax: 8 },
+  { id: "scadutree", label: "SHARDS", showMax: true, icon: "scadutree", defaultMax: 20 },
+  { id: "scadutree_blessing", label: "BLESSING", showMax: true, icon: "scadutree", defaultMax: 20 },
   { id: "pb", label: "PB", showMax: false },
   { id: "nbtries", label: "TRIES", showMax: false },
 ];
@@ -130,12 +130,15 @@ const els = {
   propW: $("#prop-w"),
   propH: $("#prop-h"),
   propShowMax: $("#prop-show-max"),
+  propMaxMode: $("#prop-max-mode"),
+  propMaxValue: $("#prop-max-value"),
   propTrackEquipped: $("#prop-track-equipped"),
   propIcon: $("#prop-icon"),
   fieldLabel: $("#field-label"),
   fieldMetric: $("#field-metric"),
   fieldKey: $("#field-key"),
   fieldShowMax: $("#field-show-max"),
+  fieldMetricMax: $("#field-metric-max"),
   fieldTrackEquipped: $("#field-track-equipped"),
   fieldIcon: $("#field-icon"),
   cfgColumns: $("#cfg-columns"),
@@ -502,16 +505,35 @@ function appendTileIcon(body, iconKey, className, left, top, size, alt = "") {
   body.appendChild(icon);
 }
 
-function metricPreview(metric, showMax) {
+function metricHasMax(metricId) {
+  const m = METRICS.find((x) => x.id === metricId);
+  return m?.showMax ?? false;
+}
+
+function defaultMaxForMetric(metricId) {
+  const m = METRICS.find((x) => x.id === metricId);
+  if (m?.defaultMax) return m.defaultMax;
+  const preview = PREVIEW_METRICS[metricId];
+  if (preview?.includes("/")) return Number(preview.split("/")[1]) || 1;
+  return 1;
+}
+
+function tileMaxOverride(tile) {
+  if (tile.max_mode === "manual" || typeof tile.max === "number") {
+    return tile.max ?? tile.max_value ?? defaultMaxForMetric(tile.metric);
+  }
+  return null;
+}
+
+function metricPreview(metric, showMax, maxOverride = null) {
   let text = PREVIEW_METRICS[metric] ?? "---";
   let complete = false;
-  if (text.includes("/")) {
-    const [cur, max] = text.split("/");
-    if (showMax) {
-      complete = cur === max && max !== "0";
-    } else {
-      text = cur;
-    }
+  if (text.includes("/") || maxOverride != null) {
+    const parts = text.includes("/") ? text.split("/") : [text, String(defaultMaxForMetric(metric))];
+    const cur = parts[0];
+    const max = maxOverride != null ? String(maxOverride) : parts[1];
+    text = showMax ? `${cur}/${max}` : cur;
+    complete = cur === max && max !== "0";
   }
   return { text, complete };
 }
@@ -524,7 +546,13 @@ function fillPaletteThumb(thumb, kind, data) {
 
   if (kind === "metric") {
     const m = METRICS.find((x) => x.id === (data.id || data.metric)) || data;
-    const preview = metricPreview(m.id || m.metric, m.showMax ?? data.showMax);
+    const preview = metricPreview(
+      m.id || m.metric,
+      m.showMax ?? data.showMax,
+      data.max_mode === "manual" || typeof data.max === "number"
+        ? data.max ?? data.max_value ?? defaultMaxForMetric(m.id || m.metric)
+        : null
+    );
     if (m.icon) {
       const img = makeIconImg(m.icon, "tile-icon");
       img.style.width = "82%";
@@ -596,7 +624,7 @@ function fillTileBody(body, tile, pxW, pxH) {
   }
 
   if (tile.kind === "metric") {
-    const preview = metricPreview(tile.metric, tile.show_max);
+    const preview = metricPreview(tile.metric, tile.show_max, tileMaxOverride(tile));
     const hasLabel = !!tile.label;
     const labelText = tile.label || "";
     const labelScale = scales.label;
@@ -975,6 +1003,10 @@ function renderProperties() {
   els.fieldMetric.classList.toggle("hidden", tile.kind !== "metric");
   els.fieldKey.classList.toggle("hidden", tile.kind !== "item");
   els.fieldShowMax.classList.toggle("hidden", tile.kind !== "metric");
+  els.fieldMetricMax.classList.toggle(
+    "hidden",
+    tile.kind !== "metric" || (!metricHasMax(tile.metric) && !tile.show_max)
+  );
   els.fieldTrackEquipped.classList.toggle("hidden", tile.kind !== "item");
   els.fieldIcon.classList.toggle("hidden", tile.kind !== "metric");
 
@@ -986,6 +1018,12 @@ function renderProperties() {
   els.propW.value = tile.w;
   els.propH.value = tile.h;
   els.propShowMax.checked = !!tile.show_max;
+  const maxManual = tile.max_mode === "manual" || typeof tile.max === "number";
+  els.propMaxMode.value = maxManual ? "manual" : "auto";
+  els.propMaxValue.value = maxManual
+    ? tile.max ?? tile.max_value ?? defaultMaxForMetric(tile.metric)
+    : defaultMaxForMetric(tile.metric);
+  els.propMaxValue.disabled = !maxManual;
   els.propTrackEquipped.checked = !!tile.track_equipped;
   els.propIcon.value = tile.icon || "";
 }
@@ -1031,6 +1069,8 @@ function createTile(kind, data, col, row) {
       metric: m.id || data.metric || "igt",
       label: m.label || data.label || "METRIC",
       show_max: m.showMax ?? data.showMax ?? false,
+      max_mode: data.max_mode ?? (typeof data.max === "number" ? "manual" : "auto"),
+      max: typeof data.max === "number" ? data.max : undefined,
       icon: m.icon || data.icon || undefined,
     };
   }
@@ -1055,8 +1095,20 @@ function applyPropChanges() {
   if (tile.kind === "metric") {
     tile.metric = els.propMetric.value;
     tile.show_max = els.propShowMax.checked;
+    if (els.propMaxMode.value === "manual") {
+      tile.max_mode = "manual";
+      tile.max = Math.max(1, Number(els.propMaxValue.value) || defaultMaxForMetric(tile.metric));
+    } else {
+      tile.max_mode = "auto";
+      delete tile.max;
+    }
+    els.propMaxValue.disabled = els.propMaxMode.value !== "manual";
     const icon = els.propIcon.value.trim();
     tile.icon = icon || undefined;
+    els.fieldMetricMax.classList.toggle(
+      "hidden",
+      !metricHasMax(tile.metric) && !tile.show_max
+    );
   }
   if (tile.kind === "item") {
     tile.key = els.propKey.value.trim() || tile.key;
@@ -1303,6 +1355,9 @@ function exportToml() {
         lines.push(`metric = "${tile.metric}"`);
         if (tile.label) lines.push(`label = "${tile.label}"`);
         if (tile.show_max) lines.push("show_max = true");
+        if (tile.max_mode === "manual" || typeof tile.max === "number") {
+          lines.push(`max = ${tile.max ?? tile.max_value ?? defaultMaxForMetric(tile.metric)}`);
+        }
         if (tile.icon) lines.push(`icon = "${tile.icon}"`);
       } else if (tile.kind === "label") {
         if (tile.label) lines.push(`label = "${tile.label}"`);
@@ -1396,11 +1451,14 @@ function parseTileDef(t) {
     h: t.h ?? t.row_span ?? 1,
   };
   if (t.kind === "metric") {
+    const maxManual = typeof t.max === "number";
     return {
       ...base,
       metric: t.metric,
       label: t.label || t.metric,
       show_max: !!t.show_max,
+      max_mode: maxManual ? "manual" : t.max === "auto" ? "auto" : "auto",
+      max: maxManual ? t.max : undefined,
       icon: t.icon || undefined,
     };
   }
@@ -1443,6 +1501,8 @@ function bindEvents() {
     els.propW,
     els.propH,
     els.propShowMax,
+    els.propMaxMode,
+    els.propMaxValue,
     els.propTrackEquipped,
     els.propIcon,
   ]) {
