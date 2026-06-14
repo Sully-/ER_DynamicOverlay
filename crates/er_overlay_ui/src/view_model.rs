@@ -220,7 +220,7 @@ mod tests {
         let mock = MockGameState::default();
         let vm = build_view_model(&mock, &[], &HashSet::new(), BossPanelScope::CurrentRegion);
         assert_eq!(vm.boss_panel_sections.len(), 1);
-        assert_eq!(vm.boss_panel_sections[0].region, "LIMGRAVE");
+        assert_eq!(vm.boss_panel_sections[0].region, "Limgrave");
     }
 
     #[test]
