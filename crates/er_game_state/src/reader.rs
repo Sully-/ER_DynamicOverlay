@@ -197,6 +197,20 @@ impl GameStateReader {
         self.current_subregion_id = crate::field_area::read_current_subregion_id();
     }
 
+    /// Whether game-memory reads are available.
+    pub fn is_ready(&self) -> bool {
+        self.initialized
+    }
+
+    /// Whether challenge counters should be polled (stable gameplay, like EROverlay).
+    pub fn challenge_update_ready(&self) -> bool {
+        if !self.initialized {
+            return false;
+        }
+        let igt_ms = self.get_igt().map(|t| t.total_ms).unwrap_or(0);
+        crate::screen_state::challenge_update_ready(igt_ms, crate::screen_state::read_screen_state())
+    }
+
     pub fn poll(&mut self) {
         self.ensure_initialized();
         if self.initialized {

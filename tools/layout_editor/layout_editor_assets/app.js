@@ -9,6 +9,8 @@ const METRICS = [
   { id: "kindling", label: "KINDLING", showMax: true, icon: "kindling" },
   { id: "scadutree", label: "SHARDS", showMax: true, icon: "scadutree" },
   { id: "scadutree_blessing", label: "BLESSING", showMax: true, icon: "scadutree" },
+  { id: "pb", label: "PB", showMax: false },
+  { id: "nbtries", label: "TRIES", showMax: false },
 ];
 
 const DEFAULT_STYLE = {
@@ -36,6 +38,8 @@ const PREVIEW_METRICS = {
   kindling: "7/8",
   scadutree: "12/20",
   scadutree_blessing: "12/20",
+  pb: "42",
+  nbtries: "7",
 };
 
 const PREVIEW_ITEM_COUNT = "3";

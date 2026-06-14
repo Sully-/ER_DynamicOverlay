@@ -34,6 +34,26 @@ pub fn resolve_metric(metric: &str, vm: &OverlayViewModel) -> MetricValue {
             current: vm.bosses_killed,
             max: Some(vm.bosses_total),
         },
+        "pb" | "challenge_pb" => {
+            if vm.challenge.enabled {
+                MetricValue::Count {
+                    current: Some(vm.challenge.pb),
+                    max: None,
+                }
+            } else {
+                MetricValue::Unavailable
+            }
+        }
+        "nbtries" | "tries" | "challenge_tries" => {
+            if vm.challenge.enabled {
+                MetricValue::Count {
+                    current: Some(vm.challenge.tries),
+                    max: None,
+                }
+            } else {
+                MetricValue::Unavailable
+            }
+        }
         other => {
             if let Some(group) = vm.group(other) {
                 MetricValue::Count {
@@ -122,6 +142,7 @@ mod tests {
             &refs,
             &HashSet::new(),
             er_overlay_common::BossPanelScope::CurrentRegion,
+            er_overlay_common::ChallengeSnapshot::default(),
         );
         assert!(matches!(resolve_metric("igt", &vm), MetricValue::Time(_)));
         assert!(resolve_tracked_key("godrick_rune", &vm).is_some());
@@ -136,6 +157,7 @@ mod tests {
             &[],
             &HashSet::new(),
             er_overlay_common::BossPanelScope::CurrentRegion,
+            er_overlay_common::ChallengeSnapshot::default(),
         );
         assert_eq!(
             resolve_metric("great_runes", &vm),
@@ -153,6 +175,7 @@ mod tests {
             &[],
             &HashSet::new(),
             er_overlay_common::BossPanelScope::CurrentRegion,
+            er_overlay_common::ChallengeSnapshot::default(),
         );
         assert_eq!(
             resolve_metric("scadutree_blessing", &vm),
@@ -180,6 +203,7 @@ mod tests {
             &[],
             &HashSet::new(),
             er_overlay_common::BossPanelScope::CurrentRegion,
+            er_overlay_common::ChallengeSnapshot::default(),
         );
         assert_eq!(
             resolve_metric("ng_cycle", &vm),
@@ -203,6 +227,7 @@ mod tests {
             &refs,
             &HashSet::new(),
             er_overlay_common::BossPanelScope::CurrentRegion,
+            er_overlay_common::ChallengeSnapshot::default(),
         );
         assert!(resolve_tracked_key("daedicar_s_woe", &vm).is_some());
     }
@@ -216,6 +241,7 @@ mod tests {
             &refs,
             &equipped,
             er_overlay_common::BossPanelScope::CurrentRegion,
+            er_overlay_common::ChallengeSnapshot::default(),
         );
         let row = resolve_tracked_key("daedicar_s_woe", &vm).unwrap();
         assert_eq!(row.equipped, Some(false));

@@ -14,7 +14,7 @@ layout_section_hotkey = "F8"
 boss_panel_hotkey = "F7"
 # current-region = current area bosses only
 # all-regions = all bosses grouped by region (scrollable)
-boss_panel_scope = "current-region"
+boss_panel_scope = "all-regions"
 boss_panel_visible = true
 # Boss panel position and size (optional). Format: x, y, width, height
 # auto or omitted = -5, 10, 25%, 92% (below the minimalist HUD)
@@ -27,3 +27,9 @@ default_layout_section = "minimalist"
 # Boss table: tables/<lang>/bosses.toml next to the DLL (hot-reloaded every ~2 s).
 # auto = game language (Steam), or en, fr, …
 boss_locale = "auto"
+
+# Challenge mode (EROverlay-compatible). Metrics pb / nbtries in layouts/dashboard.toml.
+[challenge]
+enabled = false
+max_deaths = 0
+start_flag = 101

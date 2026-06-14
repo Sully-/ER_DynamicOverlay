@@ -322,6 +322,10 @@ mod tests {
             region_label_for_subregion(6100).as_deref(),
             Some("Limgrave")
         );
+        assert_eq!(
+            region_label_for_subregion(1_001_001).as_deref(),
+            Some("Liurnia of the Lakes")
+        );
     }
 
     #[test]

@@ -6,6 +6,7 @@ use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use tracing::{info, warn};
 
+use crate::challenge::ChallengeConfig;
 use crate::panel_layout::parse_panel_layout;
 
 /// Which bosses appear in the checklist panel. Region detection always follows the player.
@@ -76,6 +77,9 @@ pub struct OverlayConfig {
     /// Boss table language (`en`, `fr`, …). Use `auto` or omit to detect from the game.
     #[serde(default)]
     pub boss_locale: Option<String>,
+    /// Challenge mode (PB / failed runs), aligned with EROverlay boss challenge.
+    #[serde(default)]
+    pub challenge: ChallengeConfig,
 }
 
 fn default_true() -> bool {
@@ -136,6 +140,7 @@ impl Default for OverlayConfig {
             boss_panel_layout: None,
             default_layout_section: None,
             boss_locale: None,
+            challenge: ChallengeConfig::default(),
         }
     }
 }

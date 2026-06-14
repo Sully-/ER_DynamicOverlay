@@ -415,3 +415,26 @@ kind = "item"
 key = "warrior_jar_shard"
 col = 1
 row = 8
+
+# ── Challenge mode (enable in er_overlay.toml [challenge]) ────────
+
+[[section]]
+name = "challenge"
+
+[[section.tile]]
+kind = "metric"
+metric = "pb"
+col = 0
+row = 0
+w = 1
+h = 1
+label = "PB"
+
+[[section.tile]]
+kind = "metric"
+metric = "nbtries"
+col = 1
+row = 0
+w = 1
+h = 1
+label = "TRIES"

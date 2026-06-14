@@ -838,9 +838,10 @@ label = "X"
     fn dashboard_sections_have_tiles() {
         let raw = include_str!("../../../layouts/dashboard.toml");
         let layout: LayoutConfig = toml::from_str(raw).unwrap();
-        assert_eq!(layout.section_count(), 2);
+        assert_eq!(layout.section_count(), 3);
         assert_eq!(layout.tiles_for_section(0).len(), 5, "minimalist");
         assert!(layout.tiles_for_section(1).len() > 10, "extended");
+        assert_eq!(layout.tiles_for_section(2).len(), 2, "challenge");
     }
 
     #[test]

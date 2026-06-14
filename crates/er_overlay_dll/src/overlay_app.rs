@@ -1,13 +1,14 @@
 use std::path::PathBuf;
 use std::time::{Duration, Instant, SystemTime};
 
-use er_game_state::{reload_boss_table_if_modified, resolve_locale_id, GameStateReader};
+use er_game_state::{bosses_total_count, reload_boss_table_if_modified, resolve_locale_id, GameStateReader, GameStateSource};
 use er_overlay_common::{
-    load_layout, parse_hotkey, resolve_configured_path, resolve_layout_path, HotkeyBinding,
-    LayoutConfig, OverlayConfig, OverlayKey,
+    default_challenge_state_path, load_layout, parse_hotkey, resolve_configured_path,
+    resolve_layout_path, ChallengeTracker, HotkeyBinding, LayoutConfig, OverlayConfig, OverlayKey,
 };
 use er_overlay_ui::{
-    build_view_model, render_overlay, setup_overlay_fonts, BossPanelState, HudDragState, IconAtlas,
+    build_view_model, empty_view_model, render_overlay, setup_overlay_fonts, BossPanelState,
+    HudDragState, IconAtlas,
 };
 use hudhook::ImguiRenderLoop;
 use hudhook::RenderContext;
@@ -43,6 +44,7 @@ pub struct OverlayApp {
     last_state_poll: Instant,
     boss_table_mtime: Option<SystemTime>,
     active_boss_locale: Option<String>,
+    challenge: ChallengeTracker,
 }
 
 impl OverlayApp {
@@ -59,19 +61,22 @@ impl OverlayApp {
             warn!("Invalid boss_panel_hotkey: {:?}", boss_hotkey_raw);
         }
         let reader = GameStateReader::new();
-        let data_refs = layout
-            .as_ref()
-            .map(|l| l.collect_data_refs())
-            .unwrap_or_default();
-        let equipped_refs = layout
-            .as_ref()
-            .map(|l| l.collect_equipped_refs())
-            .unwrap_or_default();
         let boss_panel = BossPanelState::default();
-        let view_model =
-            build_view_model(&reader, &data_refs, &equipped_refs, config.boss_panel_scope);
         let show_boss_panel = config.boss_panel_visible;
         let icon_signature = Self::icon_signature_for(&config, layout.as_ref());
+        let challenge =
+            ChallengeTracker::new(config.challenge.clone(), default_challenge_state_path());
+        let mut boss_table_mtime = None;
+        let mut active_boss_locale = None;
+        let locale_id = resolve_locale_id(config.boss_locale.as_deref());
+        reload_boss_table_if_modified(
+            &er_overlay_common::default_base_dir(),
+            &locale_id,
+            None,
+            &mut boss_table_mtime,
+            &mut active_boss_locale,
+        );
+        let view_model = empty_view_model(config.boss_panel_scope);
         let mut app = Self {
             config,
             config_path,
@@ -95,8 +100,9 @@ impl OverlayApp {
             hud_drag: HudDragState::default(),
             view_model,
             last_state_poll: Instant::now(),
-            boss_table_mtime: None,
-            active_boss_locale: None,
+            boss_table_mtime,
+            active_boss_locale,
+            challenge,
         };
         app.sync_section_state();
         app.maybe_reload_boss_table();
@@ -114,6 +120,11 @@ impl OverlayApp {
 
     fn refresh_view_model(&mut self) {
         self.reader.poll();
+        self.view_model.bosses_total = bosses_total_count() as u32;
+        if !self.reader.is_ready() {
+            debug!("Skipping build_view_model: game state not ready yet");
+            return;
+        }
         let data_refs = self
             .layout
             .as_ref()
@@ -124,11 +135,22 @@ impl OverlayApp {
             .as_ref()
             .map(|l| l.collect_equipped_refs())
             .unwrap_or_default();
+        let challenge_snapshot = if self.reader.challenge_update_ready() {
+            self.challenge.update(
+                self.reader.get_death_count(),
+                self.reader.get_killed_boss_count(),
+                self.reader.get_flag(self.config.challenge.start_flag),
+            )
+        } else {
+            self.challenge.snapshot()
+        };
+        self.challenge.flush();
         self.view_model = build_view_model(
             &self.reader,
             &data_refs,
             &equipped_refs,
             self.config.boss_panel_scope,
+            challenge_snapshot,
         );
         self.last_state_poll = Instant::now();
     }
@@ -306,6 +328,7 @@ impl OverlayApp {
         if reload_boss_table_if_modified(
             &er_overlay_common::default_base_dir(),
             &locale_id,
+            None,
             &mut self.boss_table_mtime,
             &mut self.active_boss_locale,
         ) {
@@ -324,6 +347,7 @@ impl OverlayApp {
                 let locale_settings_changed = self.config.boss_locale != cfg.boss_locale;
                 self.layout = Self::load_layout_from_config(&cfg);
                 self.config = cfg;
+                self.challenge.sync_config(&self.config.challenge);
                 if locale_settings_changed {
                     self.boss_table_mtime = None;
                     self.active_boss_locale = None;

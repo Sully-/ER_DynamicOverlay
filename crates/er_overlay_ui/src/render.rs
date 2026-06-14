@@ -169,6 +169,7 @@ mod tests {
             &[],
             &HashSet::new(),
             er_overlay_common::BossPanelScope::CurrentRegion,
+            er_overlay_common::ChallengeSnapshot::default(),
         );
         assert!(vm.igt.is_some());
         assert_eq!(vm.deaths, Some(42));

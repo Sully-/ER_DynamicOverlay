@@ -4,7 +4,7 @@ use er_game_state::{
     bosses_in_region, good_by_key, group_names, group_progress, group_size, item_owned,
     region_label_for_subregion, region_names, GameStateSource,
 };
-use er_overlay_common::{BossPanelScope, GameStateDiagnostics, GameTime, TrackKind};
+use er_overlay_common::{BossPanelScope, ChallengeSnapshot, GameStateDiagnostics, GameTime, TrackKind};
 
 #[derive(Debug, Clone)]
 pub struct TrackedEntryRow {
@@ -58,6 +58,7 @@ pub struct OverlayViewModel {
     pub boss_panel_sections: Vec<BossPanelSection>,
     pub boss_panel_killed: u32,
     pub boss_panel_total: u32,
+    pub challenge: ChallengeSnapshot,
 }
 
 impl OverlayViewModel {
@@ -97,45 +98,74 @@ fn build_boss_panel_sections(
     scope: BossPanelScope,
     current_region: Option<&str>,
 ) -> (Vec<BossPanelSection>, u32, u32) {
-    let mut sections = Vec::new();
-    let mut killed_total = 0u32;
-    let mut boss_total = 0u32;
-
     match scope {
         BossPanelScope::CurrentRegion => {
             if let Some(region) = current_region {
                 let (bosses, killed, total) = boss_rows_for_region(source, region);
-                killed_total = killed;
-                boss_total = total;
-                sections.push(BossPanelSection {
+                let section = BossPanelSection {
                     region: region.to_string(),
                     is_current: true,
                     bosses,
                     killed,
                     total,
-                });
+                };
+                (vec![section], killed, total)
+            } else {
+                // Unknown map id — fall back to the full checklist instead of an empty panel.
+                build_all_region_sections(source, current_region)
             }
         }
-        BossPanelScope::AllRegions => {
-            for region in region_names() {
-                let (bosses, killed, total) = boss_rows_for_region(source, &region);
-                if bosses.is_empty() {
-                    continue;
-                }
-                killed_total += killed;
-                boss_total += total;
-                sections.push(BossPanelSection {
-                    region: region.clone(),
-                    is_current: matches!(current_region, Some(r) if r == region),
-                    bosses,
-                    killed,
-                    total,
-                });
-            }
+        BossPanelScope::AllRegions => build_all_region_sections(source, current_region),
+    }
+}
+
+fn build_all_region_sections(
+    source: &dyn GameStateSource,
+    current_region: Option<&str>,
+) -> (Vec<BossPanelSection>, u32, u32) {
+    let mut sections = Vec::new();
+    let mut killed_total = 0u32;
+    let mut boss_total = 0u32;
+
+    for region in region_names() {
+        let (bosses, killed, total) = boss_rows_for_region(source, &region);
+        if bosses.is_empty() {
+            continue;
         }
+        killed_total += killed;
+        boss_total += total;
+        sections.push(BossPanelSection {
+            region: region.clone(),
+            is_current: matches!(current_region, Some(r) if r == region),
+            bosses,
+            killed,
+            total,
+        });
     }
 
     (sections, killed_total, boss_total)
+}
+
+pub fn empty_view_model(boss_panel_scope: BossPanelScope) -> OverlayViewModel {
+    let bosses_total = er_game_state::bosses_total_count() as u32;
+    OverlayViewModel {
+        igt: None,
+        bosses_killed: None,
+        bosses_total,
+        deaths: None,
+        ng_cycle: None,
+        scadutree_blessing: None,
+        groups: HashMap::new(),
+        tracked_by_key: HashMap::new(),
+        diagnostics: GameStateDiagnostics::default(),
+        current_subregion_id: None,
+        current_region: None,
+        boss_panel_scope,
+        boss_panel_sections: Vec::new(),
+        boss_panel_killed: 0,
+        boss_panel_total: bosses_total,
+        challenge: ChallengeSnapshot::default(),
+    }
 }
 
 /// Builds the view model. `referenced_keys` are the good keys / metric refs used by the active
@@ -146,6 +176,7 @@ pub fn build_view_model(
     referenced_keys: &[String],
     equipped_keys: &HashSet<String>,
     boss_panel_scope: BossPanelScope,
+    challenge: ChallengeSnapshot,
 ) -> OverlayViewModel {
     let mut tracked_by_key = HashMap::new();
     for key in referenced_keys {
@@ -207,6 +238,7 @@ pub fn build_view_model(
         boss_panel_sections,
         boss_panel_killed,
         boss_panel_total,
+        challenge,
     }
 }
 
@@ -218,7 +250,13 @@ mod tests {
     #[test]
     fn current_region_scope_filters_bosses() {
         let mock = MockGameState::default();
-        let vm = build_view_model(&mock, &[], &HashSet::new(), BossPanelScope::CurrentRegion);
+        let vm = build_view_model(
+            &mock,
+            &[],
+            &HashSet::new(),
+            BossPanelScope::CurrentRegion,
+            ChallengeSnapshot::default(),
+        );
         assert_eq!(vm.boss_panel_sections.len(), 1);
         assert_eq!(vm.boss_panel_sections[0].region, "Limgrave");
     }
@@ -226,7 +264,13 @@ mod tests {
     #[test]
     fn all_regions_scope_lists_every_region() {
         let mock = MockGameState::default();
-        let vm = build_view_model(&mock, &[], &HashSet::new(), BossPanelScope::AllRegions);
+        let vm = build_view_model(
+            &mock,
+            &[],
+            &HashSet::new(),
+            BossPanelScope::AllRegions,
+            ChallengeSnapshot::default(),
+        );
         assert!(vm.boss_panel_sections.len() > 1);
         assert_eq!(
             vm.boss_panel_total,

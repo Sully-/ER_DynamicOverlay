@@ -11,6 +11,9 @@ mod game_language;
 #[cfg(feature = "game")]
 mod reader;
 
+#[cfg(feature = "game")]
+mod screen_state;
+
 pub use boss_table::{
     active_boss_locale, bosses_total_count, load_boss_table_from_path, normalize_locale_id,
     reload_boss_table_if_modified, resolve_boss_table_path, resolve_locale_id, BossTableData,
