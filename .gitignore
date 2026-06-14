@@ -5,3 +5,6 @@
 /er-overlay-local-test
 /er-overlay-local-test/
 /er-overlay-local-test/*
+**/bin/**
+**/obj/**
+**/__pycache__/**
