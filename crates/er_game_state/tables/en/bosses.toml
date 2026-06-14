@@ -1679,7 +1679,7 @@ subregions = [1000]
 
 [[region]]
 name = """Liurnia of the Lakes"""
-subregions = [3003, 3005, 3006, 3104, 3105, 3106, 3202, 3411, 3900, 3920, 6200, 6201]
+subregions = [1001, 3003, 3005, 3006, 3104, 3105, 3106, 3202, 3411, 3900, 3920, 6200, 6201]
 
 [[region]]
 name = """Moonlight Altar"""
@@ -1715,7 +1715,7 @@ subregions = [1600]
 
 [[region]]
 name = """Leyndell, Royal Capital"""
-subregions = [1100, 3414, 3415, 3500]
+subregions = [1100, 1110, 3414, 3415, 3500]
 
 [[region]]
 name = """Forbidden Lands"""
@@ -1739,7 +1739,7 @@ subregions = [1500]
 
 [[region]]
 name = """Siofra River"""
-subregions = [1202, 1207]
+subregions = [1202, 1207, 1208, 1209]
 
 [[region]]
 name = """Mohgwyn Dynasty Mausoleum"""
@@ -1759,11 +1759,11 @@ subregions = [1105, 1900]
 
 [[region]]
 name = """Gravesite Plain"""
-subregions = [4100, 4102, 4300, 6800, 6801, 6804, 6805, 6806, 6810, 6815, 6820]
+subregions = [2000, 4100, 4102, 4300, 6800, 6801, 6804, 6805, 6806, 6810, 6815, 6820]
 
 [[region]]
 name = """Scadu Altus"""
-subregions = [4000, 4001, 4101, 6900, 6901, 6902, 6903, 6904, 6905, 6906]
+subregions = [2100, 2101, 2102, 4000, 4001, 4101, 6900, 6901, 6902, 6903, 6904, 6905, 6906]
 
 [[region]]
 name = """Ancient Ruins of Rauh"""
@@ -1779,11 +1779,11 @@ subregions = [6840]
 
 [[region]]
 name = """Jagged Peak"""
-subregions = [4301, 6841, 6850]
+subregions = [4200, 4202, 4203, 4301, 6841, 6850]
 
 [[region]]
 name = """Scaduview"""
-subregions = [6920, 6930, 6960]
+subregions = [2500, 6920, 6930, 6960]
 
 [[region]]
 name = """Abyssal Woods"""
