@@ -6,6 +6,7 @@ use er_overlay_common::{
     default_challenge_state_path, load_layout, parse_hotkey, resolve_configured_path,
     resolve_layout_path, ChallengeTracker, HotkeyBinding, LayoutConfig, OverlayConfig, OverlayKey,
 };
+use er_overlay_common::layout::LayoutStyle;
 use er_overlay_ui::{
     build_view_model, empty_view_model, render_overlay, setup_overlay_fonts, BossPanelState,
     HudDragState, IconAtlas,
@@ -29,6 +30,9 @@ pub struct OverlayApp {
     hotkey_raw: Option<String>,
     parsed_boss_hotkey: Option<HotkeyBinding>,
     boss_hotkey_raw: Option<String>,
+    parsed_hide_all_hotkey: Option<HotkeyBinding>,
+    hide_all_hotkey_raw: Option<String>,
+    show_overlay: bool,
     show_boss_panel: bool,
     boss_panel: BossPanelState,
     last_config_reload: Instant,
@@ -60,9 +64,15 @@ impl OverlayApp {
         if boss_hotkey_raw.is_some() && parsed_boss_hotkey.is_none() {
             warn!("Invalid boss_panel_hotkey: {:?}", boss_hotkey_raw);
         }
+        let hide_all_hotkey_raw = config.hide_all_hotkey.clone();
+        let parsed_hide_all_hotkey = hide_all_hotkey_raw.as_deref().and_then(parse_hotkey);
+        if hide_all_hotkey_raw.is_some() && parsed_hide_all_hotkey.is_none() {
+            warn!("Invalid hide_all_hotkey: {:?}", hide_all_hotkey_raw);
+        }
         let reader = GameStateReader::new();
         let boss_panel = BossPanelState::default();
         let show_boss_panel = config.boss_panel_visible;
+        let show_overlay = config.overlay_visible;
         let icon_signature = Self::icon_signature_for(&config, layout.as_ref());
         let challenge =
             ChallengeTracker::new(config.challenge.clone(), default_challenge_state_path());
@@ -89,6 +99,9 @@ impl OverlayApp {
             hotkey_raw,
             parsed_boss_hotkey,
             boss_hotkey_raw,
+            parsed_hide_all_hotkey,
+            hide_all_hotkey_raw,
+            show_overlay,
             show_boss_panel,
             boss_panel,
             last_config_reload: Instant::now(),
@@ -199,6 +212,15 @@ impl OverlayApp {
                 warn!("Invalid boss_panel_hotkey: {:?}", boss_raw);
             }
         }
+
+        let hide_raw = self.config.hide_all_hotkey.clone();
+        if self.hide_all_hotkey_raw.as_ref() != hide_raw.as_ref() {
+            self.hide_all_hotkey_raw = hide_raw.clone();
+            self.parsed_hide_all_hotkey = hide_raw.as_deref().and_then(parse_hotkey);
+            if hide_raw.is_some() && self.parsed_hide_all_hotkey.is_none() {
+                warn!("Invalid hide_all_hotkey: {:?}", hide_raw);
+            }
+        }
     }
 
     fn sync_section_state(&mut self) {
@@ -263,16 +285,29 @@ impl OverlayApp {
         }
         let key = overlay_key_to_imgui(hk.key);
         if ui.is_key_pressed_no_repeat(key) {
-            if !self.section_allows_boss_panel(self.section_state.active_index) {
-                return;
-            }
             let opening = !self.show_boss_panel;
             self.show_boss_panel = !self.show_boss_panel;
+            self.show_overlay = true;
             if opening {
+                self.section_state.active_index = self.compact_layout_section_index();
                 self.boss_panel.on_reopened();
                 self.refresh_view_model();
             }
             debug!("Boss panel toggled: {}", self.show_boss_panel);
+        }
+    }
+
+    fn maybe_toggle_overlay_visibility(&mut self, ui: &imgui::Ui) {
+        let Some(hk) = self.parsed_hide_all_hotkey else {
+            return;
+        };
+        if !modifiers_match(ui, hk) {
+            return;
+        }
+        let key = overlay_key_to_imgui(hk.key);
+        if ui.is_key_pressed_no_repeat(key) {
+            self.show_overlay = !self.show_overlay;
+            debug!("Overlay visibility toggled: {}", self.show_overlay);
         }
     }
 
@@ -315,6 +350,7 @@ impl OverlayApp {
         }
         let key = overlay_key_to_imgui(hk.key);
         if ui.is_key_pressed_no_repeat(key) {
+            self.show_overlay = true;
             self.section_state.active_index =
                 (self.section_state.active_index + 1) % layout.section_count();
             if !self.section_allows_boss_panel(self.section_state.active_index) {
@@ -467,12 +503,25 @@ impl ImguiRenderLoop for OverlayApp {
         ctx.io_mut().config_windows_move_from_title_bar_only = false;
         self.load_icons_if_dirty(render_ctx);
         self.refresh_view_model();
-        let style = ctx.style_mut();
-        style.window_rounding = 6.0;
-        style.frame_rounding = 4.0;
-        style.colors[imgui::StyleColor::WindowBg as usize] =
-            imgui::ImColor32::from_rgba(12, 12, 18, 180).into();
-        style.colors[imgui::StyleColor::Text as usize] =
+        let imgui_style = ctx.style_mut();
+        imgui_style.window_rounding = 6.0;
+        imgui_style.frame_rounding = 4.0;
+        let default_layout_style = LayoutStyle::default();
+        let layout_style = self
+            .layout
+            .as_ref()
+            .map(|l| &l.style)
+            .unwrap_or(&default_layout_style);
+        let bg = layout_style.window_bg_rgba_f32();
+        imgui_style.colors[imgui::StyleColor::WindowBg as usize] =
+            imgui::ImColor32::from_rgba(
+                (bg[0] * 255.0) as u8,
+                (bg[1] * 255.0) as u8,
+                (bg[2] * 255.0) as u8,
+                (bg[3] * 255.0) as u8,
+            )
+            .into();
+        imgui_style.colors[imgui::StyleColor::Text as usize] =
             imgui::ImColor32::from_rgba(245, 245, 250, 255).into();
     }
 
@@ -484,8 +533,12 @@ impl ImguiRenderLoop for OverlayApp {
 
     fn render(&mut self, ui: &mut imgui::Ui) {
         self.maybe_reload_config();
+        self.maybe_toggle_overlay_visibility(ui);
         self.maybe_cycle_section(ui);
         self.maybe_toggle_boss_panel(ui);
+        if !self.show_overlay {
+            return;
+        }
         self.maybe_refresh_view_model();
         let vm = &self.view_model;
         let atlas = if self.config.use_item_icons && self.icon_atlas.is_loaded() {

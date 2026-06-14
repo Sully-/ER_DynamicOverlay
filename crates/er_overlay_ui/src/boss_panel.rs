@@ -1,9 +1,10 @@
 use er_overlay_common::{
-    parse_panel_layout, resolve_panel_rect, BossPanelScope, OverlayConfig, PanelRect,
+    layout::LayoutStyle, parse_panel_layout, resolve_panel_rect, BossPanelScope, OverlayConfig,
+    PanelRect,
 };
 use imgui::{Condition, StyleColor, Ui, WindowFlags};
 
-use crate::hud_window::HudBounds;
+use crate::hud_window::{draw_window_border, suppress_imgui_window_border, HudBounds};
 use crate::view_model::OverlayViewModel;
 
 const KILLED_COLOR: [f32; 4] = [0.5, 0.5, 0.5, 0.7];
@@ -58,9 +59,11 @@ struct BossPanelGeometry {
 pub fn render_boss_panel(
     ui: &Ui,
     config: &OverlayConfig,
+    style: &LayoutStyle,
     vm: &OverlayViewModel,
     state: &mut BossPanelState,
     hud_anchor: Option<HudBounds>,
+    border_radius: f32,
 ) {
     let text_scale = (config.text_size * config.scale / 18.0).max(0.5);
     let viewport = ui.io().display_size;
@@ -77,13 +80,17 @@ pub fn render_boss_panel(
         )
         .position(geometry.pos, Condition::Always)
         .size([geometry.width, geometry.window_height], Condition::Always)
-        .bg_alpha(config.background_opacity);
+        .bg_alpha(style.window_bg_alpha());
 
     if geometry.pivot != [0.0, 0.0] {
         window = window.position_pivot(geometry.pivot);
     }
 
+    let _no_native_border = suppress_imgui_window_border(ui);
     window.build(|| {
+        let _bg = style.has_window_background().then(|| {
+            ui.push_style_color(StyleColor::WindowBg, style.window_bg_rgba_f32())
+        });
         ui.set_window_font_scale(text_scale);
 
         if ui.is_window_hovered() && ui.is_mouse_dragging(imgui::MouseButton::Left) {
@@ -100,12 +107,10 @@ pub fn render_boss_panel(
             } else {
                 ui.text("(not in-game or data unavailable)");
             }
-            return;
-        }
-
-        ui.child_window("##boss_list")
-            .size(ui.content_region_avail())
-            .build(|| match vm.boss_panel_scope {
+        } else {
+            ui.child_window("##boss_list")
+                .size(ui.content_region_avail())
+                .build(|| match vm.boss_panel_scope {
                 BossPanelScope::AllRegions => {
                     let current_index = vm.boss_panel_sections.iter().position(|s| s.is_current);
                     let scroll_to_current = state.should_scroll_to_section(current_index);
@@ -130,6 +135,9 @@ pub fn render_boss_panel(
                     }
                 }
             });
+        }
+
+        draw_window_border(ui, style, border_radius * config.scale, config.scale);
     });
 }
 

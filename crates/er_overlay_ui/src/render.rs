@@ -1,15 +1,14 @@
 use er_game_state::{active_boss_locale, bosses_total_count, resolve_boss_table_path};
-use er_overlay_common::{default_base_dir, LayoutConfig, OverlayConfig};
+use er_overlay_common::{default_base_dir, layout::LayoutStyle, LayoutConfig, OverlayConfig};
 use imgui::{Condition, MouseButton, Ui};
 
 use crate::boss_panel::{render_boss_panel, BossPanelState};
 use crate::hud_window::{
-    debug_window_flags, hud_window_flags, hud_window_placement, top_left_from_placement, HudBounds,
-    HudDragState,
+    debug_window_flags, draw_window_border, hud_window_flags, hud_window_placement,
+    suppress_imgui_window_border, top_left_from_placement, HudBounds, HudDragState,
 };
 use crate::icon_atlas::IconAtlas;
 use crate::layout_engine::render_layout_dashboard;
-use crate::tile_render::rgba;
 use crate::view_model::OverlayViewModel;
 
 #[allow(clippy::too_many_arguments)]
@@ -33,8 +32,20 @@ pub fn render_overlay(
         render_overlay_layout(ui, config, vm, atlas, layout, active_section_index, drag);
     }
 
+    let default_style = LayoutStyle::default();
+    let style = layout.map(|l| &l.style).unwrap_or(&default_style);
+
     if show_boss_panel {
-        render_boss_panel(ui, config, vm, boss_panel, hud_anchor);
+        let border_radius = layout.map(|l| l.grid.border_radius).unwrap_or(6.0);
+        render_boss_panel(
+            ui,
+            config,
+            style,
+            vm,
+            boss_panel,
+            hud_anchor,
+            border_radius,
+        );
     }
 
     if config.show_debug {
@@ -84,17 +95,20 @@ fn render_overlay_layout(
         window = window.position_pivot(pivot);
     }
 
+    let _no_native_border = suppress_imgui_window_border(ui);
     window
-        .bg_alpha(config.background_opacity)
+        .bg_alpha(layout.style.window_bg_alpha())
         .size([width, height], Condition::Always)
         .build(|| {
             let pad = layout.grid.window_padding * config.scale;
             let _pad = ui.push_style_var(imgui::StyleVar::WindowPadding([pad, pad]));
             let _spacing = ui.push_style_var(imgui::StyleVar::ItemSpacing([0.0, 0.0]));
-            let _bg = ui.push_style_color(
-                imgui::StyleColor::WindowBg,
-                rgba(12, 12, 18, (config.background_opacity * 255.0) as u8),
-            );
+            let _bg = layout.style.has_window_background().then(|| {
+                ui.push_style_color(
+                    imgui::StyleColor::WindowBg,
+                    layout.style.window_bg_rgba_f32(),
+                )
+            });
             ui.set_window_font_scale((text_size / 18.0).max(0.5));
             let origin = ui.cursor_screen_pos();
             let inner_w = (width - pad * 2.0).max(1.0);
@@ -104,6 +118,12 @@ fn render_overlay_layout(
             if ui.is_window_hovered() && ui.is_mouse_dragging(MouseButton::Left) {
                 drag.capture_pos(ui);
             }
+            draw_window_border(
+                ui,
+                &layout.style,
+                layout.grid.border_radius * config.scale,
+                config.scale,
+            );
         });
 }
 

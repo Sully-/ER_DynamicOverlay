@@ -115,6 +115,37 @@
       </section>
 
       <section class="panel-block">
+        <h2 data-i18n="style">Style</h2>
+        <div class="field">
+          <label data-i18n="windowBg">window_bg</label>
+          <p class="hint" data-i18n="windowBgHint">HUD window background. Opacity 0 = no background.</p>
+          <div id="picker-window-bg"></div>
+        </div>
+        <div class="field">
+          <label data-i18n="tileBg">tile_bg</label>
+          <p class="hint" data-i18n="tileBgHint">Background of each dashboard tile.</p>
+          <div id="picker-tile-bg"></div>
+        </div>
+        <div class="field">
+          <label data-i18n="borderDefault">border_default</label>
+          <p class="hint" data-i18n="borderDefaultHint">Default tile / window border.</p>
+          <div id="picker-border-default"></div>
+        </div>
+        <div class="field">
+          <label data-i18n="borderComplete">border_complete</label>
+          <p class="hint" data-i18n="borderCompleteHint">Border when a counter is complete.</p>
+          <div id="picker-border-complete"></div>
+        </div>
+        <div class="field">
+          <label class="checkbox-label">
+            <input id="cfg-window-border" type="checkbox" />
+            <span data-i18n="windowBorder">window_border</span>
+          </label>
+          <p class="hint" data-i18n="windowBorderHint">Outer border around the HUD window (uses border_default color).</p>
+        </div>
+      </section>
+
+      <section class="panel-block">
         <h2 data-i18n="grid">Grid</h2>
         <div class="field-row">
           <div class="field">
@@ -166,6 +197,7 @@
 
   <script src="layout_editor_assets/catalog.js"></script>
   <script src="layout_editor_assets/i18n.js"></script>
+  <script src="layout_editor_assets/color_picker.js"></script>
   <script src="layout_editor_assets/app.js"></script>
 </body>
 </html>

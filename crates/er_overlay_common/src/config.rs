@@ -46,8 +46,6 @@ pub struct OverlayConfig {
     pub text_size: f32,
     #[serde(default = "default_icon_size")]
     pub icon_size: f32,
-    #[serde(default = "default_bg_opacity")]
-    pub background_opacity: f32,
     #[serde(default = "default_gray_tint")]
     pub gray_tint: f32,
     #[serde(default = "default_true")]
@@ -62,6 +60,9 @@ pub struct OverlayConfig {
     /// Hotkey to toggle the regional boss checklist panel (e.g. `"F7"`).
     #[serde(default = "default_boss_panel_hotkey")]
     pub boss_panel_hotkey: Option<String>,
+    /// Hotkey to show/hide the entire overlay (HUD + boss panel).
+    #[serde(default)]
+    pub hide_all_hotkey: Option<String>,
     /// Boss panel filter: `current-region` or `all-regions` (player location is always tracked).
     #[serde(default)]
     pub boss_panel_scope: BossPanelScope,
@@ -77,6 +78,9 @@ pub struct OverlayConfig {
     /// Boss table language (`en`, `fr`, …). Use `auto` or omit to detect from the game.
     #[serde(default)]
     pub boss_locale: Option<String>,
+    /// Show the overlay when the DLL starts (toggle at runtime with `hide_all_hotkey`).
+    #[serde(default = "default_true")]
+    pub overlay_visible: bool,
     /// Challenge mode (PB / failed runs), aligned with EROverlay boss challenge.
     #[serde(default)]
     pub challenge: ChallengeConfig,
@@ -96,10 +100,6 @@ fn default_scale() -> f32 {
 
 fn default_text_size() -> f32 {
     18.0
-}
-
-fn default_bg_opacity() -> f32 {
-    0.65
 }
 
 fn default_icon_size() -> f32 {
@@ -128,18 +128,19 @@ impl Default for OverlayConfig {
             scale: 1.0,
             text_size: 18.0,
             icon_size: 24.0,
-            background_opacity: 0.65,
             gray_tint: 0.40,
             use_item_icons: true,
             icons_dir: None,
             layout_file: default_layout_file(),
             layout_section_hotkey: None,
             boss_panel_hotkey: default_boss_panel_hotkey(),
+            hide_all_hotkey: None,
             boss_panel_scope: BossPanelScope::default(),
             boss_panel_visible: true,
             boss_panel_layout: None,
             default_layout_section: None,
             boss_locale: None,
+            overlay_visible: true,
             challenge: ChallengeConfig::default(),
         }
     }
@@ -162,13 +163,6 @@ impl OverlayConfig {
         if self.icon_size <= 0.0 || self.icon_size > 128.0 {
             warn!("Invalid icon_size {}, clamping to 24.0", self.icon_size);
             self.icon_size = 24.0;
-        }
-        if !(0.0..=1.0).contains(&self.background_opacity) {
-            warn!(
-                "Invalid background_opacity {}, clamping to 0.65",
-                self.background_opacity
-            );
-            self.background_opacity = 0.65;
         }
         if let Some(ref raw) = self.boss_panel_layout {
             if parse_panel_layout(raw).is_none() && !raw.trim().is_empty() {
@@ -280,12 +274,10 @@ mod tests {
         let mut cfg = OverlayConfig {
             scale: -1.0,
             text_size: 999.0,
-            background_opacity: 2.0,
             ..Default::default()
         };
         cfg.validate_and_clamp();
         assert_eq!(cfg.scale, 1.0);
         assert_eq!(cfg.text_size, 18.0);
-        assert_eq!(cfg.background_opacity, 0.65);
     }
 }

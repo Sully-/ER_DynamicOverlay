@@ -17,6 +17,8 @@ const DEFAULT_STYLE = {
   border_default: [100, 100, 110, 200],
   border_complete: [60, 200, 90, 255],
   tile_bg: [12, 12, 18, 180],
+  window_bg: [12, 12, 18, 166],
+  window_border: true,
   label_scale: 0.65,
   value_scale: 1.15,
 };
@@ -144,7 +146,20 @@ const els = {
   cfgDefaultSection: $("#cfg-default-section"),
   cfgTextSize: $("#cfg-text-size"),
   cfgOverlayScale: $("#cfg-overlay-scale"),
+  cfgWindowBorder: $("#cfg-window-border"),
 };
+
+const STYLE_COLOR_KEYS = ["window_bg", "tile_bg", "border_default", "border_complete"];
+
+const STYLE_PICKER_IDS = {
+  window_bg: "picker-window-bg",
+  tile_bg: "picker-tile-bg",
+  border_default: "picker-border-default",
+  border_complete: "picker-border-complete",
+};
+
+/** @type {Record<string, { syncFromState: () => void, setOpacityLabel: (s: string) => void }>} */
+const stylePickers = {};
 
 // ── TOML parse (local, no CDN) ──────────────────────────────────────
 
@@ -263,10 +278,12 @@ function init() {
 
   window.onLocaleChange = () => {
     rebuildLocalizedPalette();
+    syncStylePickers();
     render();
   };
 
   buildPalette();
+  initStylePickers();
   bindEvents();
   syncConfigInputs();
   applyThemeFromState();
@@ -324,17 +341,86 @@ function itemIsCountable(key) {
 }
 
 function rgbaCss(c) {
-  return `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${(c[3] ?? 255) / 255})`;
+  return ColorPicker.rgbaCss(c);
+}
+
+function clampByte(n) {
+  return ColorPicker.clampByte(n);
+}
+
+function styleRgba(key) {
+  return state.style[key] || DEFAULT_STYLE[key] || [0, 0, 0, 255];
+}
+
+function setStyleRgba(key, rgba) {
+  state.style[key] = rgba.map(clampByte);
+}
+
+function initStylePickers() {
+  for (const key of STYLE_COLOR_KEYS) {
+    const mount = document.getElementById(STYLE_PICKER_IDS[key]);
+    if (!mount) continue;
+    stylePickers[key] = ColorPicker.mountRgbaColorPicker(mount, {
+      getRgba: () => styleRgba(key),
+      setRgba: (rgba) => setStyleRgba(key, rgba),
+      onChange: () => applyLivePreview(),
+      opacityLabel: t("opacity"),
+    });
+  }
+}
+
+function syncStylePickers() {
+  for (const picker of Object.values(stylePickers)) {
+    picker.syncFromState();
+    picker.setOpacityLabel(t("opacity"));
+  }
+}
+
+function windowBgCss(style) {
+  const c = style.window_bg || DEFAULT_STYLE.window_bg;
+  if ((c[3] ?? 255) === 0) return "transparent";
+  return rgbaCss(c);
+}
+
+function applyLivePreview() {
+  const s = state.style;
+  const winBg = windowBgCss(s);
+  const tileBg = rgbaCss(s.tile_bg || DEFAULT_STYLE.tile_bg);
+  const borderDef = rgbaCss(s.border_default || DEFAULT_STYLE.border_default);
+  const borderComp = rgbaCss(s.border_complete || DEFAULT_STYLE.border_complete);
+  const root = document.documentElement.style;
+
+  root.setProperty("--window-bg-color", winBg);
+  root.setProperty("--tile-bg-color", tileBg);
+  root.setProperty("--tile-border-color", borderDef);
+  root.setProperty("--tile-border-complete", borderComp);
+  const scales = overlayFontScales();
+  root.setProperty("--overlay-label-line", `${scales.label * OVERLAY_FONT_REF_PX}px`);
+
+  const canvas = els.gridCanvas;
+  if (!canvas) return;
+
+  canvas.style.background = winBg;
+  canvas.style.border = "none";
+  canvas.style.boxShadow =
+    s.window_border !== false ? `inset 0 0 0 1.5px ${borderDef}` : "none";
+  canvas.classList.toggle("grid-canvas--no-window-chrome", s.window_border === false && (s.window_bg?.[3] ?? 255) === 0);
+
+  for (const tile of canvas.querySelectorAll(".tile")) {
+    tile.style.background = tileBg;
+    if (tile.classList.contains("tile--complete")) {
+      tile.style.borderColor = borderComp;
+    } else if (
+      !tile.classList.contains("selected") &&
+      !tile.classList.contains("overlap")
+    ) {
+      tile.style.borderColor = borderDef;
+    }
+  }
 }
 
 function applyThemeFromState() {
-  const s = state.style;
-  const root = document.documentElement.style;
-  root.setProperty("--tile-bg-color", rgbaCss(s.tile_bg));
-  root.setProperty("--tile-border-color", rgbaCss(s.border_default));
-  root.setProperty("--tile-border-complete", rgbaCss(s.border_complete));
-  const scales = overlayFontScales();
-  root.setProperty("--overlay-label-line", `${scales.label * OVERLAY_FONT_REF_PX}px`);
+  applyLivePreview();
 }
 
 function overlayTextSize() {
@@ -698,7 +784,7 @@ function renderItemPalette() {
 // ── Render ──────────────────────────────────────────────────────────
 
 function render() {
-  applyThemeFromState();
+  applyLivePreview();
   renderSectionTabs();
   renderGrid();
   renderProperties();
@@ -775,6 +861,7 @@ function renderGrid() {
   }
 
   attachGridResizeHandles(canvas, gm);
+  applyLivePreview();
 }
 
 function attachGridResizeHandles(canvas, gm) {
@@ -808,11 +895,15 @@ function renderTileEl(tile, gm, overlap) {
   el.style.width = `${w}px`;
   el.style.height = `${h}px`;
   el.style.borderRadius = `${state.grid.border_radius * gm.preview}px`;
+  el.style.background = rgbaCss(state.style.tile_bg);
 
   const body = document.createElement("div");
   body.className = "tile-body";
   const meta = fillTileBody(body, tile, w, h);
   if (meta?.complete) el.classList.add("tile--complete");
+  el.style.borderColor = rgbaCss(
+    meta?.complete ? state.style.border_complete : state.style.border_default
+  );
   el.appendChild(body);
 
   if (tile._id === selectedTileId) {
@@ -909,6 +1000,10 @@ function syncConfigInputs() {
   els.cfgDefaultSection.value = state.default_section;
   if (els.cfgTextSize) els.cfgTextSize.value = state.overlay.text_size;
   if (els.cfgOverlayScale) els.cfgOverlayScale.value = state.overlay.scale;
+  syncStylePickers();
+  if (els.cfgWindowBorder) {
+    els.cfgWindowBorder.checked = state.style.window_border !== false;
+  }
 }
 
 function updateGridInfo() {
@@ -1188,6 +1283,8 @@ function exportToml() {
   lines.push(`border_default = ${rgba(state.style.border_default)}`);
   lines.push(`border_complete = ${rgba(state.style.border_complete)}`);
   lines.push(`tile_bg = ${rgba(state.style.tile_bg)}`);
+  lines.push(`window_bg = ${rgba(state.style.window_bg || DEFAULT_STYLE.window_bg)}`);
+  lines.push(`window_border = ${state.style.window_border !== false}`);
   lines.push(`label_scale = ${state.style.label_scale}`);
   lines.push(`value_scale = ${state.style.value_scale}`);
   lines.push("");
@@ -1248,6 +1345,10 @@ function importToml(text) {
   }
   if (raw.style) {
     Object.assign(newState.style, raw.style);
+    for (const key of STYLE_COLOR_KEYS) {
+      if (!newState.style[key]) newState.style[key] = [...DEFAULT_STYLE[key]];
+    }
+    if (newState.style.window_border == null) newState.style.window_border = DEFAULT_STYLE.window_border;
   }
   if (raw.default_section) {
     newState.default_section = raw.default_section;
@@ -1388,6 +1489,12 @@ function bindEvents() {
       state.overlay.scale = Math.max(0.25, Math.min(4, Number(els.cfgOverlayScale.value) || 1));
       applyThemeFromState();
       render();
+    });
+  }
+  if (els.cfgWindowBorder) {
+    els.cfgWindowBorder.addEventListener("change", () => {
+      state.style.window_border = els.cfgWindowBorder.checked;
+      applyLivePreview();
     });
   }
 

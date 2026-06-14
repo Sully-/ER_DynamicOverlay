@@ -1,5 +1,6 @@
+use er_overlay_common::layout::LayoutStyle;
 use er_overlay_common::{Anchor, OverlayConfig};
-use imgui::{Condition, Ui, WindowFlags};
+use imgui::{Condition, ImColor32, StyleVar, Ui, WindowFlags};
 
 /// Top-left corner and size of a positioned window.
 #[derive(Debug, Clone, Copy)]
@@ -106,6 +107,29 @@ pub fn hud_window_flags(fixed_size: bool) -> WindowFlags {
     }
 
     flags
+}
+
+/// ImGui draws its own 1px window border at `Begin()` — disable it; we draw manually when enabled.
+pub fn suppress_imgui_window_border<'ui>(ui: &'ui Ui) -> imgui::StyleStackToken<'ui> {
+    ui.push_style_var(StyleVar::WindowBorderSize(0.0))
+}
+
+/// Outer window frame when `window_border` is set (uses `border_default`).
+pub fn draw_window_border(ui: &Ui, style: &LayoutStyle, rounding: f32, scale: f32) {
+    if !style.window_border {
+        return;
+    }
+    let draw = ui.get_window_draw_list();
+    let pos = ui.window_pos();
+    let [w, h] = ui.window_size();
+    let p1 = [pos[0] + w, pos[1] + h];
+    let c = style.border_default;
+    let color = ImColor32::from_rgba(c[0], c[1], c[2], c[3]);
+    draw.add_rect(pos, p1, color)
+        .filled(false)
+        .thickness((1.5 * scale).max(1.0))
+        .rounding(rounding)
+        .build();
 }
 
 pub fn debug_window_flags() -> WindowFlags {

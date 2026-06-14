@@ -1,34 +1,53 @@
+# ── General ──────────────────────────────────────────────────────────
+# Show the ImGui debug window (diagnostics, boss table path, etc.).
 show_debug = false
+# Show the HUD when the overlay starts. Toggle at runtime with hide_all_hotkey.
+overlay_visible = true
+
+# ── HUD placement ────────────────────────────────────────────────────
+# Anchor corner: top-left | top-right | bottom-left | bottom-right
 anchor = "top-right"
 offset_x = 16.0
 offset_y = 16.0
 scale = 1.0
 text_size = 18.0
 icon_size = 24.0
-background_opacity = 0.65
+
+# ── Appearance ───────────────────────────────────────────────────────
+# Desaturation for unowned / incomplete tracked items (0–1).
 gray_tint = 0.40
 use_item_icons = true
 # icons_dir = "assets/icons"   # relative to the er_overlay.dll directory
+
+# ── Layout ───────────────────────────────────────────────────────────
 layout_file = "layouts/dashboard.toml"
+# Initial layout section; overrides default_section in the layout file.
+default_layout_section = "minimalist"
+
+# ── Hotkeys ──────────────────────────────────────────────────────────
+# Cycle layout sections (minimalist ↔ extended, etc.).
 layout_section_hotkey = "F8"
+# Toggle the boss checklist panel (opens minimalist layout when shown).
 boss_panel_hotkey = "F7"
-# current-region = current area bosses only
-# all-regions = all bosses grouped by region (scrollable)
+# Show / hide the entire overlay (HUD + boss panel).
+hide_all_hotkey = "F9"
+
+# ── Boss panel ───────────────────────────────────────────────────────
+# Scope: current-region | all-regions
 boss_panel_scope = "all-regions"
 boss_panel_visible = true
-# Boss panel position and size (optional). Format: x, y, width, height
-# auto or omitted = -5, 10, 25%, 92% (below the minimalist HUD)
-# Pixels:         32, 120, 480, 900
-# Percent:        75%, 8%, 22%, 45%
-# Negative edges: -5, 10, 25%, 92%   (x=-5 → 5px from the right edge)
-# Y is shifted down automatically if it would cover the minimalist HUD.
-# boss_panel_layout = "-5, 10, 25%, 92%"
-default_layout_section = "minimalist"
-# Boss table: tables/<lang>/bosses.toml next to the DLL (hot-reloaded every ~2 s).
+# Boss table: tables/<lang>/bosses.toml next to the DLL (hot-reloaded ~every 2 s).
 # auto = game language (Steam), or en, fr, …
 boss_locale = "auto"
+# Optional placement: x, y, width, height (pixels or %). Omit or "auto" for default.
+# Examples:
+#   Pixels:  32, 120, 480, 900
+#   Percent: 75%, 8%, 22%, 45%
+#   Default: -5, 10, 25%, 92%  (right edge; Y shifts below minimalist HUD if needed)
+# boss_panel_layout = "-5, 10, 25%, 92%"
 
-# Challenge mode (EROverlay-compatible). Metrics pb / nbtries in layouts/dashboard.toml.
+# ── Challenge mode (EROverlay-compatible) ────────────────────────────
+# Metrics pb / nbtries in layouts/dashboard.toml.
 [challenge]
 enabled = false
 max_deaths = 0

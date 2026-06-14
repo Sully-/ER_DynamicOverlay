@@ -16,6 +16,7 @@ See the "Layout editor" section of the [main README](../../../README.md). In sho
 |------|------|
 | `../layout_editor.html` | Page entry point. |
 | `app.js` | Logic: grid, drag & drop, properties, layout import/export. |
+| `color_picker.js` | Reusable RGBA picker (native color input + opacity slider). |
 | `i18n.js` | EN/FR UI strings. |
 | `style.css` | Styles. |
 | `catalog.js` | Item palette **generated** from `goods.toml`. Do not edit by hand. |

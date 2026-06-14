@@ -76,6 +76,12 @@ pub struct LayoutStyle {
     pub border_complete: [u8; 4],
     #[serde(default = "default_tile_bg")]
     pub tile_bg: [u8; 4],
+    /// HUD / boss-panel window background `[r, g, b, a]` (alpha 0 = transparent).
+    #[serde(default = "default_window_bg")]
+    pub window_bg: [u8; 4],
+    /// Draw the outer ImGui window border around the HUD and boss panel.
+    #[serde(default = "default_window_border")]
+    pub window_border: bool,
     #[serde(default = "default_label_scale")]
     pub label_scale: f32,
     #[serde(default = "default_value_scale")]
@@ -94,6 +100,14 @@ fn default_tile_bg() -> [u8; 4] {
     [12, 12, 18, 180]
 }
 
+fn default_window_bg() -> [u8; 4] {
+    [12, 12, 18, 166]
+}
+
+fn default_window_border() -> bool {
+    true
+}
+
 fn default_label_scale() -> f32 {
     0.55
 }
@@ -108,9 +122,44 @@ impl Default for LayoutStyle {
             border_default: default_border_default(),
             border_complete: default_border_complete(),
             tile_bg: default_tile_bg(),
+            window_bg: default_window_bg(),
+            window_border: default_window_border(),
             label_scale: default_label_scale(),
             value_scale: default_value_scale(),
         }
+    }
+}
+
+impl LayoutStyle {
+    /// ImGui `[r, g, b, a]` window background.
+    pub fn window_bg_rgba_f32(&self) -> [f32; 4] {
+        [
+            self.window_bg[0] as f32 / 255.0,
+            self.window_bg[1] as f32 / 255.0,
+            self.window_bg[2] as f32 / 255.0,
+            self.window_bg[3] as f32 / 255.0,
+        ]
+    }
+
+    pub fn window_bg_alpha(&self) -> f32 {
+        self.window_bg[3] as f32 / 255.0
+    }
+
+    pub fn has_window_background(&self) -> bool {
+        self.window_bg[3] > 0
+    }
+
+    pub fn rgba_f32(c: [u8; 4]) -> [f32; 4] {
+        [
+            c[0] as f32 / 255.0,
+            c[1] as f32 / 255.0,
+            c[2] as f32 / 255.0,
+            c[3] as f32 / 255.0,
+        ]
+    }
+
+    pub fn border_default_rgba_f32(&self) -> [f32; 4] {
+        Self::rgba_f32(self.border_default)
     }
 }
 
@@ -532,8 +581,12 @@ impl LayoutConfig {
         let width = cols as f32 * unit_w + cols.saturating_sub(1) as f32 * gap;
         let height = max_row as f32 * unit_h + max_row.saturating_sub(1) as f32 * gap;
         let pad = self.grid.window_padding * scale;
-        // Tile stroke (1.5px) + ImGui window border — avoids clipping the rightmost column.
-        let bleed = 4.0 * scale;
+        // Tile stroke (1.5px) + optional ImGui window border — avoids clipping edge tiles.
+        let bleed = if self.style.window_border {
+            4.0 * scale
+        } else {
+            2.0 * scale
+        };
         [width + pad * 2.0 + bleed, height + pad * 2.0 + bleed]
     }
 
@@ -915,5 +968,20 @@ row = 0
         let refs = layout.collect_equipped_refs();
         assert_eq!(refs.len(), 1);
         assert!(refs.contains("green_turtle_talisman"));
+    }
+
+    #[test]
+    fn window_bg_defaults_and_parses() {
+        let style = LayoutStyle::default();
+        assert_eq!(style.window_bg, [12, 12, 18, 166]);
+        assert!(style.window_border);
+        assert!(style.has_window_background());
+
+        let raw = r#"
+[style]
+window_bg = [0, 0, 0, 0]
+"#;
+        let layout: LayoutConfig = toml::from_str(raw).unwrap();
+        assert!(!layout.style.has_window_background());
     }
 }
