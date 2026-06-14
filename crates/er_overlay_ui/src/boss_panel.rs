@@ -20,6 +20,7 @@ pub struct BossPanelState {
     last_scrolled_section: Option<usize>,
     /// Second scroll pass once the tree node has expanded (updates scroll_max).
     scroll_follow_up_frames: u8,
+    last_current_section: Option<usize>,
 }
 
 impl BossPanelState {
@@ -114,15 +115,20 @@ pub fn render_boss_panel(
                     BossPanelScope::AllRegions => {
                         let current_index =
                             vm.boss_panel_sections.iter().position(|s| s.is_current);
+                        let region_just_changed =
+                            state.last_current_section != current_index;
+                        if region_just_changed {
+                            state.last_current_section = current_index;
+                        }
                         let scroll_to_current = state.should_scroll_to_section(current_index);
                         let scroll_follow_up = state.consume_scroll_follow_up();
                         let scroll_current = scroll_to_current || scroll_follow_up;
                         for (i, section) in vm.boss_panel_sections.iter().enumerate() {
-                            let should_open = current_index == Some(i);
-                            if should_open && scroll_current {
+                            let force_open = region_just_changed && current_index == Some(i);
+                            if current_index == Some(i) && scroll_current {
                                 scroll_current_region_into_view(ui);
                             }
-                            render_region_tree(ui, section, should_open);
+                            render_region_tree(ui, section, force_open);
                         }
                     }
                     BossPanelScope::CurrentRegion => {
@@ -166,17 +172,21 @@ fn scroll_current_region_into_view(ui: &Ui) {
     ui.set_scroll_from_pos_y_with_ratio(ui.cursor_pos()[1], 0.2);
 }
 
-fn render_region_tree(ui: &Ui, section: &crate::view_model::BossPanelSection, should_open: bool) {
+fn render_region_tree(
+    ui: &Ui,
+    section: &crate::view_model::BossPanelSection,
+    force_open: bool,
+) {
     let label = format!("{} ({}/{})", section.region, section.killed, section.total);
-    // Same `should_open` logic as ER_boss_checklist_R; `Always` re-opens on region change
-    // (needed because DLC is one aggregated node — `default_open` alone is FirstUseEver only).
-    ui.tree_node_config(&label)
-        .opened(should_open, Condition::Always)
-        .build(|| {
-            for boss in &section.bosses {
-                render_boss_row(ui, boss);
-            }
-        });
+    let mut node = ui.tree_node_config(&label);
+    if force_open {
+        node = node.opened(true, Condition::Always);
+    }
+    node.build(|| {
+        for boss in &section.bosses {
+            render_boss_row(ui, boss);
+        }
+    });
 }
 
 fn render_boss_row(ui: &Ui, boss: &crate::view_model::BossPanelRow) {
