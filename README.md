@@ -17,6 +17,7 @@ A Rust overlay injected into an **already-running** `eldenring.exe`, **read-only
 - [Warnings](#warnings)
 - [Installation](#installation)
 - [Configuration (`er_overlay.toml`)](#configuration-er_overlaytoml)
+- [Challenge mode](#challenge-mode)
 - [Customizing the display](#customizing-the-display)
 - [Layout editor](#layout-editor)
 - [Troubleshooting](#troubleshooting)
@@ -61,6 +62,7 @@ After extracting the zip, you should have a single folder containing at least:
 | `tables/` | Boss names per language |
 | `assets/` | Item icons |
 | `layout_editor.html` | Visual layout editor (see step 3) |
+| `challenge_state.toml` | *(runtime)* Challenge PB / tries — created when `[challenge] enabled = true` |
 
 **Do not separate these files** — they must stay in the same folder.
 
@@ -73,8 +75,9 @@ That's it. Re-run the injector after each game restart (the overlay is not persi
 
 | Key | Action |
 |-----|--------|
-| `F8` | Switch layout section (`minimalist` ↔ `extended`) |
+| `F8` | Switch layout section (`minimalist` → `extended` → `challenge`, …) |
 | `F7` | Toggle boss checklist panel |
+| `F9` | Show / hide the entire overlay (default; see `hide_all_hotkey`) |
 
 If something goes wrong, check `logs/er_injector.log` and `logs/er_overlay.log` in the same folder.
 
@@ -102,6 +105,7 @@ Open `er_overlay.toml` in any text editor. Common options:
 - `scale`, `text_size`, `icon_size` — size
 - `background_opacity`, `gray_tint` — look of unowned items
 - `boss_panel_visible`, `boss_panel_hotkey`, `boss_locale` — boss checklist
+- `[challenge]` — optional **challenge mode** (PB / failed runs); see [Challenge mode](#challenge-mode)
 
 Full reference: [Configuration](#configuration-er_overlaytoml).
 
@@ -181,6 +185,66 @@ Read next to the DLL, **hot-reloaded every 2 seconds** (you can edit it while th
 | `boss_panel_layout` | string | — | Panel `x,y,width,height` (pixels or `%`). Omit or `auto` = `"-5, 10, 25%, 92%"` (right-aligned), shifted below the minimalist HUD. Negative x/y = offset from right/bottom edge. |
 | `boss_locale` | string | `auto` | Boss table language (`en`, `fr`, …). `auto` reads the game language via Steam; falls back to `en`. |
 
+### Challenge mode (`[challenge]`)
+
+Optional ruleset inspired by [EROverlay](https://github.com/soarqin/EROverlay) boss challenge mode. **Disabled by default.**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `enabled` | bool | `false` | When `false`, challenge metrics show `---` and no progress is tracked. |
+| `max_deaths` | u32 | `0` | Deaths allowed **per run** (inclusive). The run fails when run deaths exceed this value. `0` = deathless. |
+| `start_flag` | u32 | `101` | Event flag that marks the **start of a run** (flag `101` = left the Cave of Knowledge / Stranded Graveyard, same as EROverlay). |
+
+Example:
+
+```toml
+[challenge]
+enabled = true
+max_deaths = 0      # deathless: one death ends the run
+start_flag = 101
+```
+
+**Progress file:** `challenge_state.toml` (next to `er_overlay.dll`, created at runtime). Stores personal best (`pb`), failed run count (`nbtries` / `tries`), and internal run state. Delete this file to reset PB and tries.
+
+See [Challenge mode](#challenge-mode) for behaviour and layout tiles.
+
+## Challenge mode
+
+Track a **personal best** (most bosses killed on a run within your death budget) and how many times the run **failed**, without editing game saves.
+
+### Metrics
+
+Add these to a layout as `kind = "metric"` tiles (the bundled `layouts/dashboard.toml` includes a **`challenge`** section with both):
+
+| Metric | Label idea | Meaning |
+|--------|------------|---------|
+| `pb` | PB | Highest boss kill count recorded while the current run is still within the death budget. |
+| `nbtries` | TRIES | Number of failed runs (increments once when deaths exceed `max_deaths`, not once per extra death). |
+
+When `[challenge].enabled = false`, both show `---`.
+
+### Typical deathless run (`max_deaths = 0`)
+
+| Event | PB | TRIES |
+|-------|-----|-------|
+| Kill 1 boss, no deaths | 1 | 0 |
+| First death (run failed) | 1 (frozen) | 1 |
+| Kill another boss on the same save | 1 | 1 |
+
+After a failed run, PB stays frozen until you start a **new game** (flag `101` clears with zero deaths on the character). You can keep playing on the same save; the overlay just stops counting a new PB for that failed run.
+
+### Enabling in-game
+
+1. Set `enabled = true` under `[challenge]` in `er_overlay.toml` (hot-reloaded ~every 2 s).
+2. Press **`F8`** until the **`challenge`** layout section is visible, or add `pb` / `nbtries` tiles to your own layout.
+3. Leave the tutorial cave — run tracking starts when flag `101` becomes active.
+
+### Notes
+
+- Boss count uses the same 207-boss table as the main `bosses` metric (save-wide kill flags).
+- Challenge updates are paused during loading screens / when in-game time is not running (same idea as EROverlay), so respawn fades do not corrupt run state.
+- Compatible with `boss_panel_scope` and the rest of the HUD; challenge is independent of the boss checklist panel.
+
 ## Customizing the display
 
 What gets shown is driven entirely by the **layout file** (`layout_file`), not by the code. A layout is a **grid** of tiles; each tile occupies one or more cells.
@@ -189,7 +253,7 @@ Three tile kinds:
 
 | Kind | Shows |
 |------|-------|
-| `metric` | A counter or time: IGT, deaths, NG+, bosses killed, group progress, item quantity. |
+| `metric` | A counter or time: IGT, deaths, NG+, bosses killed, challenge **PB** / **TRIES**, group progress, item quantity. |
 | `item` | A tracked item (icon **in color** if owned, **greyed out** otherwise; quantity for consumables). Optional `track_equipped = true` adds a **green border** while the item is equipped. |
 | `label` | Plain decorative text (heading, separator). |
 
@@ -204,7 +268,7 @@ Two ways to write a layout:
 
 The full syntax is in [Layout format](#layout-format-reference). An invalid layout (overlapping tiles, grid overflow, empty section…) is **rejected on load** and reported in the log.
 
-Provided layout: `layouts/dashboard.toml` (two sections: `minimalist` and `extended`).
+Provided layout: `layouts/dashboard.toml` (three sections: `minimalist`, `extended`, and `challenge` with `pb` / `nbtries`).
 
 ## Layout editor
 
@@ -225,6 +289,8 @@ See **[Quick start § 3](#3-customize-your-dashboard-layout-editor)** for the st
 | Game crashes on inject | Check `logs/er_overlay.log`: last line before crash pinpoints the step (`Hudhook::apply`, `build_view_model`, etc.). Update the game if the log says unsupported executable. |
 | No icons (only dots) | PNGs missing from `assets/icons` — see [Icons](#icons). |
 | Overlay crash | Conflict with another DX12 hook (RTSS, etc.). |
+| Challenge metrics always `---` | Set `[challenge] enabled = true` in `er_overlay.toml`. |
+| PB / tries look wrong after testing | Delete `challenge_state.toml` next to the DLL and retry on a clean run. |
 
 ### Logs and diagnostics
 
@@ -325,6 +391,8 @@ The `metric` field of a `metric` tile accepts:
 | `deaths` | Death count. |
 | `ng_cycle` | New Game cycle (`NG+N`). |
 | `bosses` | Bosses killed out of 207. |
+| `pb` | Challenge personal best (requires `[challenge] enabled = true`). |
+| `nbtries` | Challenge failed run count (`tries` in EROverlay; same aliases: `tries`, `challenge_pb`, `challenge_tries`). |
 | `scadutree_blessing` | Scadutree Blessing level spent at Sites of Grace (`N/20`). Distinct from the `scadutree` good key (fragment inventory count). |
 | *group name* | `owned/total` progress of an aggregate group from `goods.toml` (e.g. `great_runes`). |
 | *good key* | Quantity (consumable `count = true`) or `0/1` owned state for a unique item. |
@@ -399,6 +467,7 @@ CI (`.github/workflows/ci.yml`) runs `fmt --check`, `clippy -D warnings` and `te
 
 ## References
 
+- [EROverlay](https://github.com/soarqin/EROverlay) — boss overlay; challenge mode semantics reference
 - [hudhook](https://github.com/veeenu/hudhook) — DX12 + ImGui hook
 - [fromsoftware-rs](https://github.com/vswarte/fromsoftware-rs) — game structure access
 - [SoulSplitter](https://github.com/FrankvdStam/SoulSplitter) — flags / IGT reference
