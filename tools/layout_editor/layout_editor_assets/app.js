@@ -44,7 +44,11 @@ const PREVIEW_METRICS = {
   nbtries: "7",
 };
 
+const OVERLAY_COUNTER_SCALE = 0.85;
 const PREVIEW_ITEM_COUNT = "3";
+/** Reference counter width — keeps font size identical for "7/8", "12/20", "3", etc. */
+const COUNTER_FIT_TEMPLATE = "99/99";
+const TILE_RENDER_VERSION = 2;
 
 const OVERLAY_CONFIG_URL = (() => {
   const pageDir = new URL(".", location.href);
@@ -185,6 +189,7 @@ function tileContentKey(tile, gm) {
     state.overlay.scale,
     state.style.label_scale,
     state.style.value_scale,
+    TILE_RENDER_VERSION,
   ].join("\0");
 }
 
@@ -695,6 +700,69 @@ function appendTileText(body, text, top, fontScale, className, maxW) {
   return overlayLineHeight(fontScale);
 }
 
+function tileInsetPad(pxW, pxH) {
+  return Math.max(4, Math.min(pxW, pxH) * 0.1);
+}
+
+/** Icon size for icon+counter tiles — fills square tiles; on wide tiles, scales to ~one cell width. */
+function iconTileSize(pxW, pxH) {
+  const minDim = Math.min(pxW, pxH);
+  if (pxW > pxH * 1.15) {
+    return Math.min(minDim * 0.92, pxW * 0.48);
+  }
+  return minDim * 0.88;
+}
+
+function metricIconKey(tile) {
+  if (tile.icon) return tile.icon;
+  return METRICS.find((m) => m.id === tile.metric)?.icon || null;
+}
+
+function overlayCounterScale() {
+  return overlayFontScales().value * OVERLAY_COUNTER_SCALE;
+}
+
+function counterFontScaleForTile(pxW, pxH) {
+  const minDim = Math.min(pxW, pxH);
+  const maxW = Math.max(8, minDim * 0.45);
+  return fitFontScale(COUNTER_FIT_TEMPLATE, maxW, overlayCounterScale());
+}
+
+function appendTileCountBottomRight(body, text, pxW, pxH) {
+  const minDim = Math.min(pxW, pxH);
+  const pad = tileInsetPad(pxW, pxH);
+  const maxW = Math.max(8, minDim * 0.45);
+  const fitted = counterFontScaleForTile(pxW, pxH);
+  const el = document.createElement("div");
+  el.className = "tile-layer tile-value tile-count";
+  el.style.left = "auto";
+  el.style.top = "auto";
+  el.style.right = `${pad}px`;
+  el.style.bottom = `${pad}px`;
+  el.style.width = `${maxW}px`;
+  el.style.fontSize = `${overlayFontPx(fitted)}px`;
+  el.style.transform = "none";
+  el.style.textAlign = "right";
+  el.textContent = text;
+  body.appendChild(el);
+}
+
+function appendTileLabelOverlay(body, text, pxW, pxH, fontScale) {
+  const pad = tileInsetPad(pxW, pxH);
+  const maxW = Math.max(8, pxW - pad * 2);
+  const fitted = fitFontScale(text, maxW, fontScale);
+  const el = document.createElement("div");
+  el.className = "tile-layer tile-label tile-label--overlay";
+  el.style.left = `${pad}px`;
+  el.style.top = `${pad}px`;
+  el.style.width = `${maxW}px`;
+  el.style.fontSize = `${overlayFontPx(fitted)}px`;
+  el.style.transform = "none";
+  el.style.textAlign = "center";
+  el.textContent = text;
+  body.appendChild(el);
+}
+
 function appendTileIcon(body, iconKey, className, left, top, size, alt = "") {
   const icon = makeIconImg(iconKey, className, alt);
   icon.classList.add("tile-layer", "tile-layer--icon");
@@ -756,16 +824,18 @@ function fillPaletteThumb(thumb, kind, data) {
     );
     if (m.icon) {
       const img = makeIconImg(m.icon, "tile-icon");
-      img.style.width = "82%";
-      img.style.maxHeight = "58%";
+      img.style.width = "88%";
+      img.style.height = "88%";
+      img.style.objectFit = "contain";
       thumb.appendChild(img);
-    } else {
-      const lbl = document.createElement("span");
-      lbl.className = "palette-thumb-text";
-      lbl.style.fontSize = `${overlayFontPx(scales.label)}px`;
-      lbl.textContent = (m.label || m.id).slice(0, 8);
-      thumb.appendChild(lbl);
+      appendTileCountBottomRight(thumb, preview.text, thumbW, thumbW);
+      return;
     }
+    const lbl = document.createElement("span");
+    lbl.className = "palette-thumb-text";
+    lbl.style.fontSize = `${overlayFontPx(scales.label)}px`;
+    lbl.textContent = (m.label || m.id).slice(0, 8);
+    thumb.appendChild(lbl);
     const val = document.createElement("span");
     val.className = "palette-thumb-value";
     const fitted = fitFontScale(preview.text, maxW, scales.value);
@@ -786,28 +856,30 @@ function fillPaletteThumb(thumb, kind, data) {
   if (kind === "item") {
     const key = data.key;
     const countable = itemIsCountable(key);
+    const iconSize = thumbW * (countable ? 0.88 : 0.78);
     const img = makeIconImg(itemIconKey(key), `tile-icon ${countable ? "tile-icon--item-countable" : "tile-icon--item"}`);
+    img.style.width = `${iconSize}px`;
+    img.style.height = `${iconSize}px`;
     thumb.appendChild(img);
     if (countable) {
-      const val = document.createElement("span");
-      val.className = "palette-thumb-value";
-      const countScale = fitFontScale(PREVIEW_ITEM_COUNT, thumbW * 0.9, scales.value * 0.85);
-      val.style.fontSize = `${overlayFontPx(countScale)}px`;
-      val.textContent = PREVIEW_ITEM_COUNT;
-      thumb.appendChild(val);
+      appendTileCountBottomRight(thumb, PREVIEW_ITEM_COUNT, thumbW, thumbW);
     }
   }
 }
 
-function metricIconSize(pxW, pxH, hasLabel, valueH) {
-  const minDim = Math.min(pxW, pxH);
-  if (!hasLabel) {
-    const verticalPad = minDim * 0.06;
-    const valueGap = valueH * 0.25;
-    const maxFromHeight = pxH - valueH - valueGap - verticalPad * 2;
-    return Math.min(minDim, maxFromHeight, minDim * 0.72);
+function fillIconTileWithCounter(body, pxW, pxH, { iconKey, counterText, labelText = "" }) {
+  const scales = overlayFontScales();
+  const iconSize = iconTileSize(pxW, pxH);
+  const ix = (pxW - iconSize) * 0.5;
+  const iy = (pxH - iconSize) * 0.5;
+
+  appendTileIcon(body, iconKey, "tile-icon tile-icon--metric", ix, iy, iconSize, labelText || iconKey);
+
+  if (labelText.trim()) {
+    appendTileLabelOverlay(body, labelText, pxW, pxH, scales.label);
   }
-  return minDim * 0.38;
+
+  appendTileCountBottomRight(body, counterText, pxW, pxH);
 }
 
 function fillTileBody(body, tile, pxW, pxH) {
@@ -826,35 +898,26 @@ function fillTileBody(body, tile, pxW, pxH) {
 
   if (tile.kind === "metric") {
     const preview = metricPreview(tile.metric, tile.show_max, tileMaxOverride(tile));
-    const hasLabel = !!tile.label;
+    const iconKey = metricIconKey(tile);
+    const hasIcon = !!(iconKey && iconUrl(iconKey));
+
+    if (hasIcon) {
+      fillIconTileWithCounter(body, pxW, pxH, {
+        iconKey,
+        counterText: preview.text,
+        labelText: tile.label || "",
+      });
+      return { complete: preview.complete };
+    }
+
+    const hasLabel = !!tile.label?.trim();
     const labelText = tile.label || "";
     const labelScale = scales.label;
     const valueScale = fitFontScale(preview.text, maxW, scales.value);
     const labelH = overlayLineHeight(labelScale);
     const valueH = overlayLineHeight(valueScale);
-    const hasIcon = !!(tile.icon && iconUrl(tile.icon));
-    const iconSize = hasIcon ? metricIconSize(pxW, pxH, hasLabel, valueH) : 0;
-    const blockH = hasIcon
-      ? hasLabel
-        ? iconSize + labelH * 0.35 + labelH + valueH
-        : iconSize + valueH * 0.25 + valueH
-      : hasLabel
-        ? labelH + valueH * 1.1
-        : valueH;
+    const blockH = hasLabel ? labelH + valueH * 1.1 : valueH;
     let y = (pxH - blockH) * 0.5;
-
-    if (hasIcon) {
-      appendTileIcon(
-        body,
-        tile.icon,
-        "tile-icon tile-icon--metric",
-        (pxW - iconSize) * 0.5,
-        y,
-        iconSize,
-        tile.label
-      );
-      y += iconSize + (hasLabel ? labelH * 0.25 : valueH * 0.25);
-    }
 
     if (hasLabel) {
       y += appendTileText(body, labelText, y, labelScale, "tile-label", maxW);
@@ -865,27 +928,20 @@ function fillTileBody(body, tile, pxW, pxH) {
 
   if (tile.kind === "item") {
     const countable = itemIsCountable(tile.key);
-    const iconSize = Math.min(pxW, pxH) * (countable ? 0.58 : 0.78);
-    const iy = countable ? pxH * 0.12 : (pxH - iconSize) * 0.5;
+    const iconSize = iconTileSize(pxW, pxH);
+    const ix = (pxW - iconSize) * 0.5;
+    const iy = (pxH - iconSize) * 0.5;
     appendTileIcon(
       body,
       itemIconKey(tile.key),
       `tile-icon ${countable ? "tile-icon--item-countable" : "tile-icon--item"}`,
-      (pxW - iconSize) * 0.5,
+      ix,
       iy,
       iconSize,
       tile.key
     );
     if (countable) {
-      const countScale = fitFontScale(PREVIEW_ITEM_COUNT, pxW * 0.9, scales.value * 0.85);
-      appendTileText(
-        body,
-        PREVIEW_ITEM_COUNT,
-        pxH - countScale * 16 - 2,
-        countScale,
-        "tile-value tile-count",
-        pxW * 0.9
-      );
+      appendTileCountBottomRight(body, PREVIEW_ITEM_COUNT, pxW, pxH);
     }
     return tile.track_equipped ? { complete: true } : {};
   }
