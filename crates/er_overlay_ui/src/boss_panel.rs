@@ -117,8 +117,7 @@ pub fn render_boss_panel(
                     BossPanelScope::AllRegions => {
                         let current_index =
                             vm.boss_panel_sections.iter().position(|s| s.is_current);
-                        let region_just_changed =
-                            state.last_current_section != current_index;
+                        let region_just_changed = state.last_current_section != current_index;
                         if region_just_changed {
                             state.last_current_section = current_index;
                         }
@@ -174,11 +173,7 @@ fn scroll_current_region_into_view(ui: &Ui) {
     ui.set_scroll_from_pos_y_with_ratio(ui.cursor_pos()[1], 0.2);
 }
 
-fn render_region_tree(
-    ui: &Ui,
-    section: &crate::view_model::BossPanelSection,
-    force_open: bool,
-) {
+fn render_region_tree(ui: &Ui, section: &crate::view_model::BossPanelSection, force_open: bool) {
     let label = format!("{} ({}/{})", section.region, section.killed, section.total);
     let mut node = ui.tree_node_config(&label);
     if force_open {

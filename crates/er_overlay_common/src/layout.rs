@@ -646,7 +646,10 @@ impl LayoutConfig {
         let height = max_row as f32 * unit_h + max_row.saturating_sub(1) as f32 * gap;
         let pad = self.grid.window_padding * scale;
         let margin = Self::tile_grid_margin(scale);
-        [width + pad * 2.0 + margin * 2.0, height + pad * 2.0 + margin * 2.0]
+        [
+            width + pad * 2.0 + margin * 2.0,
+            height + pad * 2.0 + margin * 2.0,
+        ]
     }
 
     pub fn tile_origin(&self, col: u32, row: u32, scale: f32) -> [f32; 2] {

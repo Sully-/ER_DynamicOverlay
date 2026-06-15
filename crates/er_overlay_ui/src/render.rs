@@ -3,13 +3,13 @@ use er_overlay_common::{default_base_dir, layout::LayoutStyle, LayoutConfig, Ove
 use imgui::{Condition, MouseButton, Ui};
 
 use crate::boss_panel::{render_boss_panel, BossPanelState};
+use crate::fonts::overlay_font_scale;
 use crate::hud_window::{
     debug_window_flags, draw_window_border, hud_window_flags, hud_window_placement,
     push_window_outer_clip, suppress_imgui_window_border, top_left_from_placement, HudBounds,
     HudDragState,
 };
 use crate::icon_atlas::IconAtlas;
-use crate::fonts::overlay_font_scale;
 use crate::layout_engine::render_layout_dashboard;
 use crate::view_model::OverlayViewModel;
 

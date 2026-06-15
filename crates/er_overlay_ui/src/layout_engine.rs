@@ -2,7 +2,9 @@ use er_overlay_common::{LayoutConfig, OverlayConfig, TileDef};
 use imgui::Ui;
 
 use crate::icon_atlas::IconAtlas;
-use crate::metric_registry::{apply_metric_max, metric_is_complete, resolve_metric, resolve_tracked_key};
+use crate::metric_registry::{
+    apply_metric_max, metric_is_complete, resolve_metric, resolve_tracked_key,
+};
 use crate::tile_render::{
     draw_item_tile, draw_label_tile, draw_metric_tile, draw_unavailable_metric_tile,
     metric_value_for_tile, TileDrawCtx,
