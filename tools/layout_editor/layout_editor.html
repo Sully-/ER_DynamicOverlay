@@ -44,6 +44,7 @@
       <div class="canvas-toolbar">
         <div class="section-tabs" id="section-tabs"></div>
         <div class="canvas-toolbar-spacer"></div>
+        <div id="trash-zone" class="trash-zone" data-i18n-title="trashHint" title="">🗑</div>
         <span id="grid-info" class="muted"></span>
       </div>
       <div class="canvas-wrapper">
@@ -59,6 +60,8 @@
 
       <section class="panel-block hidden" id="props-tile">
         <h2 data-i18n="tile">Tile</h2>
+        <p id="props-multi-hint" class="hint hidden"></p>
+        <div id="props-fields">
         <div class="field">
           <label data-i18n="type">Type</label>
           <input id="prop-kind" class="input" type="text" readonly />
@@ -120,6 +123,7 @@
         <div class="field hidden" id="field-icon">
           <label data-i18n="iconOptional">Icon (optional)</label>
           <input id="prop-icon" class="input" type="text" data-i18n-placeholder="iconPlaceholder" placeholder="kindling, scadutree…" />
+        </div>
         </div>
         <button id="btn-delete-tile" class="btn btn-danger btn-block" type="button" data-i18n="delete">Delete</button>
       </section>

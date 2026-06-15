@@ -2,7 +2,7 @@
 # Square grid units: 1 unit = 1 icon square.
 
 [grid]
-columns = 9
+columns = 10
 unit_size = 64
 gap = 4
 border_radius = 6
@@ -10,10 +10,10 @@ window_padding = 8
 
 [style]
 border_default = [100, 100, 110, 200]
-border_complete = [60, 200, 90, 255]
+border_complete = [255, 0, 0, 179]
 tile_bg = [12, 12, 18, 180]
-window_bg = [12, 12, 18, 166]
-window_border = true
+window_bg = [12, 12, 18, 0]
+window_border = false
 label_scale = 0.65
 value_scale = 1.15
 
@@ -21,12 +21,10 @@ default_section = "minimalist"
 
 [[section]]
 name = "minimalist"
-editor_cols = 9
-editor_rows = 1
 
 [[section.tile]]
 kind = "label"
-label = "DEFAULT"
+label = "French Challenge"
 col = 0
 row = 0
 w = 2
@@ -35,7 +33,7 @@ w = 2
 kind = "metric"
 metric = "igt"
 label = "IGT"
-col = 2
+col = 6
 row = 0
 w = 2
 
@@ -43,13 +41,6 @@ w = 2
 kind = "metric"
 metric = "deaths"
 label = "DEATHS"
-col = 4
-row = 0
-
-[[section.tile]]
-kind = "metric"
-metric = "ng_cycle"
-label = "NG"
 col = 5
 row = 0
 
@@ -58,32 +49,24 @@ kind = "metric"
 metric = "bosses"
 label = "BOSS"
 show_max = true
-col = 6
+col = 3
 row = 0
+w = 2
 
 [[section.tile]]
 kind = "metric"
 metric = "pb"
 label = "PB"
-col = 7
-row = 0
-
-[[section.tile]]
-kind = "metric"
-metric = "nbtries"
-label = "TRIES"
-col = 8
+col = 2
 row = 0
 
 [[section]]
 name = "extended"
-editor_cols = 8
-editor_rows = 9
 
 [[section.tile]]
 kind = "label"
-label = "DEFAULT"
-col = 0
+label = "French Challenge"
+col = 2
 row = 0
 w = 2
 
@@ -91,7 +74,7 @@ w = 2
 kind = "metric"
 metric = "igt"
 label = "IGT"
-col = 2
+col = 8
 row = 0
 w = 2
 
@@ -99,14 +82,7 @@ w = 2
 kind = "metric"
 metric = "deaths"
 label = "DEATHS"
-col = 4
-row = 0
-
-[[section.tile]]
-kind = "metric"
-metric = "ng_cycle"
-label = "NG"
-col = 5
+col = 7
 row = 0
 
 [[section.tile]]
@@ -114,256 +90,263 @@ kind = "metric"
 metric = "bosses"
 label = "BOSS"
 show_max = true
-col = 6
+col = 5
 row = 0
-
-[[section.tile]]
-kind = "metric"
-metric = "great_runes"
-label = "RUNES"
-show_max = true
-col = 0
-row = 1
+w = 2
 
 [[section.tile]]
 kind = "item"
 key = "godrick_rune"
-col = 1
+col = 4
 row = 1
 
 [[section.tile]]
 kind = "item"
 key = "radahn_rune"
-col = 2
+col = 5
 row = 1
 
 [[section.tile]]
 kind = "item"
 key = "morgott_rune"
-col = 3
+col = 6
 row = 1
 
 [[section.tile]]
 kind = "item"
 key = "rykard_rune"
-col = 4
+col = 7
 row = 1
 
 [[section.tile]]
 kind = "item"
 key = "mohg_rune"
-col = 5
+col = 8
 row = 1
 
 [[section.tile]]
 kind = "item"
 key = "malenia_rune"
-col = 6
+col = 9
 row = 1
 
 [[section.tile]]
 kind = "metric"
 metric = "kindling"
-label = "KINDLING"
 show_max = true
 icon = "kindling"
-col = 0
-row = 2
+col = 3
+row = 1
 
 [[section.tile]]
 kind = "metric"
 metric = "scadutree"
-label = "SHARDS"
-show_max = true
-icon = "scadutree"
-col = 1
-row = 2
-
-[[section.tile]]
-kind = "metric"
-metric = "scadutree_blessing"
-label = "BLESSING"
 show_max = true
 icon = "scadutree"
 col = 2
-row = 2
+row = 1
 
 [[section.tile]]
 kind = "item"
 key = "smithing_stone_1"
 col = 0
-row = 3
+row = 2
 
 [[section.tile]]
 kind = "item"
 key = "smithing_stone_2"
 col = 1
-row = 3
+row = 2
 
 [[section.tile]]
 kind = "item"
 key = "smithing_stone_3"
 col = 2
-row = 3
+row = 2
 
 [[section.tile]]
 kind = "item"
 key = "smithing_stone_4"
 col = 3
-row = 3
+row = 2
 
 [[section.tile]]
 kind = "item"
 key = "smithing_stone_5"
 col = 4
-row = 3
+row = 2
 
 [[section.tile]]
 kind = "item"
 key = "smithing_stone_6"
 col = 5
-row = 3
+row = 2
 
 [[section.tile]]
 kind = "item"
 key = "smithing_stone_7"
 col = 6
-row = 3
+row = 2
 
 [[section.tile]]
 kind = "item"
-key = "smithing_stone_8"
-col = 7
-row = 3
+key = "ancient_dragon_smithing_stone"
+col = 9
+row = 2
 
 [[section.tile]]
 kind = "item"
 key = "somber_smithing_stone_1"
 col = 0
-row = 4
+row = 3
 
 [[section.tile]]
 kind = "item"
 key = "somber_smithing_stone_2"
 col = 1
-row = 4
+row = 3
 
 [[section.tile]]
 kind = "item"
 key = "somber_smithing_stone_3"
 col = 2
-row = 4
+row = 3
 
 [[section.tile]]
 kind = "item"
 key = "somber_smithing_stone_4"
 col = 3
-row = 4
+row = 3
 
 [[section.tile]]
 kind = "item"
 key = "somber_smithing_stone_5"
 col = 4
-row = 4
+row = 3
 
 [[section.tile]]
 kind = "item"
 key = "somber_smithing_stone_6"
 col = 5
-row = 4
+row = 3
 
 [[section.tile]]
 kind = "item"
 key = "somber_smithing_stone_7"
 col = 6
-row = 4
+row = 3
 
 [[section.tile]]
 kind = "item"
 key = "somber_smithing_stone_8"
 col = 7
-row = 4
-
-[[section.tile]]
-kind = "item"
-key = "ancient_dragon_smithing_stone"
-col = 0
-row = 5
+row = 3
 
 [[section.tile]]
 kind = "item"
 key = "somber_smithing_stone_9"
-col = 1
-row = 5
+col = 8
+row = 3
 
 [[section.tile]]
 kind = "item"
 key = "somber_ancient_dragon_smithing_stone"
-col = 2
-row = 5
+col = 9
+row = 3
 
 [[section.tile]]
 kind = "item"
 key = "daedicar_s_woe"
-col = 0
-row = 6
+col = 3
+row = 4
 
 [[section.tile]]
 kind = "item"
 key = "radagon_s_scarseal"
-col = 1
-row = 6
+col = 7
+row = 4
 
 [[section.tile]]
 kind = "item"
 key = "radagon_s_soreseal"
-col = 2
-row = 6
+col = 7
+row = 5
 
 [[section.tile]]
 kind = "item"
 key = "marika_s_scarseal"
-col = 3
-row = 6
+col = 6
+row = 4
 
 [[section.tile]]
 kind = "item"
 key = "marika_s_soreseal"
-col = 4
-row = 6
+col = 6
+row = 5
 
 [[section.tile]]
 kind = "item"
 key = "beloved_stardust"
-col = 5
-row = 6
+col = 4
+row = 4
 
 [[section.tile]]
 kind = "item"
 key = "magic_scorpion_charm"
-col = 0
-row = 7
+col = 9
+row = 4
 
 [[section.tile]]
 kind = "item"
 key = "lightning_scorpion_charm"
-col = 1
-row = 7
+col = 8
+row = 5
 
 [[section.tile]]
 kind = "item"
 key = "fire_scorpion_charm"
-col = 2
-row = 7
+col = 9
+row = 5
 
 [[section.tile]]
 kind = "item"
 key = "sacred_scorpion_charm"
-col = 3
-row = 7
+col = 8
+row = 4
 
 [[section.tile]]
 kind = "item"
-key = "unborn_rune"
+key = "smithing_stone_8"
 col = 7
-row = 1
+row = 2
+
+[[section.tile]]
+kind = "item"
+key = "crucible_feather_talisman"
+col = 5
+row = 4
+
+[[section.tile]]
+kind = "item"
+key = "primal_glintstone_blade"
+col = 4
+row = 5
+
+[[section.tile]]
+kind = "item"
+key = "talisman_of_all_crucibles"
+col = 3
+row = 5
+
+[[section.tile]]
+kind = "item"
+key = "fine_crucible_feather_talisman"
+col = 5
+row = 5
+
+[[section.tile]]
+kind = "metric"
+metric = "pb"
+label = "PB"
+col = 4
+row = 0

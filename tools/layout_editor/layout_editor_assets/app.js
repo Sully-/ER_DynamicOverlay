@@ -36,7 +36,7 @@ const PREVIEW_METRICS = {
   deaths: "42",
   ng_cycle: "NG+2",
   bosses: "12/165",
-  great_runes: "6/6",
+  great_runes: "6/7",
   kindling: "7/8",
   scadutree: "12/20",
   scadutree_blessing: "12/20",
@@ -45,9 +45,6 @@ const PREVIEW_METRICS = {
 };
 
 const PREVIEW_ITEM_COUNT = "3";
-
-/** Reference height used in tile_render.rs for line spacing (not text_size). */
-const OVERLAY_FONT_REF_PX = 18;
 
 const OVERLAY_CONFIG_URL = (() => {
   const pageDir = new URL(".", location.href);
@@ -81,6 +78,23 @@ function inferSectionGrid(tiles) {
   return { gridCols, gridRows };
 }
 
+/** Editor grid size on import — never inflate to defaultSectionGrid when tiles are smaller. */
+function sectionGridOnImport(name, found, tiles) {
+  const inferred = inferSectionGrid(tiles);
+  const editorCols = found?.editor_cols;
+  const editorRows = found?.editor_rows;
+  if (typeof editorCols === "number" || typeof editorRows === "number") {
+    return {
+      gridCols: Math.max(inferred.gridCols, editorCols ?? inferred.gridCols),
+      gridRows: Math.max(inferred.gridRows, editorRows ?? inferred.gridRows),
+    };
+  }
+  if (tiles.length === 0) {
+    return defaultSectionGrid(name);
+  }
+  return inferred;
+}
+
 function createDefaultState() {
   return {
     grid: { columns: 8, unit_size: 64, gap: 4, border_radius: 6, window_padding: 8 },
@@ -96,8 +110,190 @@ let nextId = 1;
 let catalog = [];
 let catalogByKey = new Map();
 let state = createDefaultState();
-let selectedTileId = null;
+let selectedTileIds = new Set();
+let clipboardTiles = null;
 let dragState = null;
+let dragMoveRaf = null;
+let dragMovePending = null;
+let canvasSelectionBound = false;
+let sectionTabsBuilt = false;
+const gridTileNodes = new Map();
+let gridBgCacheKey = null;
+let gridHandlesCacheKey = null;
+const textWidthCache = new Map();
+
+function clearSelection() {
+  selectedTileIds.clear();
+}
+
+function selectOnly(id) {
+  selectedTileIds.clear();
+  selectedTileIds.add(id);
+}
+
+function toggleTileSelection(id) {
+  if (selectedTileIds.has(id)) selectedTileIds.delete(id);
+  else selectedTileIds.add(id);
+}
+
+function primarySelectedId() {
+  if (selectedTileIds.size !== 1) return null;
+  return selectedTileIds.values().next().value;
+}
+
+function tileDataWithoutId(tile) {
+  const { _id, ...data } = tile;
+  return { ...data };
+}
+
+function pointInRect(x, y, rect) {
+  return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+}
+
+function clearGridTileNodes() {
+  for (const el of gridTileNodes.values()) el.remove();
+  gridTileNodes.clear();
+  gridBgCacheKey = null;
+  gridHandlesCacheKey = null;
+}
+
+function resetGridDom() {
+  clearGridTileNodes();
+  els.gridCanvas.querySelector(".grid-bg")?.remove();
+  els.gridCanvas.querySelector(".grid-handles")?.remove();
+  els.gridCanvas.querySelector(".grid-tiles")?.remove();
+}
+
+function tileContentKey(tile, gm) {
+  return [
+    tile.kind,
+    tile.label,
+    tile.metric,
+    tile.show_max,
+    tile.max_mode,
+    tile.max,
+    tile.icon,
+    tile.key,
+    tile.track_equipped,
+    tile.w,
+    tile.h,
+    gm.unit,
+    gm.gap,
+    gm.preview,
+    state.grid.border_radius,
+    state.overlay.text_size,
+    state.overlay.scale,
+    state.style.label_scale,
+    state.style.value_scale,
+  ].join("\0");
+}
+
+function tileGeometryStyle(tile, gm) {
+  const left = gm.window_padding + tile.col * (gm.unit + gm.gap);
+  const top = gm.window_padding + tile.row * (gm.unit + gm.gap);
+  const w = tile.w * gm.unit + (tile.w - 1) * gm.gap;
+  const h = tile.h * gm.unit + (tile.h - 1) * gm.gap;
+  return { left, top, w, h };
+}
+
+function gridContentRectClient() {
+  const rect = els.gridCanvas.getBoundingClientRect();
+  const gm = gridMetrics();
+  return {
+    left: rect.left + gm.window_padding,
+    top: rect.top + gm.window_padding,
+    right: rect.left + gm.w - gm.window_padding,
+    bottom: rect.top + gm.h - gm.window_padding,
+  };
+}
+
+function isDeleteDragIntent(clientX, clientY) {
+  const trash = els.trashZone?.getBoundingClientRect();
+  if (trash && pointInRect(clientX, clientY, trash)) return true;
+  const content = gridContentRectClient();
+  return (
+    clientX < content.left ||
+    clientX > content.right ||
+    clientY < content.top ||
+    clientY > content.bottom
+  );
+}
+
+function snapPositionsForDrag() {
+  return dragState.snapPositions || dragState.startPositions;
+}
+
+function syncFreeDragVisual(clientX, clientY) {
+  const gm = gridMetrics();
+  const canvasRect = els.gridCanvas.getBoundingClientRect();
+  const bases = snapPositionsForDrag();
+  const anchorStart = bases.get(dragState.tileId);
+  if (!anchorStart) return;
+
+  const anchorLeft = clientX - canvasRect.left - dragState.pointerOffsetX;
+  const anchorTop = clientY - canvasRect.top - dragState.pointerOffsetY;
+  const anchorGridLeft = gm.window_padding + anchorStart.col * (gm.unit + gm.gap);
+  const anchorGridTop = gm.window_padding + anchorStart.row * (gm.unit + gm.gap);
+  const dPxX = anchorLeft - anchorGridLeft;
+  const dPxY = anchorTop - anchorGridTop;
+
+  for (const id of dragState.tileIds) {
+    const start = bases.get(id);
+    const t = activeSection().tiles.find((x) => x._id === id);
+    const el = gridTileNodes.get(id);
+    if (!start || !t || !el) continue;
+    const geom = tileGeometryStyle({ ...t, col: start.col, row: start.row }, gm);
+    el.style.left = `${geom.left + dPxX}px`;
+    el.style.top = `${geom.top + dPxY}px`;
+  }
+}
+
+function setTilesDeletePendingClass(tileIds, active) {
+  for (const id of tileIds) {
+    gridTileNodes.get(id)?.classList.toggle("tile--delete-pending", active);
+  }
+}
+
+function syncTileDomPositions(tileIds = null) {
+  const gm = gridMetrics();
+  const filter = tileIds ? new Set(tileIds) : null;
+  for (const tile of activeSection().tiles) {
+    if (filter && !filter.has(tile._id)) continue;
+    const el = gridTileNodes.get(tile._id);
+    if (!el) continue;
+    const { left, top, w, h } = tileGeometryStyle(tile, gm);
+    el.style.left = `${left}px`;
+    el.style.top = `${top}px`;
+    el.style.width = `${w}px`;
+    el.style.height = `${h}px`;
+  }
+}
+
+function setTilesMovingClass(tileIds, active) {
+  for (const id of tileIds) {
+    gridTileNodes.get(id)?.classList.toggle("tile--moving", active);
+  }
+}
+
+function syncSelectionDom() {
+  for (const tile of activeSection().tiles) {
+    const el = gridTileNodes.get(tile._id);
+    if (!el) continue;
+    el.classList.toggle("selected", selectedTileIds.has(tile._id));
+    syncResizeHandles(el, tile._id, selectedTileIds.size === 1 && selectedTileIds.has(tile._id));
+  }
+  renderProperties();
+}
+
+/** Full render when selection shape changes (resize handles); otherwise DOM-only sync. */
+function updateSelectionAfterChange(prevSize) {
+  const nextSize = selectedTileIds.size;
+  if (prevSize === 1 || nextSize === 1) {
+    render();
+    return;
+  }
+  syncSelectionDom();
+}
 
 function activeSection() {
   return state.sections[state.activeSection];
@@ -119,8 +315,11 @@ const els = {
   gridCanvas: $("#grid-canvas"),
   gridInfo: $("#grid-info"),
   sectionTabs: $("#section-tabs"),
+  trashZone: $("#trash-zone"),
   propsEmpty: $("#props-empty"),
   propsTile: $("#props-tile"),
+  propsMultiHint: $("#props-multi-hint"),
+  propsFields: $("#props-fields"),
   propKind: $("#prop-kind"),
   propLabel: $("#prop-label"),
   propMetric: $("#prop-metric"),
@@ -271,7 +470,6 @@ function rebuildLocalizedPalette() {
     makePaletteEl("label", t("labelPalette"), { label: t("defaultTitle") })
   );
   buildItemSections();
-  renderItemPalette();
 }
 
 function init() {
@@ -398,7 +596,7 @@ function applyLivePreview() {
   root.setProperty("--tile-border-color", borderDef);
   root.setProperty("--tile-border-complete", borderComp);
   const scales = overlayFontScales();
-  root.setProperty("--overlay-label-line", `${scales.label * OVERLAY_FONT_REF_PX}px`);
+  root.setProperty("--overlay-label-line", `${overlayFontPx(scales.label)}px`);
 
   const canvas = els.gridCanvas;
   if (!canvas) return;
@@ -437,6 +635,8 @@ function overlayPreviewScale() {
 let _textProbe = null;
 
 function measureTextWidth(text, fontScale) {
+  const key = `${text}\0${fontScale}\0${overlayTextSize()}`;
+  if (textWidthCache.has(key)) return textWidthCache.get(key);
   if (!_textProbe) {
     _textProbe = document.createElement("span");
     _textProbe.className = "tile-text-probe";
@@ -444,14 +644,14 @@ function measureTextWidth(text, fontScale) {
   }
   _textProbe.style.fontSize = `${overlayFontPx(fontScale)}px`;
   _textProbe.textContent = text;
-  return _textProbe.getBoundingClientRect().width;
+  const width = _textProbe.getBoundingClientRect().width;
+  textWidthCache.set(key, width);
+  return width;
 }
 
-/** Same formula as tile_render.rs: (text_size * scale / 18).max(0.5) */
+/** Window font scale — TTF is already at text_size px; only overlay scale applies. */
 function overlayBaseFontScale() {
-  const textSize = overlayTextSize();
-  const scale = overlayPreviewScale();
-  return Math.max(0.5, (textSize * scale) / OVERLAY_FONT_REF_PX);
+  return Math.max(0.5, overlayPreviewScale());
 }
 
 function overlayFontScales() {
@@ -467,7 +667,7 @@ function overlayFontPx(fontScale) {
 }
 
 function overlayLineHeight(fontScale) {
-  return fontScale * OVERLAY_FONT_REF_PX;
+  return overlayFontPx(fontScale);
 }
 
 /** Same logic as tile_render.rs fit_font_scale (linear shrink to max width). */
@@ -531,7 +731,8 @@ function metricPreview(metric, showMax, maxOverride = null) {
   if (text.includes("/") || maxOverride != null) {
     const parts = text.includes("/") ? text.split("/") : [text, String(defaultMaxForMetric(metric))];
     const cur = parts[0];
-    const max = maxOverride != null ? String(maxOverride) : parts[1];
+    const max =
+      maxOverride != null ? String(maxOverride) : String(defaultMaxForMetric(metric));
     text = showMax ? `${cur}/${max}` : cur;
     complete = cur === max && max !== "0";
   }
@@ -703,7 +904,6 @@ function buildPalette() {
   );
 
   buildItemSections();
-  renderItemPalette();
 
   for (const m of METRICS) {
     const opt = document.createElement("option");
@@ -750,14 +950,19 @@ function buildItemSections() {
   for (const catId of ITEM_CATEGORY_IDS) {
     const cat = { id: catId, label: categoryLabel(catId) };
     const section = document.createElement("div");
-    section.className = "item-section";
+    const all = itemsInCategory(cat.id);
+    section.className = "item-section collapsed";
     section.dataset.category = cat.id;
 
     const head = document.createElement("button");
     head.type = "button";
     head.className = "item-section-head";
-    head.innerHTML = `<span>${cat.label}</span><span class="item-section-count">0</span>`;
-    head.addEventListener("click", () => section.classList.toggle("collapsed"));
+    head.innerHTML = `<span>${cat.label}</span><span class="item-section-count">${all.length}</span>`;
+    head.addEventListener("click", () => {
+      const opening = section.classList.contains("collapsed");
+      section.classList.toggle("collapsed");
+      if (opening) renderItemSection(cat.id);
+    });
 
     const content = document.createElement("div");
     content.className = "item-section-content";
@@ -811,28 +1016,47 @@ function renderItemPalette() {
 
 // ── Render ──────────────────────────────────────────────────────────
 
-function render() {
-  applyLivePreview();
-  renderSectionTabs();
-  renderGrid();
-  renderProperties();
-  syncConfigInputs();
-  updateGridInfo();
+function render(options = {}) {
+  const opts = {
+    preview: true,
+    tabs: true,
+    grid: true,
+    props: true,
+    config: true,
+    info: true,
+    ...options,
+  };
+  if (opts.preview) applyLivePreview();
+  if (opts.tabs) syncSectionTabs();
+  if (opts.grid) renderGrid();
+  if (opts.props) renderProperties();
+  if (opts.config) syncConfigInputs();
+  if (opts.info) updateGridInfo();
 }
 
-function renderSectionTabs() {
+function ensureSectionTabs() {
+  if (sectionTabsBuilt) return;
+  sectionTabsBuilt = true;
   els.sectionTabs.innerHTML = "";
   state.sections.forEach((sec, i) => {
     const tab = document.createElement("button");
-    tab.className = "section-tab" + (i === state.activeSection ? " active" : "");
+    tab.className = "section-tab";
     tab.type = "button";
     tab.textContent = sec.name;
     tab.addEventListener("click", () => {
       state.activeSection = i;
-      selectedTileId = null;
+      clearSelection();
+      clearGridTileNodes();
       render();
     });
     els.sectionTabs.appendChild(tab);
+  });
+}
+
+function syncSectionTabs() {
+  ensureSectionTabs();
+  els.sectionTabs.querySelectorAll(".section-tab").forEach((tab, i) => {
+    tab.classList.toggle("active", i === state.activeSection);
   });
 }
 
@@ -861,13 +1085,25 @@ function gridMetrics() {
   return { columns: cols, unit, gap: gapPx, window_padding: pad, rows, w, h, preview };
 }
 
-function renderGrid() {
-  const gm = gridMetrics();
-  const canvas = els.gridCanvas;
-  canvas.style.width = `${gm.w}px`;
-  canvas.style.height = `${gm.h}px`;
-  canvas.innerHTML = "";
+function gridLayoutCacheKey(gm) {
+  return `${gm.columns}x${gm.rows}@${gm.unit},${gm.gap},${gm.window_padding},${gm.preview},${gm.w},${gm.h}`;
+}
 
+function ensureGridTilesLayer(canvas) {
+  let layer = canvas.querySelector(".grid-tiles");
+  if (!layer) {
+    layer = document.createElement("div");
+    layer.className = "grid-tiles";
+    canvas.appendChild(layer);
+  }
+  return layer;
+}
+
+function rebuildGridBackground(canvas, gm) {
+  const key = gridLayoutCacheKey(gm);
+  if (gridBgCacheKey === key) return;
+  gridBgCacheKey = key;
+  canvas.querySelector(".grid-bg")?.remove();
   const bg = document.createElement("div");
   bg.className = "grid-bg";
   for (let r = 0; r < gm.rows; r++) {
@@ -881,36 +1117,136 @@ function renderGrid() {
       bg.appendChild(cell);
     }
   }
-  canvas.appendChild(bg);
-
-  const overlaps = findOverlaps(activeSection().tiles);
-  for (const tile of activeSection().tiles) {
-    canvas.appendChild(renderTileEl(tile, gm, overlaps.has(tile._id)));
-  }
-
-  attachGridResizeHandles(canvas, gm);
-  applyLivePreview();
+  canvas.insertBefore(bg, canvas.firstChild);
 }
 
-function attachGridResizeHandles(canvas, gm) {
+function rebuildGridHandles(canvas, gm) {
+  const key = gridLayoutCacheKey(gm);
+  let handles = canvas.querySelector(".grid-handles");
+  if (!handles) {
+    handles = document.createElement("div");
+    handles.className = "grid-handles";
+    canvas.appendChild(handles);
+  }
+  if (gridHandlesCacheKey === key) return;
+  gridHandlesCacheKey = key;
+  handles.innerHTML = "";
   const mk = (cls, axis, title) => {
     const el = document.createElement("div");
     el.className = `grid-resize-handle ${cls}`;
     el.title = title;
     el.addEventListener("mousedown", (e) => startGridResize(e, axis));
+    handles.appendChild(el);
     return el;
   };
-  canvas.appendChild(mk("grid-resize-e", "e", t("resizeWiderCols")));
-  canvas.appendChild(mk("grid-resize-s", "s", t("resizeWiderRows")));
-  canvas.appendChild(mk("grid-resize-se", "se", t("resizeGrid")));
+  mk("grid-resize-e", "e", t("resizeWiderCols"));
+  mk("grid-resize-s", "s", t("resizeWiderRows"));
+  mk("grid-resize-se", "se", t("resizeGrid"));
   if (dragState?.mode === "grid") canvas.classList.add("grid-canvas--resizing");
+}
+
+function syncResizeHandles(el, tileId, show) {
+  el.querySelectorAll(".resize-zone, .resize-handle").forEach((node) => node.remove());
+  if (!show) return;
+  const zone = document.createElement("div");
+  zone.className = "resize-zone";
+  zone.title = t("resize");
+  zone.addEventListener("mousedown", (e) => startResize(e, tileId));
+  el.appendChild(zone);
+  const handle = document.createElement("div");
+  handle.className = "resize-handle";
+  handle.title = t("resize");
+  handle.addEventListener("mousedown", (e) => startResize(e, tileId));
+  el.appendChild(handle);
+}
+
+function updateTileEl(el, tile, gm, overlap) {
+  const { left, top, w, h } = tileGeometryStyle(tile, gm);
+  el.style.left = `${left}px`;
+  el.style.top = `${top}px`;
+  el.style.width = `${w}px`;
+  el.style.height = `${h}px`;
+  el.style.borderRadius = `${state.grid.border_radius * gm.preview}px`;
+  el.classList.toggle("selected", selectedTileIds.has(tile._id));
+  el.classList.toggle("overlap", overlap);
+  el.classList.toggle(
+    "tile--resizing",
+    dragState?.mode === "resize" && dragState.tileId === tile._id
+  );
+  el.classList.toggle(
+    "tile--moving",
+    dragState?.mode === "move" && dragState.tileIdSet?.has(tile._id)
+  );
+  syncResizeHandles(el, tile._id, selectedTileIds.size === 1 && selectedTileIds.has(tile._id));
+}
+
+function updateOverlapClasses(overlaps) {
+  for (const tile of activeSection().tiles) {
+    const el = gridTileNodes.get(tile._id);
+    el?.classList.toggle("overlap", overlaps.has(tile._id));
+  }
+}
+
+function renderGrid() {
+  const gm = gridMetrics();
+  const canvas = els.gridCanvas;
+  canvas.style.width = `${gm.w}px`;
+  canvas.style.height = `${gm.h}px`;
+
+  rebuildGridBackground(canvas, gm);
+  rebuildGridHandles(canvas, gm);
+  const tilesLayer = ensureGridTilesLayer(canvas);
+
+  const overlaps = findOverlaps(activeSection().tiles);
+  const liveIds = new Set();
+
+  for (const tile of activeSection().tiles) {
+    liveIds.add(tile._id);
+    const contentKey = tileContentKey(tile, gm);
+    let el = gridTileNodes.get(tile._id);
+    if (!el || el.dataset.contentKey !== contentKey) {
+      el?.remove();
+      el = renderTileEl(tile, gm, overlaps.has(tile._id));
+      el.dataset.contentKey = contentKey;
+      tilesLayer.appendChild(el);
+      gridTileNodes.set(tile._id, el);
+    } else {
+      updateTileEl(el, tile, gm, overlaps.has(tile._id));
+    }
+  }
+
+  for (const [id, el] of gridTileNodes) {
+    if (!liveIds.has(id)) {
+      el.remove();
+      gridTileNodes.delete(id);
+    }
+  }
+}
+
+function bindCanvasSelection() {
+  if (canvasSelectionBound) return;
+  canvasSelectionBound = true;
+  els.gridCanvas.addEventListener("mousedown", (e) => {
+    if (dragState) return;
+    if (
+      e.target === els.gridCanvas ||
+      e.target.classList.contains("grid-bg") ||
+      e.target.classList.contains("grid-cell") ||
+      e.target.classList.contains("grid-tiles")
+    ) {
+      if (!e.ctrlKey && !e.metaKey) {
+        clearSelection();
+        render({ tabs: false, config: false });
+      }
+    }
+  });
 }
 
 function renderTileEl(tile, gm, overlap) {
   const el = document.createElement("div");
   el.className = "tile";
   el.dataset.id = tile._id;
-  if (tile._id === selectedTileId) el.classList.add("selected");
+  if (selectedTileIds.has(tile._id)) el.classList.add("selected");
   if (overlap) el.classList.add("overlap");
 
   const left = gm.window_padding + tile.col * (gm.unit + gm.gap);
@@ -934,7 +1270,8 @@ function renderTileEl(tile, gm, overlap) {
   );
   el.appendChild(body);
 
-  if (tile._id === selectedTileId) {
+  const singleSelected = selectedTileIds.size === 1 && selectedTileIds.has(tile._id);
+  if (singleSelected) {
     const zone = document.createElement("div");
     zone.className = "resize-zone";
     zone.title = t("resize");
@@ -951,16 +1288,28 @@ function renderTileEl(tile, gm, overlap) {
   if (dragState?.mode === "resize" && dragState.tileId === tile._id) {
     el.classList.add("tile--resizing");
   }
+  if (dragState?.mode === "move" && dragState.tileIdSet?.has(tile._id)) {
+    el.classList.add("tile--moving");
+  }
 
   el.addEventListener("mousedown", (e) => {
     if (e.target.classList.contains("resize-handle") || e.target.classList.contains("resize-zone")) {
       return;
     }
     e.preventDefault();
-    const wasSelected = selectedTileId === tile._id;
-    selectedTileId = tile._id;
+    const prevSize = selectedTileIds.size;
+    const mod = e.ctrlKey || e.metaKey;
+    if (mod) {
+      toggleTileSelection(tile._id);
+      if (!selectedTileIds.has(tile._id)) {
+        updateSelectionAfterChange(prevSize);
+        return;
+      }
+    } else if (!selectedTileIds.has(tile._id)) {
+      selectOnly(tile._id);
+      updateSelectionAfterChange(prevSize);
+    }
     startMove(e, tile._id);
-    if (!wasSelected) render();
   });
 
   return el;
@@ -989,14 +1338,30 @@ function tilesOverlap(a, b) {
 }
 
 function renderProperties() {
-  const tile = activeSection().tiles.find((t) => t._id === selectedTileId);
-  if (!tile) {
+  const count = selectedTileIds.size;
+  if (count === 0) {
     els.propsEmpty.classList.remove("hidden");
     els.propsTile.classList.add("hidden");
     return;
   }
   els.propsEmpty.classList.add("hidden");
   els.propsTile.classList.remove("hidden");
+
+  const multi = count > 1;
+  els.propsMultiHint.classList.toggle("hidden", !multi);
+  els.propsFields.classList.toggle("hidden", multi);
+  if (multi) {
+    els.propsMultiHint.textContent = t("propertiesMulti", { count });
+    return;
+  }
+
+  const tile = activeSection().tiles.find((t) => t._id === primarySelectedId());
+  if (!tile) {
+    els.propsEmpty.classList.remove("hidden");
+    els.propsTile.classList.add("hidden");
+    clearSelection();
+    return;
+  }
 
   els.propKind.value = tile.kind;
   els.fieldLabel.classList.toggle("hidden", tile.kind === "item");
@@ -1080,17 +1445,38 @@ function createTile(kind, data, col, row) {
   return base;
 }
 
-function deleteSelectedTile() {
-  if (!selectedTileId) return;
+function deleteSelectedTiles() {
+  if (selectedTileIds.size === 0) return;
   const sec = activeSection();
-  sec.tiles = sec.tiles.filter((t) => t._id !== selectedTileId);
-  selectedTileId = null;
+  sec.tiles = sec.tiles.filter((t) => !selectedTileIds.has(t._id));
+  clearSelection();
+  render({ config: false });
+}
+
+function copySelectedTiles() {
+  if (selectedTileIds.size === 0) return;
+  clipboardTiles = activeSection()
+    .tiles.filter((t) => selectedTileIds.has(t._id))
+    .map(tileDataWithoutId);
+}
+
+function pasteTiles() {
+  if (!clipboardTiles?.length) return;
+  const sec = activeSection();
+  clearSelection();
+  for (const data of clipboardTiles) {
+    const tile = { ...data, _id: uid(), col: data.col + 1, row: data.row + 1 };
+    sec.tiles.push(tile);
+    selectedTileIds.add(tile._id);
+  }
   render();
 }
 
 function applyPropChanges() {
-  const tile = activeSection().tiles.find((t) => t._id === selectedTileId);
+  const tile = activeSection().tiles.find((t) => t._id === primarySelectedId());
   if (!tile) return;
+  const gm = gridMetrics();
+  const beforeKey = tileContentKey(tile, gm);
   if (tile.kind !== "item") tile.label = els.propLabel.value;
   if (tile.kind === "metric") {
     tile.metric = els.propMetric.value;
@@ -1118,7 +1504,26 @@ function applyPropChanges() {
   tile.row = Math.max(0, Number(els.propRow.value) || 0);
   tile.w = Math.max(1, Number(els.propW.value) || 1);
   tile.h = Math.max(1, Number(els.propH.value) || 1);
-  render();
+
+  const afterKey = tileContentKey(tile, gm);
+  const overlaps = findOverlaps(activeSection().tiles);
+  renderProperties();
+  updateGridInfo();
+
+  const el = gridTileNodes.get(tile._id);
+  if (!el) {
+    render({ config: false });
+    return;
+  }
+  if (beforeKey !== afterKey) {
+    const next = renderTileEl(tile, gm, overlaps.has(tile._id));
+    next.dataset.contentKey = afterKey;
+    el.replaceWith(next);
+    gridTileNodes.set(tile._id, next);
+  } else {
+    updateTileEl(el, tile, gm, overlaps.has(tile._id));
+  }
+  updateOverlapClasses(overlaps);
 }
 
 // ── Drag & drop ───────────────────────────────────────────────────
@@ -1137,23 +1542,43 @@ function cellFromPoint(clientX, clientY) {
 }
 
 function startMove(e, tileId) {
-  const tile = activeSection().tiles.find((t) => t._id === tileId);
-  if (!tile) return;
+  const sec = activeSection();
+  const anchor = sec.tiles.find((t) => t._id === tileId);
+  if (!anchor) return;
+  const tileIds = selectedTileIds.has(tileId) ? [...selectedTileIds] : [tileId];
+  const tileIdSet = new Set(tileIds);
+  const startPositions = new Map();
+  for (const id of tileIds) {
+    const t = sec.tiles.find((x) => x._id === id);
+    if (t) startPositions.set(id, { col: t.col, row: t.row });
+  }
   const origin = cellFromPoint(e.clientX, e.clientY);
+  const gm = gridMetrics();
+  const anchorGeom = tileGeometryStyle(anchor, gm);
+  const canvasRect = els.gridCanvas.getBoundingClientRect();
   dragState = {
     mode: "move",
     tileId,
-    offsetCol: origin.col - tile.col,
-    offsetRow: origin.row - tile.row,
+    tileIds,
+    tileIdSet,
+    startPositions,
+    snapPositions: null,
+    freeDrag: false,
+    offsetCol: origin.col - anchor.col,
+    offsetRow: origin.row - anchor.row,
+    pointerOffsetX: e.clientX - canvasRect.left - anchorGeom.left,
+    pointerOffsetY: e.clientY - canvasRect.top - anchorGeom.top,
   };
+  setTilesMovingClass(tileIds, true);
   document.addEventListener("mousemove", onDragMove);
   document.addEventListener("mouseup", onDragEnd);
+  updateTrashHighlight(e.clientX, e.clientY);
 }
 
 function startResize(e, tileId) {
   e.preventDefault();
   e.stopPropagation();
-  selectedTileId = tileId;
+  selectOnly(tileId);
   dragState = { mode: "resize", tileId };
   document.addEventListener("mousemove", onDragMove);
   document.addEventListener("mouseup", onDragEnd);
@@ -1162,7 +1587,7 @@ function startResize(e, tileId) {
 function startGridResize(e, axis) {
   e.preventDefault();
   e.stopPropagation();
-  selectedTileId = null;
+  clearSelection();
   const sec = activeSection();
   dragState = {
     mode: "grid",
@@ -1186,12 +1611,24 @@ function applyResize(tile, cell) {
 
 function onDragMove(e) {
   if (!dragState) return;
+  dragMovePending = { clientX: e.clientX, clientY: e.clientY };
+  if (dragMoveRaf) return;
+  dragMoveRaf = requestAnimationFrame(() => {
+    dragMoveRaf = null;
+    const pending = dragMovePending;
+    dragMovePending = null;
+    if (pending) onDragMoveFrame(pending.clientX, pending.clientY);
+  });
+}
+
+function onDragMoveFrame(clientX, clientY) {
+  if (!dragState) return;
 
   if (dragState.mode === "grid") {
     const gm = gridMetrics();
     const step = gm.unit + gm.gap;
-    const dCol = Math.round((e.clientX - dragState.startX) / step);
-    const dRow = Math.round((e.clientY - dragState.startY) / step);
+    const dCol = Math.round((clientX - dragState.startX) / step);
+    const dRow = Math.round((clientY - dragState.startY) / step);
     const { minCol, minRow } = minGridBounds();
     const sec = activeSection();
     const prevCol = sec.gridCols ?? 8;
@@ -1209,16 +1646,55 @@ function onDragMove(e) {
 
   const tile = activeSection().tiles.find((t) => t._id === dragState.tileId);
   if (!tile) return;
-  const cell = cellFromPoint(e.clientX, e.clientY);
+  const cell = cellFromPoint(clientX, clientY);
   const prev = { col: tile.col, row: tile.row, w: tile.w, h: tile.h };
 
   if (dragState.mode === "move") {
+    const deleteIntent = isDeleteDragIntent(clientX, clientY);
+    updateTrashHighlight(clientX, clientY);
+
+    if (deleteIntent) {
+      dragState.freeDrag = true;
+      setTilesDeletePendingClass(dragState.tileIds, true);
+      syncFreeDragVisual(clientX, clientY);
+      return;
+    }
+
+    dragState.freeDrag = false;
+    setTilesDeletePendingClass(dragState.tileIds, false);
+
+    const anchorStart = dragState.startPositions.get(dragState.tileId);
+    if (!anchorStart) return;
+    const anchor = activeSection().tiles.find((t) => t._id === dragState.tileId);
+    if (!anchor) return;
     const { columns } = gridMetrics();
-    tile.col = Math.max(0, Math.min(columns - tile.w, cell.col - dragState.offsetCol));
-    tile.row = Math.max(0, cell.row - dragState.offsetRow);
-  } else {
-    applyResize(tile, cell);
+    const targetCol = Math.max(
+      0,
+      Math.min(columns - anchor.w, cell.col - dragState.offsetCol)
+    );
+    const targetRow = Math.max(0, cell.row - dragState.offsetRow);
+    const dCol = targetCol - anchorStart.col;
+    const dRow = targetRow - anchorStart.row;
+    let changed = false;
+    if (!dragState.snapPositions) dragState.snapPositions = new Map();
+    for (const id of dragState.tileIds) {
+      const t = activeSection().tiles.find((x) => x._id === id);
+      const start = dragState.startPositions.get(id);
+      if (!t || !start) continue;
+      const nextCol = Math.max(0, Math.min(columns - t.w, start.col + dCol));
+      const nextRow = Math.max(0, start.row + dRow);
+      if (t.col !== nextCol || t.row !== nextRow) {
+        t.col = nextCol;
+        t.row = nextRow;
+        changed = true;
+      }
+      dragState.snapPositions.set(id, { col: t.col, row: t.row });
+    }
+    if (changed) syncTileDomPositions(dragState.tileIds);
+    return;
   }
+
+  applyResize(tile, cell);
 
   if (
     prev.col !== tile.col ||
@@ -1226,15 +1702,47 @@ function onDragMove(e) {
     prev.w !== tile.w ||
     prev.h !== tile.h
   ) {
-    render();
+    syncTileDomPositions([dragState.tileId]);
   }
 }
 
-function onDragEnd() {
+function shouldDeleteMovedTiles(clientX, clientY) {
+  return isDeleteDragIntent(clientX, clientY);
+}
+
+function updateTrashHighlight(clientX, clientY) {
+  const trash = els.trashZone;
+  if (!trash) return;
+  const overTrash = dragState?.mode === "move" && pointInRect(clientX, clientY, trash.getBoundingClientRect());
+  const deleteIntent = dragState?.mode === "move" && isDeleteDragIntent(clientX, clientY);
+  trash.classList.toggle("trash-zone--active", overTrash || deleteIntent);
+}
+
+function onDragEnd(e) {
+  if (dragMoveRaf) {
+    cancelAnimationFrame(dragMoveRaf);
+    dragMoveRaf = null;
+  }
+  if (dragMovePending && dragState) {
+    onDragMoveFrame(dragMovePending.clientX, dragMovePending.clientY);
+    dragMovePending = null;
+  }
+
+  if (dragState?.mode === "move") {
+    setTilesMovingClass(dragState.tileIds, false);
+    setTilesDeletePendingClass(dragState.tileIds, false);
+  }
+  if (dragState?.mode === "move" && e && shouldDeleteMovedTiles(e.clientX, e.clientY)) {
+    const ids = dragState.tileIdSet ?? new Set(dragState.tileIds);
+    const sec = activeSection();
+    sec.tiles = sec.tiles.filter((t) => !ids.has(t._id));
+    clearSelection();
+  }
   dragState = null;
+  els.trashZone?.classList.remove("trash-zone--active");
   document.removeEventListener("mousemove", onDragMove);
   document.removeEventListener("mouseup", onDragEnd);
-  render();
+  render({ config: false });
 }
 
 function setupCanvasDrop() {
@@ -1259,7 +1767,7 @@ function setupCanvasDrop() {
     const cell = cellFromPoint(e.clientX, e.clientY);
     const tile = createTile(data.kind, data, cell.col, cell.row);
     activeSection().tiles.push(tile);
-    selectedTileId = tile._id;
+    selectOnly(tile._id);
     render();
   });
 }
@@ -1272,9 +1780,9 @@ function rgba(arr) {
 
 /** Global column count for Rust — max across sections, editor grid size, and tile bounds. */
 function globalGridColumns() {
-  let cols = state.grid.columns ?? 8;
+  let cols = 1;
   for (const sec of state.sections) {
-    cols = Math.max(cols, sec.gridCols ?? 8);
+    cols = Math.max(cols, sec.gridCols ?? 1);
     for (const t of sec.tiles) {
       cols = Math.max(cols, t.col + t.w);
     }
@@ -1347,6 +1855,8 @@ function exportToml() {
     if (section.tiles.length === 0) continue;
     lines.push("[[section]]");
     lines.push(`name = "${section.name}"`);
+    if (section.gridCols != null) lines.push(`editor_cols = ${section.gridCols}`);
+    if (section.gridRows != null) lines.push(`editor_rows = ${section.gridRows}`);
     lines.push("");
     for (const tile of section.tiles) {
       lines.push("[[section.tile]]");
@@ -1414,17 +1924,10 @@ function importToml(text) {
     newState.sections = SECTION_NAMES.map((name) => {
       const found = sections.find((s) => s.name === name);
       const tiles = (found?.tile || []).map(parseTileDef);
-      const inferred = inferSectionGrid(tiles);
-      const fileCols = raw.grid?.columns ?? defaultSectionGrid(name).gridCols;
       return {
         name,
         tiles,
-        ...defaultSectionGrid(name),
-        gridCols: Math.max(fileCols, inferred.gridCols),
-        gridRows: Math.max(
-          defaultSectionGrid(name).gridRows,
-          inferred.gridRows
-        ),
+        ...sectionGridOnImport(name, found, tiles),
       };
     });
   } else if (raw.tile?.length) {
@@ -1436,7 +1939,9 @@ function importToml(text) {
   }
 
   state = newState;
-  selectedTileId = null;
+  state.grid.columns = globalGridColumns();
+  clearSelection();
+  resetGridDom();
   applyThemeFromState();
   render();
 }
@@ -1455,7 +1960,7 @@ function parseTileDef(t) {
     return {
       ...base,
       metric: t.metric,
-      label: t.label || t.metric,
+      label: t.label ?? "",
       show_max: !!t.show_max,
       max_mode: maxManual ? "manual" : t.max === "auto" ? "auto" : "auto",
       max: maxManual ? t.max : undefined,
@@ -1475,15 +1980,17 @@ function parseTileDef(t) {
 
 function bindEvents() {
   setupCanvasDrop();
+  bindCanvasSelection();
 
   $("#btn-export").addEventListener("click", downloadToml);
   $("#btn-new").addEventListener("click", () => {
     if (state.sections.some((s) => s.tiles.length) && !confirm(t("confirmClear"))) return;
     state = createDefaultState();
-    selectedTileId = null;
+    clearSelection();
+    resetGridDom();
     render();
   });
-  $("#btn-delete-tile").addEventListener("click", deleteSelectedTile);
+  $("#btn-delete-tile").addEventListener("click", deleteSelectedTiles);
 
   $("#import-file").addEventListener("change", async (e) => {
     const file = e.target.files[0];
@@ -1559,12 +2066,32 @@ function bindEvents() {
   }
 
   document.addEventListener("keydown", (e) => {
+    if (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "SELECT") {
+      return;
+    }
+    const mod = e.ctrlKey || e.metaKey;
+    if (mod && e.key.toLowerCase() === "c") {
+      e.preventDefault();
+      copySelectedTiles();
+      return;
+    }
+    if (mod && e.key.toLowerCase() === "v") {
+      e.preventDefault();
+      pasteTiles();
+      return;
+    }
+    if (mod && e.key.toLowerCase() === "a") {
+      e.preventDefault();
+      clearSelection();
+      for (const tile of activeSection().tiles) selectedTileIds.add(tile._id);
+      render();
+      return;
+    }
     if (e.key === "Delete" || e.key === "Backspace") {
-      if (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "SELECT") return;
-      deleteSelectedTile();
+      deleteSelectedTiles();
     }
     if (e.key === "Escape") {
-      selectedTileId = null;
+      clearSelection();
       render();
     }
   });

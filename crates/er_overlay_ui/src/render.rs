@@ -5,9 +5,11 @@ use imgui::{Condition, MouseButton, Ui};
 use crate::boss_panel::{render_boss_panel, BossPanelState};
 use crate::hud_window::{
     debug_window_flags, draw_window_border, hud_window_flags, hud_window_placement,
-    suppress_imgui_window_border, top_left_from_placement, HudBounds, HudDragState,
+    push_window_outer_clip, suppress_imgui_window_border, top_left_from_placement, HudBounds,
+    HudDragState,
 };
 use crate::icon_atlas::IconAtlas;
+use crate::fonts::overlay_font_scale;
 use crate::layout_engine::render_layout_dashboard;
 use crate::view_model::OverlayViewModel;
 
@@ -75,7 +77,8 @@ fn render_overlay_layout(
         config.default_layout_section.as_deref(),
     );
     let [width, height] = layout.grid_pixel_size_for(tiles, config.scale);
-    let text_size = config.text_size * config.scale;
+    let pad = layout.grid.window_padding * config.scale;
+    let margin = LayoutConfig::tile_grid_margin(config.scale);
     drag.sync_anchor(config);
     let placement = hud_window_placement(ui, config, drag);
 
@@ -87,25 +90,29 @@ fn render_overlay_layout(
         window = window.position_pivot(pivot);
     }
 
+    // Padding must be set before Begin(): ImGui sizes InnerClipRect from WindowPadding at
+    // window open. Pushing it inside `.build()` left the default 8px clip active and clipped
+    // tiles when `window_padding` was smaller than ImGui's default.
     let _no_native_border = suppress_imgui_window_border(ui);
+    let _pad = ui.push_style_var(imgui::StyleVar::WindowPadding([pad, pad]));
+    let _spacing = ui.push_style_var(imgui::StyleVar::ItemSpacing([0.0, 0.0]));
     window
         .bg_alpha(layout.style.window_bg_alpha())
         .size([width, height], Condition::Always)
         .build(|| {
-            let pad = layout.grid.window_padding * config.scale;
-            let _pad = ui.push_style_var(imgui::StyleVar::WindowPadding([pad, pad]));
-            let _spacing = ui.push_style_var(imgui::StyleVar::ItemSpacing([0.0, 0.0]));
             let _bg = layout.style.has_window_background().then(|| {
                 ui.push_style_color(
                     imgui::StyleColor::WindowBg,
                     layout.style.window_bg_rgba_f32(),
                 )
             });
-            ui.set_window_font_scale((text_size / 18.0).max(0.5));
-            let origin = ui.cursor_screen_pos();
+            ui.set_window_font_scale(overlay_font_scale(config));
+            let cursor = ui.cursor_screen_pos();
+            let origin = [cursor[0] + margin, cursor[1] + margin];
             let inner_w = (width - pad * 2.0).max(1.0);
             let inner_h = (height - pad * 2.0).max(1.0);
             ui.dummy([inner_w, inner_h]);
+            let _outer_clip = push_window_outer_clip(ui);
             render_layout_dashboard(ui, config, layout, tiles, vm, atlas, origin);
             if ui.is_window_hovered() && ui.is_mouse_dragging(MouseButton::Left) {
                 drag.capture_pos(ui);

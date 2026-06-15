@@ -469,6 +469,27 @@ body {
   flex: 1;
 }
 
+.trash-zone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1.5px dashed var(--border);
+  border-radius: var(--radius);
+  color: var(--muted);
+  font-size: 1rem;
+  cursor: default;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  user-select: none;
+}
+
+.trash-zone--active {
+  border-color: var(--danger);
+  color: var(--danger);
+  background: rgba(224, 80, 80, 0.12);
+}
+
 .section-tabs {
   display: flex;
   gap: 4px;
@@ -505,6 +526,7 @@ body {
   border: none;
   border-radius: var(--radius);
   box-shadow: none;
+  overflow: visible;
 }
 
 .grid-canvas--no-window-chrome {
@@ -566,6 +588,18 @@ body {
   pointer-events: none;
 }
 
+.grid-tiles,
+.grid-handles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.grid-tiles .tile,
+.grid-handles .grid-resize-handle {
+  pointer-events: auto;
+}
+
 .grid-cell {
   position: absolute;
   border: 1px solid var(--grid-line);
@@ -603,6 +637,20 @@ body {
 .tile.tile--resizing {
   cursor: nwse-resize;
   z-index: 3;
+}
+
+.tile.tile--moving {
+  cursor: grabbing;
+  opacity: 0.92;
+  z-index: 3;
+}
+
+.tile.tile--delete-pending {
+  opacity: 0.5;
+  z-index: 5;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+  outline: 2px dashed var(--danger);
+  outline-offset: 2px;
 }
 
 .tile.overlap {

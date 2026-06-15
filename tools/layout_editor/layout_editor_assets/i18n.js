@@ -8,11 +8,11 @@ const I18N = {
     new: "New",
     exportLayout: "Export layout file",
     palette: "Palette",
-    paletteHint: "Drag an item onto the grid.",
+    paletteHint: "Drag an item onto the grid. Drag tiles to the trash or outside the grid to remove them.",
     text: "Text",
     items: "Items",
     properties: "Properties",
-    propertiesHint: "Select a tile or configure the grid.",
+    propertiesHint: "Select a tile or configure the grid. Ctrl+click for multi-select. Ctrl+C/V to copy/paste.",
     tile: "Tile",
     type: "Type",
     label: "Label",
@@ -28,6 +28,8 @@ const I18N = {
     iconOptional: "Icon (optional)",
     iconPlaceholder: "kindling, scadutree…",
     delete: "Delete",
+    propertiesMulti: "{count} tiles selected",
+    trashHint: "Drop tiles here to remove",
     style: "Style",
     windowBg: "window_bg",
     windowBgHint: "HUD window background. Opacity 0 = no background.",
@@ -85,11 +87,11 @@ const I18N = {
     new: "Nouveau",
     exportLayout: "Exporter le fichier de layout",
     palette: "Palette",
-    paletteHint: "Glissez un élément sur la grille.",
+    paletteHint: "Glissez un élément sur la grille. Glissez les tuiles vers la corbeille ou hors de la grille pour les retirer.",
     text: "Texte",
     items: "Items",
     properties: "Propriétés",
-    propertiesHint: "Sélectionnez une tuile ou configurez la grille.",
+    propertiesHint: "Sélectionnez une tuile ou configurez la grille. Ctrl+clic pour multi-sélection. Ctrl+C/V pour copier/coller.",
     tile: "Tuile",
     type: "Type",
     label: "Label",
@@ -105,6 +107,8 @@ const I18N = {
     iconOptional: "Icon (optionnel)",
     iconPlaceholder: "kindling, scadutree…",
     delete: "Supprimer",
+    propertiesMulti: "{count} tuiles sélectionnées",
+    trashHint: "Déposez les tuiles ici pour les retirer",
     style: "Style",
     windowBg: "window_bg",
     windowBgHint: "Fond de la fenêtre HUD. Opacité 0 = aucun fond.",
@@ -197,6 +201,9 @@ function applyStaticI18n() {
   });
   document.querySelectorAll("[data-i18n-aria]").forEach((el) => {
     el.setAttribute("aria-label", t(el.dataset.i18nAria));
+  });
+  document.querySelectorAll("[data-i18n-title]").forEach((el) => {
+    el.title = t(el.dataset.i18nTitle);
   });
   document.querySelectorAll(".lang-btn").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.lang === locale);

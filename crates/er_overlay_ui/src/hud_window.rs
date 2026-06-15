@@ -2,6 +2,35 @@ use er_overlay_common::layout::LayoutStyle;
 use er_overlay_common::{Anchor, OverlayConfig};
 use imgui::{Condition, ImColor32, StyleVar, Ui, WindowFlags};
 
+fn imvec2(x: f32, y: f32) -> imgui::sys::ImVec2 {
+    imgui::sys::ImVec2 { x, y }
+}
+
+/// Use the full outer window rect for draw-list clipping (not InnerClipRect / padding).
+pub struct WindowOuterClip;
+
+impl Drop for WindowOuterClip {
+    fn drop(&mut self) {
+        unsafe {
+            imgui::sys::ImDrawList_PopClipRect(imgui::sys::igGetWindowDrawList());
+        }
+    }
+}
+
+pub fn push_window_outer_clip(ui: &Ui) -> WindowOuterClip {
+    let pos = ui.window_pos();
+    let [w, h] = ui.window_size();
+    unsafe {
+        imgui::sys::ImDrawList_PushClipRect(
+            imgui::sys::igGetWindowDrawList(),
+            imvec2(pos[0], pos[1]),
+            imvec2(pos[0] + w, pos[1] + h),
+            false,
+        );
+    }
+    WindowOuterClip
+}
+
 /// Top-left corner and size of a positioned window.
 #[derive(Debug, Clone, Copy)]
 pub struct HudBounds {
@@ -119,17 +148,26 @@ pub fn draw_window_border(ui: &Ui, style: &LayoutStyle, rounding: f32, scale: f3
     if !style.window_border {
         return;
     }
-    let draw = ui.get_window_draw_list();
     let pos = ui.window_pos();
     let [w, h] = ui.window_size();
-    let p1 = [pos[0] + w, pos[1] + h];
+    let outer_max = [pos[0] + w, pos[1] + h];
+    let thickness = (1.5 * scale).max(1.0);
+    // Stroke is centered on the path — inset so left/right/top/bottom aren't clippped by the window.
+    let inset = thickness * 0.5;
+    let p0 = [pos[0] + inset, pos[1] + inset];
+    let p1 = [pos[0] + w - inset, pos[1] + h - inset];
     let c = style.border_default;
     let color = ImColor32::from_rgba(c[0], c[1], c[2], c[3]);
-    draw.add_rect(pos, p1, color)
-        .filled(false)
-        .thickness((1.5 * scale).max(1.0))
-        .rounding(rounding)
-        .build();
+    let radius = (rounding - inset).max(0.0);
+    // InnerClipRect excludes WindowPadding; the frame follows the outer window edge.
+    let draw = ui.get_window_draw_list();
+    draw.with_clip_rect(pos, outer_max, || {
+        draw.add_rect(p0, p1, color)
+            .filled(false)
+            .thickness(thickness)
+            .rounding(radius)
+            .build();
+    });
 }
 
 pub fn debug_window_flags() -> WindowFlags {

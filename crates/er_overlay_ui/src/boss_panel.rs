@@ -4,6 +4,8 @@ use er_overlay_common::{
 };
 use imgui::{Condition, StyleColor, Ui, WindowFlags};
 
+use crate::fonts::overlay_font_scale;
+
 use crate::hud_window::{draw_window_border, suppress_imgui_window_border, HudBounds};
 use crate::view_model::OverlayViewModel;
 
@@ -66,7 +68,7 @@ pub fn render_boss_panel(
     hud_anchor: Option<HudBounds>,
     border_radius: f32,
 ) {
-    let text_scale = (config.text_size * config.scale / 18.0).max(0.5);
+    let text_scale = overlay_font_scale(config);
     let viewport = ui.io().display_size;
     let geometry = boss_panel_geometry(config, state, hud_anchor, viewport);
 

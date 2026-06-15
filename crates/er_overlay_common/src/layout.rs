@@ -611,6 +611,12 @@ impl LayoutConfig {
         Ok(())
     }
 
+    /// Inset on each side of the tile grid so centered 1.5px tile strokes are not clipped.
+    pub fn tile_grid_margin(scale: f32) -> f32 {
+        const TILE_BORDER: f32 = 1.5;
+        (TILE_BORDER * 0.5 * scale + 1.0 * scale).max(2.0 * scale)
+    }
+
     pub fn grid_pixel_size_for(&self, tiles: &[TileDef], scale: f32) -> [f32; 2] {
         let mut max_row = 1u32;
         let mut max_col = 0u32;
@@ -639,13 +645,8 @@ impl LayoutConfig {
         let width = cols as f32 * unit_w + cols.saturating_sub(1) as f32 * gap;
         let height = max_row as f32 * unit_h + max_row.saturating_sub(1) as f32 * gap;
         let pad = self.grid.window_padding * scale;
-        // Tile stroke (1.5px) + optional ImGui window border — avoids clipping edge tiles.
-        let bleed = if self.style.window_border {
-            4.0 * scale
-        } else {
-            2.0 * scale
-        };
-        [width + pad * 2.0 + bleed, height + pad * 2.0 + bleed]
+        let margin = Self::tile_grid_margin(scale);
+        [width + pad * 2.0 + margin * 2.0, height + pad * 2.0 + margin * 2.0]
     }
 
     pub fn tile_origin(&self, col: u32, row: u32, scale: f32) -> [f32; 2] {
@@ -959,6 +960,33 @@ label = "X"
     }
 
     #[test]
+    fn grid_pixel_size_with_small_window_padding() {
+        let raw = r#"
+[grid]
+unit_size = 48
+gap = 4
+window_padding = 2
+
+[[tile]]
+kind = "metric"
+metric = "igt"
+col = 0
+row = 0
+w = 2
+h = 1
+"#;
+        let layout: LayoutConfig = toml::from_str(raw).unwrap();
+        let [w, _] = layout.grid_pixel_size_for(&layout.tiles, 1.0);
+        // 2 cols: 2*48 + gap=4, + padding 2*2 + margin 2*2
+        let margin = LayoutConfig::tile_grid_margin(1.0);
+        let expected = 100.0 + 4.0 + margin * 2.0;
+        assert!(
+            (w - expected).abs() < 0.01,
+            "expected ~{expected}px, got {w}"
+        );
+    }
+
+    #[test]
     fn grid_pixel_size_ignores_global_columns_when_tiles_are_narrower() {
         let layout = LayoutConfig {
             grid: GridConfig {
@@ -969,7 +997,8 @@ label = "X"
         };
         // One tile at col 0 → window should be 1 column wide, not 10.
         let [w, _] = layout.grid_pixel_size_for(&layout.tiles[..1], 1.0);
-        let one_col = 48.0 + 4.0 + 8.0 * 2.0; // unit + bleed + padding
+        let margin = LayoutConfig::tile_grid_margin(1.0);
+        let one_col = 48.0 + margin * 2.0 + 8.0 * 2.0; // unit + margins + padding
         assert!((w - one_col).abs() < 0.01, "expected ~{one_col}px, got {w}");
     }
 

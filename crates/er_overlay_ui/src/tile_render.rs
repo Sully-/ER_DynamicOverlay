@@ -2,6 +2,8 @@ use er_overlay_common::layout::LayoutStyle;
 use er_overlay_common::{OverlayConfig, TrackKind};
 use imgui::{ImColor32, Ui};
 
+use crate::fonts::{centered_text_y, line_height_at_scale, overlay_font_scale};
+
 use crate::icon_atlas::IconAtlas;
 use crate::metric_registry::MetricValue;
 use crate::tracked_icon::{draw_icon_key_at, draw_status_icon_at};
@@ -92,7 +94,7 @@ pub fn draw_metric_tile(
     };
     draw_tile_frame(ui, *pos, *size, border, style.tile_bg, *radius);
 
-    let base_scale = (config.text_size * config.scale / 18.0).max(0.5);
+    let base_scale = overlay_font_scale(config);
     let label_scale = base_scale * style.label_scale;
     let value_scale = base_scale * style.value_scale;
 
@@ -103,9 +105,19 @@ pub fn draw_metric_tile(
     let max_text_w = (size[0] - pad_x * 2.0).max(8.0);
 
     let has_label = !label.is_empty();
-    let label_h = label_scale * 18.0;
     let fitted_value_scale = fit_font_scale(ui, value_text, max_text_w, value_scale);
-    let value_h = fitted_value_scale * 18.0;
+    ui.set_window_font_scale(fitted_value_scale);
+    let value_size = ui.calc_text_size(value_text);
+    let value_w = value_size[0].min(max_text_w);
+    let value_text_h = line_height_at_scale(ui, fitted_value_scale);
+
+    let (label_w, label_text_h) = if has_label {
+        ui.set_window_font_scale(label_scale);
+        let m = ui.calc_text_size(label);
+        (m[0].min(max_text_w), line_height_at_scale(ui, label_scale))
+    } else {
+        (0.0, 0.0)
+    };
 
     let has_icon = icon_key.is_some() && config.use_item_icons;
     let min_dim = size[0].min(size[1]);
@@ -114,8 +126,8 @@ pub fn draw_metric_tile(
             min_dim * 0.38
         } else {
             let vertical_pad = min_dim * 0.06;
-            let value_gap = value_h * 0.25;
-            let max_from_height = size[1] - value_h - value_gap - vertical_pad * 2.0;
+            let value_gap = value_text_h * 0.25;
+            let max_from_height = size[1] - value_text_h - value_gap - vertical_pad * 2.0;
             min_dim
                 .min(max_from_height)
                 .clamp(min_dim * 0.38, min_dim * 0.72)
@@ -126,40 +138,42 @@ pub fn draw_metric_tile(
 
     let block_h = if has_icon {
         if has_label {
-            icon_size + label_h * 0.35 + label_h + value_h
+            icon_size + label_text_h * 0.35 + label_text_h + value_text_h
         } else {
-            icon_size + value_h * 0.25 + value_h
+            icon_size + value_text_h * 0.25 + value_text_h
         }
     } else if has_label {
-        label_h + value_h * 1.1
+        label_text_h + value_text_h * 1.1
     } else {
-        value_h
+        value_text_h
     };
 
     let block_top = pos[1] + (size[1] - block_h) * 0.5;
     let mut y = block_top;
+
+    if !has_label && !has_icon {
+        y = centered_text_y(ui, pos[1], size[1], fitted_value_scale);
+    }
 
     if let Some(key) = icon_key {
         let ix = pos[0] + (size[0] - icon_size) * 0.5;
         draw_icon_key_at(ui, key, [ix, y], icon_size, 1.0, *atlas, config);
         y += icon_size
             + if has_label {
-                label_h * 0.25
+                label_text_h * 0.25
             } else {
-                value_h * 0.25
+                value_text_h * 0.25
             };
     }
 
     if has_label {
         ui.set_window_font_scale(label_scale);
-        let label_w = ui.calc_text_size(label)[0].min(max_text_w);
         ui.set_cursor_screen_pos([pos[0] + (size[0] - label_w) * 0.5, y]);
         ui.text_colored(label_color, label);
-        y += label_h;
+        y += label_text_h;
     }
 
     ui.set_window_font_scale(fitted_value_scale);
-    let value_w = ui.calc_text_size(value_text)[0].min(max_text_w);
     ui.set_cursor_screen_pos([pos[0] + (size[0] - value_w) * 0.5, y]);
     ui.text_colored(value_color, value_text);
 
@@ -181,23 +195,21 @@ pub fn draw_label_tile(
         return;
     }
 
-    let base_scale = (config.text_size * config.scale / 18.0).max(0.5);
+    let base_scale = overlay_font_scale(config);
     let text_scale = base_scale * style.value_scale;
     let text_color = rgba(245, 245, 250, 255);
 
     let pad_x = size[0] * 0.1;
     let max_text_w = (size[0] - pad_x * 2.0).max(8.0);
     let fitted_scale = fit_font_scale(ui, label, max_text_w, text_scale);
+    let text_w = {
+        ui.set_window_font_scale(fitted_scale);
+        ui.calc_text_size(label)[0].min(max_text_w)
+    };
+    let y = centered_text_y(ui, pos[1], size[1], fitted_scale);
 
     ui.set_window_font_scale(fitted_scale);
-    let measured = ui.calc_text_size(label);
-    let text_w = measured[0].min(max_text_w);
-    let text_h = measured[1];
-
-    ui.set_cursor_screen_pos([
-        pos[0] + (size[0] - text_w) * 0.5,
-        pos[1] + (size[1] - text_h) * 0.5,
-    ]);
+    ui.set_cursor_screen_pos([pos[0] + (size[0] - text_w) * 0.5, y]);
     ui.text_colored(text_color, label);
     ui.set_window_font_scale(base_scale);
 }
@@ -267,13 +279,14 @@ pub fn draw_item_tile(
             Some(n) => n.to_string(),
             None => "---".to_string(),
         };
-        let base_scale = (config.text_size * config.scale / 18.0).max(0.5);
+        let base_scale = overlay_font_scale(config);
         let count_scale = base_scale * style.value_scale * 0.85;
         let max_text_w = (size[0] * 0.9).max(8.0);
         let fitted = fit_font_scale(ui, &count_text, max_text_w, count_scale);
         ui.set_window_font_scale(fitted);
         let text_w = ui.calc_text_size(&count_text)[0].min(max_text_w);
-        let count_y = pos[1] + size[1] - fitted * 16.0 - 2.0;
+        let line_h = line_height_at_scale(ui, fitted);
+        let count_y = pos[1] + size[1] - line_h - 2.0;
         ui.set_cursor_screen_pos([pos[0] + (size[0] - text_w) * 0.5, count_y]);
         ui.text_colored(rgba(245, 245, 250, 255), &count_text);
         ui.set_window_font_scale(base_scale);
