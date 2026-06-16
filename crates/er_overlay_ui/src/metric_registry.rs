@@ -156,6 +156,7 @@ mod tests {
             &refs,
             &HashSet::new(),
             er_overlay_common::BossPanelScope::CurrentRegion,
+            er_overlay_common::BossPanelScope::CurrentRegion,
             er_overlay_common::ChallengeSnapshot::default(),
         );
         assert!(matches!(resolve_metric("igt", &vm), MetricValue::Time(_)));
@@ -170,6 +171,7 @@ mod tests {
             &MockGameState::default(),
             &[],
             &HashSet::new(),
+            er_overlay_common::BossPanelScope::CurrentRegion,
             er_overlay_common::BossPanelScope::CurrentRegion,
             er_overlay_common::ChallengeSnapshot::default(),
         );
@@ -188,6 +190,7 @@ mod tests {
             &MockGameState::default(),
             &[],
             &HashSet::new(),
+            er_overlay_common::BossPanelScope::CurrentRegion,
             er_overlay_common::BossPanelScope::CurrentRegion,
             er_overlay_common::ChallengeSnapshot::default(),
         );
@@ -217,6 +220,7 @@ mod tests {
             &[],
             &HashSet::new(),
             er_overlay_common::BossPanelScope::CurrentRegion,
+            er_overlay_common::BossPanelScope::CurrentRegion,
             er_overlay_common::ChallengeSnapshot::default(),
         );
         let resolved = resolve_metric("bosses", &vm);
@@ -240,6 +244,7 @@ mod tests {
             &MockGameState::default(),
             &[],
             &HashSet::new(),
+            er_overlay_common::BossPanelScope::CurrentRegion,
             er_overlay_common::BossPanelScope::CurrentRegion,
             er_overlay_common::ChallengeSnapshot::default(),
         );
@@ -265,6 +270,7 @@ mod tests {
             &refs,
             &HashSet::new(),
             er_overlay_common::BossPanelScope::CurrentRegion,
+            er_overlay_common::BossPanelScope::CurrentRegion,
             er_overlay_common::ChallengeSnapshot::default(),
         );
         assert!(resolve_tracked_key("daedicar_s_woe", &vm).is_some());
@@ -278,6 +284,7 @@ mod tests {
             &MockGameState::default(),
             &refs,
             &equipped,
+            er_overlay_common::BossPanelScope::CurrentRegion,
             er_overlay_common::BossPanelScope::CurrentRegion,
             er_overlay_common::ChallengeSnapshot::default(),
         );

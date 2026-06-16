@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>er_checks_extractor</AssemblyName>
+    <RootNamespace>ErChecksExtractor</RootNamespace>
+
+    <!-- Ship as a single self-contained .exe (no .NET runtime install required). -->
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <!-- Trim the unused runtime to shrink the exe. SoulsFormats uses reflection, so it is
+         rooted below (kept whole) to stay safe; only the framework is trimmed. -->
+    <PublishTrimmed>true</PublishTrimmed>
+    <TrimMode>full</TrimMode>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Modding\Smithbox\code\Smithbox\src\Andre\SoulsFormats\SoulsFormats\Andre.SoulsFormats.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Keep reflection-heavy assemblies whole so trimming cannot remove members used dynamically. -->
+    <TrimmerRootAssembly Include="Andre.SoulsFormats" />
+    <TrimmerRootAssembly Include="er_checks_extractor" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Vendored paramdef embedded in the exe: the shipped tool needs no Smithbox install
+         and no loose files next to it. Extracted to a temp file at runtime. -->
+    <EmbeddedResource Include="Defs\ItemLotParam.xml">
+      <LogicalName>ItemLotParam.xml</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>

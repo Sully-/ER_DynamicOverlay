@@ -78,6 +78,28 @@ pub struct OverlayConfig {
     /// Boss table language (`en`, `fr`, …). Use `auto` or omit to detect from the game.
     #[serde(default)]
     pub boss_locale: Option<String>,
+    /// Path to the `regulation.bin` the game actually loads (ModEngine mod). When set, the
+    /// overlay resolves randomized ground-loot checks per seed by running the checks extractor.
+    /// Omit (or leave empty) for vanilla: dynamic checks then use their vanilla flags.
+    #[serde(default)]
+    pub regulation_path: Option<String>,
+    /// Path to the `er_checks_extractor` executable. Omit to auto-locate next to the overlay
+    /// (`companion/er_checks_extractor.exe`, then `er_checks_extractor.exe`).
+    #[serde(default)]
+    pub checks_extractor_path: Option<String>,
+    /// Hotkey to toggle the checks (boss + loot) checklist panel (e.g. `"F6"`).
+    #[serde(default = "default_checks_panel_hotkey")]
+    pub checks_panel_hotkey: Option<String>,
+    /// Checks panel filter: `current-region` or `all-regions` (player location is always tracked).
+    #[serde(default)]
+    pub checks_panel_scope: BossPanelScope,
+    /// Show the checks panel when the overlay starts.
+    #[serde(default)]
+    pub checks_panel_visible: bool,
+    /// Checks panel placement: `x,y,width,height` (pixels or `%`). Use `auto` or omit for the
+    /// default left-edge placement.
+    #[serde(default)]
+    pub checks_panel_layout: Option<String>,
     /// Show the overlay when the DLL starts (toggle at runtime with `hide_all_hotkey`).
     #[serde(default = "default_true")]
     pub overlay_visible: bool,
@@ -118,6 +140,10 @@ fn default_boss_panel_hotkey() -> Option<String> {
     Some("F7".into())
 }
 
+fn default_checks_panel_hotkey() -> Option<String> {
+    Some("F6".into())
+}
+
 impl Default for OverlayConfig {
     fn default() -> Self {
         Self {
@@ -140,6 +166,12 @@ impl Default for OverlayConfig {
             boss_panel_layout: None,
             default_layout_section: None,
             boss_locale: None,
+            regulation_path: None,
+            checks_extractor_path: None,
+            checks_panel_hotkey: default_checks_panel_hotkey(),
+            checks_panel_scope: BossPanelScope::default(),
+            checks_panel_visible: false,
+            checks_panel_layout: None,
             overlay_visible: true,
             challenge: ChallengeConfig::default(),
         }
@@ -173,6 +205,17 @@ impl OverlayConfig {
                     );
                 }
                 self.boss_panel_layout = None;
+            }
+        }
+        if let Some(ref raw) = self.checks_panel_layout {
+            if parse_panel_layout(raw).is_none() && !raw.trim().is_empty() {
+                if !raw.trim().eq_ignore_ascii_case("auto") {
+                    warn!(
+                        "Invalid checks_panel_layout {:?}, falling back to auto placement",
+                        raw
+                    );
+                }
+                self.checks_panel_layout = None;
             }
         }
     }

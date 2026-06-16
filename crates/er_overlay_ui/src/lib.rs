@@ -1,4 +1,5 @@
 mod boss_panel;
+mod checks_panel;
 mod fonts;
 mod hud_window;
 mod icon_atlas;
@@ -10,6 +11,7 @@ mod tracked_icon;
 mod view_model;
 
 pub use boss_panel::BossPanelState;
+pub use checks_panel::ChecksPanelState;
 pub use fonts::setup_overlay_fonts;
 pub use hud_window::{HudBounds, HudDragState};
 pub use icon_atlas::IconAtlas;

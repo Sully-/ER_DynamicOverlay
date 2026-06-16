@@ -1,8 +1,9 @@
 use std::collections::{HashMap, HashSet};
 
 use er_game_state::{
-    bosses_in_region, good_by_key, group_names, group_progress, group_size, item_owned,
-    region_label_for_subregion, region_names, GameStateSource,
+    bosses_in_region, checks_in_region, checks_region_label_for_subregion, checks_region_names,
+    checks_seed_flags_loaded, effective_flag, good_by_key, group_names, group_progress, group_size,
+    item_owned, region_label_for_subregion, region_names, GameStateSource,
 };
 use er_overlay_common::{
     BossPanelScope, ChallengeSnapshot, GameStateDiagnostics, GameTime, TrackKind,
@@ -44,6 +45,27 @@ pub struct BossPanelSection {
 }
 
 #[derive(Debug, Clone)]
+pub struct CheckPanelRow {
+    pub name: String,
+    pub place: Option<String>,
+    pub done: Option<bool>,
+    /// `false` for a dynamic check that is untraceable this seed (its lot holds a flagless item).
+    pub traceable: bool,
+    pub dlc: bool,
+}
+
+#[derive(Debug, Clone)]
+pub struct CheckPanelSection {
+    pub region: String,
+    pub is_current: bool,
+    pub rows: Vec<CheckPanelRow>,
+    /// Validated traceable checks.
+    pub done: u32,
+    /// Traceable checks (denominator; untraceable rows are listed but excluded).
+    pub total: u32,
+}
+
+#[derive(Debug, Clone)]
 pub struct OverlayViewModel {
     pub igt: Option<GameTime>,
     pub bosses_killed: Option<u32>,
@@ -60,6 +82,13 @@ pub struct OverlayViewModel {
     pub boss_panel_sections: Vec<BossPanelSection>,
     pub boss_panel_killed: u32,
     pub boss_panel_total: u32,
+    pub checks_panel_scope: BossPanelScope,
+    pub checks_panel_sections: Vec<CheckPanelSection>,
+    pub checks_panel_done: u32,
+    pub checks_panel_total: u32,
+    pub checks_current_region: Option<String>,
+    /// Whether a per-seed flag mapping is loaded (regulation parsed). Surfaced in the panel.
+    pub checks_seed_active: bool,
     pub challenge: ChallengeSnapshot,
 }
 
@@ -148,7 +177,91 @@ fn build_all_region_sections(
     (sections, killed_total, boss_total)
 }
 
-pub fn empty_view_model(boss_panel_scope: BossPanelScope) -> OverlayViewModel {
+fn check_rows_for_region(
+    source: &dyn GameStateSource,
+    region: &str,
+) -> (Vec<CheckPanelRow>, u32, u32) {
+    let mut rows = Vec::new();
+    let mut done = 0u32;
+    let mut traceable_total = 0u32;
+    for check in checks_in_region(region) {
+        let (done_state, traceable) = match effective_flag(&check) {
+            Some(flag) => (source.get_flag(flag), true),
+            None => (None, false),
+        };
+        if traceable {
+            traceable_total += 1;
+        }
+        if done_state == Some(true) {
+            done += 1;
+        }
+        rows.push(CheckPanelRow {
+            name: check.name.clone(),
+            place: check.place.clone(),
+            done: done_state,
+            traceable,
+            dlc: check.dlc,
+        });
+    }
+    (rows, done, traceable_total)
+}
+
+fn build_checks_panel_sections(
+    source: &dyn GameStateSource,
+    scope: BossPanelScope,
+    current_region: Option<&str>,
+) -> (Vec<CheckPanelSection>, u32, u32) {
+    match scope {
+        BossPanelScope::CurrentRegion => {
+            if let Some(region) = current_region {
+                let (rows, done, total) = check_rows_for_region(source, region);
+                let section = CheckPanelSection {
+                    region: region.to_string(),
+                    is_current: true,
+                    rows,
+                    done,
+                    total,
+                };
+                (vec![section], done, total)
+            } else {
+                build_all_check_sections(source, current_region)
+            }
+        }
+        BossPanelScope::AllRegions => build_all_check_sections(source, current_region),
+    }
+}
+
+fn build_all_check_sections(
+    source: &dyn GameStateSource,
+    current_region: Option<&str>,
+) -> (Vec<CheckPanelSection>, u32, u32) {
+    let mut sections = Vec::new();
+    let mut done_total = 0u32;
+    let mut checks_total = 0u32;
+
+    for region in checks_region_names() {
+        let (rows, done, total) = check_rows_for_region(source, &region);
+        if rows.is_empty() {
+            continue;
+        }
+        done_total += done;
+        checks_total += total;
+        sections.push(CheckPanelSection {
+            region: region.clone(),
+            is_current: matches!(current_region, Some(r) if r == region),
+            rows,
+            done,
+            total,
+        });
+    }
+
+    (sections, done_total, checks_total)
+}
+
+pub fn empty_view_model(
+    boss_panel_scope: BossPanelScope,
+    checks_panel_scope: BossPanelScope,
+) -> OverlayViewModel {
     let bosses_total = er_game_state::bosses_total_count() as u32;
     OverlayViewModel {
         igt: None,
@@ -166,6 +279,12 @@ pub fn empty_view_model(boss_panel_scope: BossPanelScope) -> OverlayViewModel {
         boss_panel_sections: Vec::new(),
         boss_panel_killed: 0,
         boss_panel_total: bosses_total,
+        checks_panel_scope,
+        checks_panel_sections: Vec::new(),
+        checks_panel_done: 0,
+        checks_panel_total: 0,
+        checks_current_region: None,
+        checks_seed_active: false,
         challenge: ChallengeSnapshot::default(),
     }
 }
@@ -173,11 +292,13 @@ pub fn empty_view_model(boss_panel_scope: BossPanelScope) -> OverlayViewModel {
 /// Builds the view model. `referenced_keys` are the good keys / metric refs used by the active
 /// layout (from `LayoutConfig::collect_data_refs`); only those goods are resolved against the
 /// inventory. Aggregate groups are always resolved (there are few, with few members).
+#[allow(clippy::too_many_arguments)]
 pub fn build_view_model(
     source: &dyn GameStateSource,
     referenced_keys: &[String],
     equipped_keys: &HashSet<String>,
     boss_panel_scope: BossPanelScope,
+    checks_panel_scope: BossPanelScope,
     challenge: ChallengeSnapshot,
 ) -> OverlayViewModel {
     let mut tracked_by_key = HashMap::new();
@@ -224,6 +345,10 @@ pub fn build_view_model(
     let (boss_panel_sections, boss_panel_killed, boss_panel_total) =
         build_boss_panel_sections(source, boss_panel_scope, current_region.as_deref());
 
+    let checks_current_region = current_subregion_id.and_then(checks_region_label_for_subregion);
+    let (checks_panel_sections, checks_panel_done, checks_panel_total) =
+        build_checks_panel_sections(source, checks_panel_scope, checks_current_region.as_deref());
+
     OverlayViewModel {
         igt: source.get_igt(),
         bosses_killed: source.get_killed_boss_count(),
@@ -240,6 +365,12 @@ pub fn build_view_model(
         boss_panel_sections,
         boss_panel_killed,
         boss_panel_total,
+        checks_panel_scope,
+        checks_panel_sections,
+        checks_panel_done,
+        checks_panel_total,
+        checks_current_region,
+        checks_seed_active: checks_seed_flags_loaded(),
         challenge,
     }
 }
@@ -257,6 +388,7 @@ mod tests {
             &[],
             &HashSet::new(),
             BossPanelScope::CurrentRegion,
+            BossPanelScope::CurrentRegion,
             ChallengeSnapshot::default(),
         );
         assert_eq!(vm.boss_panel_sections.len(), 1);
@@ -270,6 +402,7 @@ mod tests {
             &mock,
             &[],
             &HashSet::new(),
+            BossPanelScope::AllRegions,
             BossPanelScope::AllRegions,
             ChallengeSnapshot::default(),
         );

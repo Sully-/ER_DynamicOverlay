@@ -61,21 +61,27 @@ fn main() {
                 continue;
             }
             let lang = entry.file_name().to_string_lossy().into_owned();
-            let src = entry.path().join("bosses.toml");
-            if !src.is_file() {
-                continue;
-            }
-            println!("cargo:rerun-if-changed={}", src.display());
             let dest_dir = out_dir.join("tables").join(&lang);
-            if let Err(e) = fs::create_dir_all(&dest_dir) {
-                eprintln!("cargo:warning=Could not create {}: {e}", dest_dir.display());
-                continue;
-            }
-            if let Err(e) = fs::copy(&src, dest_dir.join("bosses.toml")) {
-                eprintln!(
-                    "cargo:warning=Could not copy boss table to {}: {e}",
-                    dest_dir.display()
-                );
+            let mut dest_created = false;
+            for table in ["bosses.toml", "checks.toml"] {
+                let src = entry.path().join(table);
+                if !src.is_file() {
+                    continue;
+                }
+                println!("cargo:rerun-if-changed={}", src.display());
+                if !dest_created {
+                    if let Err(e) = fs::create_dir_all(&dest_dir) {
+                        eprintln!("cargo:warning=Could not create {}: {e}", dest_dir.display());
+                        break;
+                    }
+                    dest_created = true;
+                }
+                if let Err(e) = fs::copy(&src, dest_dir.join(table)) {
+                    eprintln!(
+                        "cargo:warning=Could not copy {table} to {}: {e}",
+                        dest_dir.display()
+                    );
+                }
             }
         }
     }

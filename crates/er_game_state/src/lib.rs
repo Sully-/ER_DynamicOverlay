@@ -1,4 +1,5 @@
 mod boss_table;
+mod checks_table;
 mod inventory;
 mod tables;
 
@@ -18,6 +19,13 @@ pub use boss_table::{
     active_boss_locale, bosses_total_count, load_boss_table_from_path, normalize_locale_id,
     reload_boss_table_if_modified, resolve_boss_table_path, resolve_locale_id, BossTableData,
     DEFAULT_LOCALE_ID,
+};
+pub use checks_table::{
+    active_checks_locale, checks_in_region, checks_region_label_for_subregion, checks_region_names,
+    checks_seed_flags_loaded, checks_seed_regulation_hash, checks_total_count,
+    clear_checks_seed_flags, effective_flag, load_checks_flags_from_path,
+    load_checks_table_from_path, reload_checks_flags_if_modified, reload_checks_table_if_modified,
+    resolve_checks_table_path, CheckEntry, ChecksFlagsData, ChecksTableData, LotParam,
 };
 pub use tables::{
     boss_entries_full, bosses_in_region, good_by_key, group_members, group_names, group_progress,

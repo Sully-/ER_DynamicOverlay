@@ -1,8 +1,11 @@
-use er_game_state::{active_boss_locale, bosses_total_count, resolve_boss_table_path};
+use er_game_state::{
+    active_boss_locale, bosses_total_count, checks_seed_regulation_hash, resolve_boss_table_path,
+};
 use er_overlay_common::{default_base_dir, layout::LayoutStyle, LayoutConfig, OverlayConfig};
 use imgui::{Condition, MouseButton, Ui};
 
 use crate::boss_panel::{render_boss_panel, BossPanelState};
+use crate::checks_panel::{render_checks_panel, ChecksPanelState};
 use crate::fonts::overlay_font_scale;
 use crate::hud_window::{
     debug_window_flags, draw_window_border, hud_window_flags, hud_window_placement,
@@ -24,6 +27,8 @@ pub fn render_overlay(
     drag: &mut HudDragState,
     show_boss_panel: bool,
     boss_panel: &mut BossPanelState,
+    show_checks_panel: bool,
+    checks_panel: &mut ChecksPanelState,
 ) {
     let hud_anchor = layout.as_ref().map(|layout| {
         drag.sync_anchor(config);
@@ -36,10 +41,14 @@ pub fn render_overlay(
 
     let default_style = LayoutStyle::default();
     let style = layout.map(|l| &l.style).unwrap_or(&default_style);
+    let border_radius = layout.map(|l| l.grid.border_radius).unwrap_or(6.0);
 
     if show_boss_panel {
-        let border_radius = layout.map(|l| l.grid.border_radius).unwrap_or(6.0);
         render_boss_panel(ui, config, style, vm, boss_panel, hud_anchor, border_radius);
+    }
+
+    if show_checks_panel {
+        render_checks_panel(ui, config, style, vm, checks_panel, hud_anchor, border_radius);
     }
 
     if config.show_debug {
@@ -170,6 +179,20 @@ fn render_debug(ui: &Ui, vm: &OverlayViewModel) {
         bosses_total_count()
     ));
     ui.text(format!("  {}", table_path.display()));
+    ui.text(format!(
+        "Checks: {}/{} (region: {}){}",
+        vm.checks_panel_done,
+        vm.checks_panel_total,
+        vm.checks_current_region.as_deref().unwrap_or("?"),
+        if vm.checks_seed_active {
+            " [seed]"
+        } else {
+            ""
+        }
+    ));
+    if let Some(hash) = checks_seed_regulation_hash() {
+        ui.text(format!("  regulation: {}…", &hash[..hash.len().min(12)]));
+    }
 }
 
 #[cfg(test)]
@@ -187,6 +210,7 @@ mod tests {
             &mock,
             &[],
             &HashSet::new(),
+            er_overlay_common::BossPanelScope::CurrentRegion,
             er_overlay_common::BossPanelScope::CurrentRegion,
             er_overlay_common::ChallengeSnapshot::default(),
         );

@@ -29,6 +29,8 @@ default_layout_section = "minimalist"
 layout_section_hotkey = "F8"
 # Toggle the boss checklist panel (opens minimalist layout when shown).
 boss_panel_hotkey = "F7"
+# Toggle the checks panel (boss + loot checklist; left edge by default).
+checks_panel_hotkey = "F6"
 # Show / hide the entire overlay (HUD + boss panel).
 hide_all_hotkey = "F9"
 
@@ -45,6 +47,23 @@ boss_locale = "auto"
 #   Percent: 75%, 8%, 22%, 45%
 #   Default: -5, 10, 25%, 92%  (right edge; Y shifts below minimalist HUD if needed)
 # boss_panel_layout = "-5, 10, 25%, 92%"
+
+# ── Checks panel (bosses + loot, randomizer-aware) ───────────────────
+# A "check" = a boss to kill OR an item to loot. Toggle with checks_panel_hotkey (F6).
+# Scope: current-region | all-regions
+checks_panel_scope = "all-regions"
+checks_panel_visible = true
+# Placement (same syntax as boss_panel_layout). Default: left edge, full height.
+# checks_panel_layout = "5, 10, 25%, 92%"
+#
+# Randomizer support (item randomizer by thefifthmatt): for ground-loot checks the
+# acquisition flag changes every seed. Point this at the regulation.bin the game LOADS
+# (your ModEngine mod) and the overlay resolves the current flags automatically — no
+# manual step. Leave empty/omitted for vanilla (dynamic checks use their vanilla flags).
+# regulation_path = "C:/.../ModEngine2/mod/regulation.bin"
+# Path to the shipped extractor. Omit to auto-find companion/er_checks_extractor.exe
+# (then er_checks_extractor.exe) next to the DLL.
+# checks_extractor_path = "companion/er_checks_extractor.exe"
 
 # ── Challenge mode (EROverlay-compatible) ────────────────────────────
 # Metrics pb / nbtries in layouts/dashboard.toml.

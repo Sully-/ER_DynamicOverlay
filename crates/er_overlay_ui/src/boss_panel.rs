@@ -174,7 +174,12 @@ fn scroll_current_region_into_view(ui: &Ui) {
 }
 
 fn render_region_tree(ui: &Ui, section: &crate::view_model::BossPanelSection, force_open: bool) {
-    let label = format!("{} ({}/{})", section.region, section.killed, section.total);
+    // Stable ImGui id after `###`: otherwise the node id changes with the killed/total counters,
+    // and ImGui collapses the node every time a boss flips to killed.
+    let label = format!(
+        "{} ({}/{})###boss_region_{}",
+        section.region, section.killed, section.total, section.region
+    );
     let mut node = ui.tree_node_config(&label);
     if force_open {
         node = node.opened(true, Condition::Always);

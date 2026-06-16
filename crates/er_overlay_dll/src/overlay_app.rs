@@ -1,18 +1,22 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime};
 
 use er_game_state::{
-    bosses_total_count, reload_boss_table_if_modified, resolve_locale_id, GameStateReader,
-    GameStateSource,
+    bosses_total_count, clear_checks_seed_flags, reload_boss_table_if_modified,
+    reload_checks_flags_if_modified, reload_checks_table_if_modified, resolve_checks_table_path,
+    resolve_locale_id, GameStateReader, GameStateSource,
 };
 use er_overlay_common::layout::LayoutStyle;
 use er_overlay_common::{
-    default_challenge_state_path, load_layout, parse_hotkey, resolve_configured_path,
-    resolve_layout_path, ChallengeTracker, HotkeyBinding, LayoutConfig, OverlayConfig, OverlayKey,
+    default_base_dir, default_challenge_state_path, load_layout, parse_hotkey,
+    resolve_configured_path, resolve_layout_path, ChallengeTracker, HotkeyBinding, LayoutConfig,
+    OverlayConfig, OverlayKey,
 };
 use er_overlay_ui::{
     build_view_model, empty_view_model, render_overlay, setup_overlay_fonts, BossPanelState,
-    HudDragState, IconAtlas,
+    ChecksPanelState, HudDragState, IconAtlas,
 };
 use hudhook::ImguiRenderLoop;
 use hudhook::RenderContext;
@@ -33,11 +37,15 @@ pub struct OverlayApp {
     hotkey_raw: Option<String>,
     parsed_boss_hotkey: Option<HotkeyBinding>,
     boss_hotkey_raw: Option<String>,
+    parsed_checks_hotkey: Option<HotkeyBinding>,
+    checks_hotkey_raw: Option<String>,
     parsed_hide_all_hotkey: Option<HotkeyBinding>,
     hide_all_hotkey_raw: Option<String>,
     show_overlay: bool,
     show_boss_panel: bool,
     boss_panel: BossPanelState,
+    show_checks_panel: bool,
+    checks_panel: ChecksPanelState,
     last_config_reload: Instant,
     reader: GameStateReader,
     font_bytes: Vec<u8>,
@@ -51,6 +59,13 @@ pub struct OverlayApp {
     last_state_poll: Instant,
     boss_table_mtime: Option<SystemTime>,
     active_boss_locale: Option<String>,
+    checks_table_mtime: Option<SystemTime>,
+    active_checks_locale: Option<String>,
+    checks_flags_mtime: Option<SystemTime>,
+    /// `(mtime, len)` of the watched regulation.bin, to detect a new seed.
+    regulation_sig: Option<(SystemTime, u64)>,
+    /// Guards against spawning the extractor while a previous run is in flight.
+    extractor_running: Arc<AtomicBool>,
     challenge: ChallengeTracker,
 }
 
@@ -67,6 +82,11 @@ impl OverlayApp {
         if boss_hotkey_raw.is_some() && parsed_boss_hotkey.is_none() {
             warn!("Invalid boss_panel_hotkey: {:?}", boss_hotkey_raw);
         }
+        let checks_hotkey_raw = config.checks_panel_hotkey.clone();
+        let parsed_checks_hotkey = checks_hotkey_raw.as_deref().and_then(parse_hotkey);
+        if checks_hotkey_raw.is_some() && parsed_checks_hotkey.is_none() {
+            warn!("Invalid checks_panel_hotkey: {:?}", checks_hotkey_raw);
+        }
         let hide_all_hotkey_raw = config.hide_all_hotkey.clone();
         let parsed_hide_all_hotkey = hide_all_hotkey_raw.as_deref().and_then(parse_hotkey);
         if hide_all_hotkey_raw.is_some() && parsed_hide_all_hotkey.is_none() {
@@ -75,6 +95,8 @@ impl OverlayApp {
         let reader = GameStateReader::new();
         let boss_panel = BossPanelState::default();
         let show_boss_panel = config.boss_panel_visible;
+        let checks_panel = ChecksPanelState::default();
+        let show_checks_panel = config.checks_panel_visible;
         let show_overlay = config.overlay_visible;
         let icon_signature = Self::icon_signature_for(&config, layout.as_ref());
         let challenge =
@@ -89,7 +111,16 @@ impl OverlayApp {
             &mut boss_table_mtime,
             &mut active_boss_locale,
         );
-        let view_model = empty_view_model(config.boss_panel_scope);
+        let mut checks_table_mtime = None;
+        let mut active_checks_locale = None;
+        reload_checks_table_if_modified(
+            &er_overlay_common::default_base_dir(),
+            &locale_id,
+            None,
+            &mut checks_table_mtime,
+            &mut active_checks_locale,
+        );
+        let view_model = empty_view_model(config.boss_panel_scope, config.checks_panel_scope);
         let mut app = Self {
             config,
             config_path,
@@ -102,11 +133,15 @@ impl OverlayApp {
             hotkey_raw,
             parsed_boss_hotkey,
             boss_hotkey_raw,
+            parsed_checks_hotkey,
+            checks_hotkey_raw,
             parsed_hide_all_hotkey,
             hide_all_hotkey_raw,
             show_overlay,
             show_boss_panel,
             boss_panel,
+            show_checks_panel,
+            checks_panel,
             last_config_reload: Instant::now(),
             reader,
             font_bytes: Vec::new(),
@@ -118,10 +153,16 @@ impl OverlayApp {
             last_state_poll: Instant::now(),
             boss_table_mtime,
             active_boss_locale,
+            checks_table_mtime,
+            active_checks_locale,
+            checks_flags_mtime: None,
+            regulation_sig: None,
+            extractor_running: Arc::new(AtomicBool::new(false)),
             challenge,
         };
         app.sync_section_state();
         app.maybe_reload_boss_table();
+        app.maybe_sync_checks();
         app
     }
 
@@ -166,6 +207,7 @@ impl OverlayApp {
             &data_refs,
             &equipped_refs,
             self.config.boss_panel_scope,
+            self.config.checks_panel_scope,
             challenge_snapshot,
         );
         self.last_state_poll = Instant::now();
@@ -213,6 +255,15 @@ impl OverlayApp {
             self.parsed_boss_hotkey = boss_raw.as_deref().and_then(parse_hotkey);
             if boss_raw.is_some() && self.parsed_boss_hotkey.is_none() {
                 warn!("Invalid boss_panel_hotkey: {:?}", boss_raw);
+            }
+        }
+
+        let checks_raw = self.config.checks_panel_hotkey.clone();
+        if self.checks_hotkey_raw.as_ref() != checks_raw.as_ref() {
+            self.checks_hotkey_raw = checks_raw.clone();
+            self.parsed_checks_hotkey = checks_raw.as_deref().and_then(parse_hotkey);
+            if checks_raw.is_some() && self.parsed_checks_hotkey.is_none() {
+                warn!("Invalid checks_panel_hotkey: {:?}", checks_raw);
             }
         }
 
@@ -292,11 +343,36 @@ impl OverlayApp {
             self.show_boss_panel = !self.show_boss_panel;
             self.show_overlay = true;
             if opening {
+                // Boss / checks / extended are mutually exclusive: opening boss closes checks.
+                self.show_checks_panel = false;
                 self.section_state.active_index = self.compact_layout_section_index();
                 self.boss_panel.on_reopened();
                 self.refresh_view_model();
             }
             debug!("Boss panel toggled: {}", self.show_boss_panel);
+        }
+    }
+
+    fn maybe_toggle_checks_panel(&mut self, ui: &imgui::Ui) {
+        let Some(hk) = self.parsed_checks_hotkey else {
+            return;
+        };
+        if !modifiers_match(ui, hk) {
+            return;
+        }
+        let key = overlay_key_to_imgui(hk.key);
+        if ui.is_key_pressed_no_repeat(key) {
+            let opening = !self.show_checks_panel;
+            self.show_checks_panel = !self.show_checks_panel;
+            self.show_overlay = true;
+            if opening {
+                // Boss / checks / extended are mutually exclusive: opening checks closes boss.
+                self.show_boss_panel = false;
+                self.section_state.active_index = self.compact_layout_section_index();
+                self.checks_panel.on_reopened();
+                self.refresh_view_model();
+            }
+            debug!("Checks panel toggled: {}", self.show_checks_panel);
         }
     }
 
@@ -335,6 +411,10 @@ impl OverlayApp {
         if self.show_boss_panel {
             self.show_boss_panel = false;
             debug!("Boss panel hidden (extended layout)");
+        }
+        if self.show_checks_panel {
+            self.show_checks_panel = false;
+            debug!("Checks panel hidden (extended layout)");
         }
     }
 
@@ -376,6 +456,138 @@ impl OverlayApp {
         }
     }
 
+    /// Reloads the checks table on locale/file change, drives the per-seed extractor, and
+    /// reloads `checks_flags.toml` when a new mapping is produced.
+    fn maybe_sync_checks(&mut self) {
+        let base = default_base_dir();
+        let locale_id = resolve_locale_id(self.config.boss_locale.as_deref());
+        let mut changed = reload_checks_table_if_modified(
+            &base,
+            &locale_id,
+            None,
+            &mut self.checks_table_mtime,
+            &mut self.active_checks_locale,
+        );
+
+        let regulation = self
+            .config
+            .regulation_path
+            .clone()
+            .filter(|p| !p.is_empty());
+        match regulation {
+            Some(reg) => {
+                self.maybe_run_extractor(&base, &locale_id, Path::new(&reg));
+                let flags_path = base.join("checks_flags.toml");
+                if reload_checks_flags_if_modified(&flags_path, &mut self.checks_flags_mtime) {
+                    changed = true;
+                }
+            }
+            None => {
+                // No regulation configured: ensure dynamic checks use their vanilla flags.
+                self.regulation_sig = None;
+                if clear_checks_seed_flags() {
+                    self.checks_flags_mtime = None;
+                    changed = true;
+                }
+            }
+        }
+
+        if changed {
+            self.refresh_view_model();
+        }
+    }
+
+    /// Spawns the checks extractor (in a background thread) when the watched regulation.bin
+    /// changes, so the modded seed's randomized loot flags get resolved.
+    fn maybe_run_extractor(&mut self, base: &Path, locale_id: &str, regulation: &Path) {
+        let Ok(meta) = std::fs::metadata(regulation) else {
+            return;
+        };
+        let sig = (meta.modified().ok().unwrap_or(SystemTime::UNIX_EPOCH), meta.len());
+        if self.regulation_sig == Some(sig) {
+            return;
+        }
+        if self.extractor_running.load(Ordering::Acquire) {
+            return;
+        }
+
+        let Some(extractor) = self.resolve_extractor_path(base) else {
+            warn!("regulation_path is set but er_checks_extractor was not found; dynamic checks use vanilla flags");
+            // Mark as handled so we don't warn every tick for the same regulation.
+            self.regulation_sig = Some(sig);
+            return;
+        };
+
+        let checks_toml = {
+            let p = resolve_checks_table_path(base, locale_id);
+            if p.is_file() {
+                p
+            } else {
+                resolve_checks_table_path(base, er_game_state::DEFAULT_LOCALE_ID)
+            }
+        };
+        let out_path = base.join("checks_flags.toml");
+        let regulation = regulation.to_path_buf();
+        // The game install dir holds oo2core_*.dll, which the extractor needs to decompress the
+        // regulation. We run inside the game, so current_exe() is the game executable.
+        let game_dir = std::env::current_exe()
+            .ok()
+            .and_then(|p| p.parent().map(Path::to_path_buf));
+        let running = Arc::clone(&self.extractor_running);
+        running.store(true, Ordering::Release);
+        self.regulation_sig = Some(sig);
+
+        let spawned = std::thread::Builder::new()
+            .name("er_checks_extractor".into())
+            .spawn(move || {
+                let mut cmd = std::process::Command::new(&extractor);
+                cmd.arg(&regulation).arg(&checks_toml).arg(&out_path);
+                if let Some(dir) = game_dir.as_deref() {
+                    cmd.arg(dir);
+                }
+                let result = cmd.output();
+                match result {
+                    Ok(out) if out.status.success() => {
+                        debug!(
+                            "checks extractor ok: {}",
+                            String::from_utf8_lossy(&out.stdout).trim()
+                        );
+                    }
+                    Ok(out) => warn!(
+                        "checks extractor failed ({}): {}",
+                        out.status,
+                        String::from_utf8_lossy(&out.stderr).trim()
+                    ),
+                    Err(e) => warn!("failed to launch checks extractor: {e}"),
+                }
+                running.store(false, Ordering::Release);
+            });
+
+        if let Err(e) = spawned {
+            warn!("could not spawn extractor thread: {e}");
+            self.extractor_running.store(false, Ordering::Release);
+        }
+    }
+
+    /// Configured path, else `companion/er_checks_extractor.exe`, else `er_checks_extractor.exe`.
+    fn resolve_extractor_path(&self, base: &Path) -> Option<PathBuf> {
+        if let Some(raw) = self
+            .config
+            .checks_extractor_path
+            .as_deref()
+            .filter(|p| !p.is_empty())
+        {
+            let p = Path::new(raw);
+            let resolved = if p.is_absolute() { p.to_path_buf() } else { base.join(p) };
+            return resolved.is_file().then_some(resolved);
+        }
+        let candidates = [
+            base.join("companion").join("er_checks_extractor.exe"),
+            base.join("er_checks_extractor.exe"),
+        ];
+        candidates.into_iter().find(|p| p.is_file())
+    }
+
     fn maybe_reload_config(&mut self) {
         if self.last_config_reload.elapsed() < Duration::from_secs(2) {
             return;
@@ -384,14 +596,21 @@ impl OverlayApp {
         match er_overlay_common::load_or_create_config(&self.config_path) {
             Ok(cfg) => {
                 let locale_settings_changed = self.config.boss_locale != cfg.boss_locale;
+                let regulation_changed = self.config.regulation_path != cfg.regulation_path;
                 self.layout = Self::load_layout_from_config(&cfg);
                 self.config = cfg;
                 self.challenge.sync_config(&self.config.challenge);
                 if locale_settings_changed {
                     self.boss_table_mtime = None;
                     self.active_boss_locale = None;
+                    self.checks_table_mtime = None;
+                    self.active_checks_locale = None;
+                }
+                if regulation_changed {
+                    self.regulation_sig = None;
                 }
                 self.maybe_reload_boss_table();
+                self.maybe_sync_checks();
                 self.sync_hotkey();
                 self.sync_section_state();
                 // Reload icons only when the referenced keys (or the toggle)
@@ -538,6 +757,7 @@ impl ImguiRenderLoop for OverlayApp {
         self.maybe_toggle_overlay_visibility(ui);
         self.maybe_cycle_section(ui);
         self.maybe_toggle_boss_panel(ui);
+        self.maybe_toggle_checks_panel(ui);
         if !self.show_overlay {
             return;
         }
@@ -548,8 +768,9 @@ impl ImguiRenderLoop for OverlayApp {
         } else {
             None
         };
-        let show_boss_panel =
-            self.show_boss_panel && self.section_allows_boss_panel(self.section_state.active_index);
+        let section_allows = self.section_allows_boss_panel(self.section_state.active_index);
+        let show_boss_panel = self.show_boss_panel && section_allows;
+        let show_checks_panel = self.show_checks_panel && section_allows;
 
         render_overlay(
             ui,
@@ -561,6 +782,8 @@ impl ImguiRenderLoop for OverlayApp {
             &mut self.hud_drag,
             show_boss_panel,
             &mut self.boss_panel,
+            show_checks_panel,
+            &mut self.checks_panel,
         );
     }
 }
