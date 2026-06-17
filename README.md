@@ -1,6 +1,6 @@
 # Elden Ring Overlay (offline, read-only)
 
-A Rust overlay injected into an **already-running** `eldenring.exe`, **read-only**. Shows a customizable dashboard: IGT, a **boss** counter, Great Runes, deaths, NG+, Key items...
+A Rust overlay injected into an **already-running** `eldenring.exe`, **read-only**. Shows a customizable dashboard: IGT, a **boss** counter, Great Runes, deaths, NG+, Key items, and **boss/loot checklists** (with item-randomizer support)...
 
 ![Elden Ring Overlay](docs/overlay.png)
 
@@ -17,6 +17,7 @@ A Rust overlay injected into an **already-running** `eldenring.exe`, **read-only
 - [Warnings](#warnings)
 - [Installation](#installation)
 - [Configuration (`er_overlay.toml`)](#configuration-er_overlaytoml)
+- [Checks panel (randomizer-aware)](#checks-panel-randomizer-aware)
 - [Challenge mode](#challenge-mode)
 - [Customizing the display](#customizing-the-display)
 - [Layout editor](#layout-editor)
@@ -59,10 +60,12 @@ After extracting the zip, you should have a single folder containing at least:
 | `er_overlay.dll` | Overlay (injected into the game) |
 | `er_overlay.toml` | Settings (position, scale, hotkeys, layout file…) |
 | `layouts/` | Dashboard layout files |
-| `tables/` | Boss names per language |
+| `tables/` | Boss / checks lists per language |
 | `assets/` | Item icons |
+| `companion/er_checks_extractor.exe` | Helper that reads a randomizer `regulation.bin` (see [Checks panel](#checks-panel-randomizer-aware)) |
 | `layout_editor.html` | Visual layout editor (see step 3) |
 | `challenge_state.toml` | *(runtime)* Challenge PB / tries — created when `[challenge] enabled = true` |
+| `checks_flags.toml` | *(runtime)* Per-seed randomizer flags — created only when `regulation_path` is set |
 
 **Do not separate these files** — they must stay in the same folder.
 
@@ -77,7 +80,10 @@ That's it. Re-run the injector after each game restart (the overlay is not persi
 |-----|--------|
 | `F8` | Switch layout section (`minimalist` → `extended` → `challenge`, …) |
 | `F7` | Toggle boss checklist panel |
+| `F6` | Toggle checks panel (boss + loot checklist, randomizer-aware) |
 | `F9` | Show / hide the entire overlay (default; see `hide_all_hotkey`) |
+
+The **boss panel**, **checks panel** and the **extended** layout section are mutually exclusive: opening one closes the others.
 
 If something goes wrong, check `logs/er_injector.log` and `logs/er_overlay.log` in the same folder.
 
@@ -105,6 +111,8 @@ Open `er_overlay.toml` in any text editor. Common options:
 - `scale`, `text_size`, `icon_size` — size
 - `background_opacity`, `gray_tint` — look of unowned items
 - `boss_panel_visible`, `boss_panel_hotkey`, `boss_locale` — boss checklist
+- `checks_panel_visible`, `checks_panel_hotkey`, `checks_panel_scope` — checks panel
+- `regulation_path` — point at a randomizer `regulation.bin` to track moved loot; see [Checks panel](#checks-panel-randomizer-aware)
 - `[challenge]` — optional **challenge mode** (PB / failed runs); see [Challenge mode](#challenge-mode)
 
 Full reference: [Configuration](#configuration-er_overlaytoml).
@@ -145,7 +153,15 @@ Artifacts in `target/release/`:
 - `er_overlay_injector.exe` — the injector
 - `er_overlay.dll` — the overlay itself
 
-The build copies `er_overlay.toml`, `layouts/`, `tables/<lang>/bosses.toml` and `assets/icons/` next to the binaries. To produce a release-style zip locally: `.\tools\bundle_release.ps1`.
+The build copies `er_overlay.toml`, `layouts/`, `tables/<lang>/bosses.toml`, `tables/<lang>/checks.toml` and `assets/icons/` next to the binaries. To produce a release-style zip locally: `.\tools\bundle_release.ps1`.
+
+The randomizer helper (`companion/er_checks_extractor`) is a separate .NET project, published self-contained:
+
+```powershell
+dotnet publish companion/er_checks_extractor/er_checks_extractor.csproj -c Release
+```
+
+Copy the resulting `er_checks_extractor.exe` to `companion/` next to the DLL (or point `checks_extractor_path` at it).
 
 ### Advanced injector (command line)
 
@@ -184,6 +200,12 @@ Read next to the DLL, **hot-reloaded every 2 seconds** (you can edit it while th
 | `boss_panel_visible` | bool | `true` | Show the boss panel at startup. |
 | `boss_panel_layout` | string | — | Panel `x,y,width,height` (pixels or `%`). Omit or `auto` = `"-5, 10, 25%, 92%"` (right-aligned), shifted below the minimalist HUD. Negative x/y = offset from right/bottom edge. |
 | `boss_locale` | string | `auto` | Boss table language (`en`, `fr`, …). `auto` reads the game language via Steam; falls back to `en`. |
+| `checks_panel_hotkey` | string | `F6` | Toggle the checks panel (boss + loot checklist). |
+| `checks_panel_scope` | enum | `current-region` | `current-region` or `all-regions` (the bundled `er_overlay.toml` ships `all-regions`). |
+| `checks_panel_visible` | bool | `false` | Show the checks panel at startup (the bundled `er_overlay.toml` ships `true`). |
+| `checks_panel_layout` | string | — | Panel `x,y,width,height` (pixels or `%`). Omit or `auto` = `"5, 10, 25%, 92%"` (left-aligned, mirrors the boss panel). |
+| `regulation_path` | path | — | Path to the `regulation.bin` the game **loads** (your randomizer / ModEngine mod). Enables per-seed resolution of randomized loot flags. Empty/omitted = vanilla flags. See [Checks panel](#checks-panel-randomizer-aware). |
+| `checks_extractor_path` | path | — | Override the helper exe location. Omit to auto-find `companion/er_checks_extractor.exe` (then `er_checks_extractor.exe`) next to the DLL. |
 
 ### Challenge mode (`[challenge]`)
 
@@ -207,6 +229,36 @@ start_flag = 101
 **Progress file:** `challenge_state.toml` (next to `er_overlay.dll`, created at runtime). Stores personal best (`pb`), failed run count (`nbtries` / `tries`), and internal run state. Delete this file to reset PB and tries.
 
 See [Challenge mode](#challenge-mode) for behaviour and layout tiles.
+
+## Checks panel (randomizer-aware)
+
+The **checks panel** (`F6`) is a checklist of "checks" — a *check* is something you can complete in a run: a **boss to kill** or an **item to loot**. It works like the boss panel (grouped by region, ticked off live from event flags) but also covers key loot, and it understands the **item randomizer**.
+
+### Vanilla
+
+Nothing to configure. The checks list is bundled with the overlay; bosses and chest/loot checks tick off automatically as you play. Toggle with `F6`.
+
+### With the item randomizer (thefifthmatt, [Nexus #428](https://www.nexusmods.com/eldenring/mods/428))
+
+The randomizer **moves items around**, so the acquisition flag of a *ground* loot spot changes every seed. To track those correctly, the overlay needs to read the `regulation.bin` your game actually loads:
+
+1. In `er_overlay.toml`, set `regulation_path` to that file (use single quotes to avoid escaping backslashes):
+
+```toml
+regulation_path = 'C:\path\to\randomizer\regulation.bin'
+```
+
+2. Save. Within ~2 s the overlay runs the bundled helper (`companion/er_checks_extractor.exe`), which reads the modded regulation and writes `checks_flags.toml` next to the DLL.
+3. The checks panel now tracks the **right flags for your seed** — the header shows `[seed]` when a seed mapping is active.
+
+This is fully automatic: change seed (the `regulation.bin` changes) and the overlay re-runs the helper on its own. You never call the helper by hand.
+
+**Notes**
+
+- Bosses and chest loot use stable flags, so they work the same with or without `regulation_path`. Only **ground loot** needs the seed mapping.
+- If a randomized spot holds an item that has **no acquisition flag** this seed, that check is shown greyed out with a note ("Untraceable this seed") — it can't be tracked.
+- The helper needs the game's `oo2core_*.dll` to read the regulation; it finds it automatically in your Elden Ring install (the overlay runs inside the game process).
+- Leave `regulation_path` empty/omitted for a vanilla run.
 
 ## Challenge mode
 
@@ -291,6 +343,8 @@ See **[Quick start § 3](#3-customize-your-dashboard-layout-editor)** for the st
 | Overlay crash | Conflict with another DX12 hook (RTSS, etc.). |
 | Challenge metrics always `---` | Set `[challenge] enabled = true` in `er_overlay.toml`. |
 | PB / tries look wrong after testing | Delete `challenge_state.toml` next to the DLL and retry on a clean run. |
+| Randomized ground loot not tracked | Set `regulation_path` to the `regulation.bin` the game loads; check `logs/er_overlay.log` for the extractor result and that `checks_flags.toml` was written. |
+| Checks header has no `[seed]` tag | No seed mapping active — `regulation_path` is unset/wrong, or `er_checks_extractor.exe` is missing next to the DLL. |
 
 ### Logs and diagnostics
 
@@ -404,6 +458,23 @@ Any unknown key renders `---` (unavailable).
 ### Bosses — `tables/<lang>/bosses.toml`
 
 One complete boss table per language (`tables/en/bosses.toml`, `tables/fr/bosses.toml`, …): 207 entries (165 base + 42 Shadow of the Erdtree), regions, display order, flags, icons. Copied next to the DLL at build time. **Hot-reloaded** when the file changes (same 2 s poll as `er_overlay.toml`); if the locale file is missing, falls back to `tables/en/bosses.toml` (embedded in the DLL). Set `boss_locale = "auto"` to match the in-game language, or override with `fr`. Regenerate a locale with `python tools/gen_boss_locale_toml.py fr` (from `en/bosses.toml` + ER_boss_checklist_R JSON).
+
+### Checks — `tables/<lang>/checks.toml`
+
+The checklist behind the [checks panel](#checks-panel-randomizer-aware). One `[[check]]` per entry; each declares whether it is `dynamic` (randomizer-sensitive ground loot) or not. Embedded in the DLL (`en`) and copied next to it at build time; hot-reloaded like the boss table.
+
+| Field | Required | Description |
+|-------|:--------:|-------------|
+| `region` | yes | Region the check belongs to (groups the panel). |
+| `name` | yes | Display name (boss or item). |
+| `place` | — | Location hint (shown as a tooltip). |
+| `dlc` | — | `true` to tag the entry `[DLC]`. |
+| `dynamic` | yes | `false` = fixed `flag`. `true` = randomizer-sensitive ground loot resolved per seed. |
+| `flag` | for static | Event flag checked when `dynamic = false`. |
+| `vanilla_flag` | for dynamic | Vanilla acquisition flag; used as fallback when no seed mapping is loaded. |
+| `lot_id`, `lot_param` | for dynamic | Stable `ItemLotParam` row id (`map` or `enemy`) used to look up the current flag in a randomizer regulation. |
+
+When `regulation_path` is set, the companion writes a `checks_flags.toml` (`lot_id → current flag` + regulation hash) that the overlay hot-reloads to resolve dynamic checks for the active seed.
 
 ### Goods — `crates/er_game_state/tables/goods.toml`
 
