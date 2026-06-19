@@ -70,7 +70,7 @@ After extracting the zip, you should have a single folder containing at least:
 **Do not separate these files** — they must stay in the same folder.
 
 1. With Elden Ring already running offline, **double-click `er_overlay_injector.exe`**.
-2. The overlay appears in-game (default: top-right HUD + boss panel on the right).
+2. The overlay appears in-game (default: top-right HUD only). Open a side panel with `F7` (boss) or `F6` (checks).
 
 That's it. Re-run the injector after each game restart (the overlay is not persistent across launches).
 
@@ -197,12 +197,12 @@ Read next to the DLL, **hot-reloaded every 2 seconds** (you can edit it while th
 | `show_debug` | bool | `false` | Shows a diagnostics window (backend, resolved pointers, loaded flags). |
 | `boss_panel_hotkey` | string | `F7` | Toggle the boss checklist panel. |
 | `boss_panel_scope` | enum | `current-region` | `current-region` or `all-regions`. |
-| `boss_panel_visible` | bool | `true` | Show the boss panel at startup. |
+| `boss_panel_visible` | bool | `true` | Show the boss panel at startup (the bundled `er_overlay.toml` ships `false`). At most one of boss / checks shows at startup; boss wins if both are `true`. |
 | `boss_panel_layout` | string | — | Panel `x,y,width,height` (pixels or `%`). Omit or `auto` = `"-5, 10, 25%, 92%"` (right-aligned), shifted below the minimalist HUD. Negative x/y = offset from right/bottom edge. |
 | `boss_locale` | string | `auto` | Boss table language (`en`, `fr`, …). `auto` reads the game language via Steam; falls back to `en`. |
 | `checks_panel_hotkey` | string | `F6` | Toggle the checks panel (boss + loot checklist). |
 | `checks_panel_scope` | enum | `current-region` | `current-region` or `all-regions` (the bundled `er_overlay.toml` ships `all-regions`). |
-| `checks_panel_visible` | bool | `false` | Show the checks panel at startup (the bundled `er_overlay.toml` ships `true`). |
+| `checks_panel_visible` | bool | `false` | Show the checks panel at startup. Mutually exclusive with the boss panel (boss wins if both are `true`). |
 | `checks_panel_layout` | string | — | Panel `x,y,width,height` (pixels or `%`). Omit or `auto` = `"5, 10, 25%, 92%"` (left-aligned, mirrors the boss panel). |
 | `regulation_path` | path | — | Path to the `regulation.bin` the game **loads** (your randomizer / ModEngine mod). Enables per-seed resolution of randomized loot flags. Empty/omitted = vanilla flags. See [Checks panel](#checks-panel-randomizer-aware). |
 | `checks_extractor_path` | path | — | Override the helper exe location. Omit to auto-find `companion/er_checks_extractor.exe` (then `er_checks_extractor.exe`) next to the DLL. |
@@ -232,33 +232,62 @@ See [Challenge mode](#challenge-mode) for behaviour and layout tiles.
 
 ## Checks panel (randomizer-aware)
 
-The **checks panel** (`F6`) is a checklist of "checks" — a *check* is something you can complete in a run: a **boss to kill** or an **item to loot**. It works like the boss panel (grouped by region, ticked off live from event flags) but also covers key loot, and it understands the **item randomizer**.
+The **checks panel** is a single checklist of everything worth completing in a run. A *check* is one thing to do: a **boss to kill** or an **important item to grab**. Think of it as the boss panel, but it also lists key loot — and it can follow the **item randomizer**.
 
-### Vanilla
+### How to use it (the basics)
 
-Nothing to configure. The checks list is bundled with the overlay; bosses and chest/loot checks tick off automatically as you play. Toggle with `F6`.
+1. Start Elden Ring and run the overlay (see [Quick start](#quick-start-github-release)).
+2. Press **`F6`** to open or close the panel.
+3. Play normally. Each line ticks itself off the moment you kill the boss or pick up the item — you don't click anything.
+
+What you see:
+
+- Checks are **grouped by region** (Limgrave, Liurnia, …), so you can see what's left where you are.
+- A check you've completed is **ticked / highlighted**; one you haven't is dim.
+- Hover a line to see a **location hint** (where to find it).
+- By default the panel shows the **region you're currently in**. To list every region at once, set `checks_panel_scope = "all-regions"` in `er_overlay.toml`.
+
+That's all most people need. The rest of this section is **only for randomizer players**.
+
+### Vanilla (no mods): nothing to do
+
+If you play normal Elden Ring, you're done — the checklist is built in and works out of the box. Leave `regulation_path` empty in `er_overlay.toml` and just press `F6`.
 
 ### With the item randomizer (thefifthmatt, [Nexus #428](https://www.nexusmods.com/eldenring/mods/428))
 
-The randomizer **moves items around**, so the acquisition flag of a *ground* loot spot changes every seed. To track those correctly, the overlay needs to read the `regulation.bin` your game actually loads:
+The randomizer **shuffles where items are**, so a given spot on the ground holds a different item every seed. To tick those off correctly, the overlay has to read the **same `regulation.bin` your game is actually loading** (the modded one, not the vanilla game file).
 
-1. In `er_overlay.toml`, set `regulation_path` to that file (use single quotes to avoid escaping backslashes):
+Do this once per setup:
+
+1. **Find your modded `regulation.bin`.** It's the file the randomizer generated for your seed — usually inside the mod folder you launch the game with, for example:
+   - ModEngine 2: `…\ModEngine2\mod\regulation.bin`
+   - Randomizer output folder: wherever you told the randomizer to write, next to its other files.
+
+   If you're not sure, it's the `regulation.bin` your launch profile / ModEngine config points at — **not** the one in your Steam `Game\` install.
+
+2. **Tell the overlay where it is.** Open `er_overlay.toml` and set `regulation_path` to that full path. Use **single quotes** so you don't have to double your backslashes:
 
 ```toml
-regulation_path = 'C:\path\to\randomizer\regulation.bin'
+regulation_path = 'C:\Games\ModEngine2\mod\regulation.bin'
 ```
 
-2. Save. Within ~2 s the overlay runs the bundled helper (`companion/er_checks_extractor.exe`), which reads the modded regulation and writes `checks_flags.toml` next to the DLL.
-3. The checks panel now tracks the **right flags for your seed** — the header shows `[seed]` when a seed mapping is active.
+3. **Save the file.** Within ~2 seconds the overlay reads the modded regulation on its own (via the bundled `companion/er_checks_extractor.exe`) and starts tracking the right items for your seed.
 
-This is fully automatic: change seed (the `regulation.bin` changes) and the overlay re-runs the helper on its own. You never call the helper by hand.
+4. **Check it worked:** the panel header shows a **`[seed]`** tag when the seed mapping is active. No tag = it didn't load (see below).
 
-**Notes**
+You only do this once. When you **change seed**, just point `regulation_path` at the new `regulation.bin` (or replace the file at the same path) and save — the overlay re-reads it automatically. You never run the helper by hand.
 
-- Bosses and chest loot use stable flags, so they work the same with or without `regulation_path`. Only **ground loot** needs the seed mapping.
-- If a randomized spot holds an item that has **no acquisition flag** this seed, that check is shown greyed out with a note ("Untraceable this seed") — it can't be tracked.
-- The helper needs the game's `oo2core_*.dll` to read the regulation; it finds it automatically in your Elden Ring install (the overlay runs inside the game process).
-- Leave `regulation_path` empty/omitted for a vanilla run.
+**If the `[seed]` tag doesn't appear:**
+
+- Double-check the path is the **modded** `regulation.bin` and that the file exists (typos, wrong folder).
+- Make sure `companion/er_checks_extractor.exe` is present next to `er_overlay.dll` (don't move files out of the extracted folder).
+- Look at `logs/er_overlay.log` — it logs whether the extractor ran and wrote `checks_flags.toml`.
+
+**Good to know**
+
+- Bosses and chest loot use fixed flags, so they tick off the same with or without the randomizer. Only **ground loot** needs the seed step above.
+- If your seed puts an item with **no tracking flag** on a randomized spot, that line is greyed out and labelled **"Untraceable this seed"**. This is normal, not a bug — the game simply gives the overlay nothing to watch for that pickup.
+- To go back to vanilla tracking, empty or remove `regulation_path` and save.
 
 ## Challenge mode
 
