@@ -96,7 +96,9 @@ impl OverlayApp {
         let boss_panel = BossPanelState::default();
         let show_boss_panel = config.boss_panel_visible;
         let checks_panel = ChecksPanelState::default();
-        let show_checks_panel = config.checks_panel_visible;
+        // Boss / checks / extended are mutually exclusive, including at startup: if both panels
+        // are configured visible, the boss panel wins and checks stay hidden until toggled (F6).
+        let show_checks_panel = config.checks_panel_visible && !show_boss_panel;
         let show_overlay = config.overlay_visible;
         let icon_signature = Self::icon_signature_for(&config, layout.as_ref());
         let challenge =

@@ -37,7 +37,9 @@ hide_all_hotkey = "F9"
 # ── Boss panel ───────────────────────────────────────────────────────
 # Scope: current-region | all-regions
 boss_panel_scope = "all-regions"
-boss_panel_visible = true
+# Only one of boss / checks panels (or the extended layout) shows at a time.
+# Both false = start with just the HUD; open a panel in-game with F7 (boss) / F6 (checks).
+boss_panel_visible = false
 # Boss table: tables/<lang>/bosses.toml next to the DLL (hot-reloaded ~every 2 s).
 # auto = game language (Steam), or en, fr, …
 boss_locale = "auto"
@@ -52,7 +54,7 @@ boss_locale = "auto"
 # A "check" = a boss to kill OR an item to loot. Toggle with checks_panel_hotkey (F6).
 # Scope: current-region | all-regions
 checks_panel_scope = "all-regions"
-checks_panel_visible = true
+checks_panel_visible = false
 # Placement (same syntax as boss_panel_layout). Default: left edge, full height.
 # checks_panel_layout = "5, 10, 25%, 92%"
 #
