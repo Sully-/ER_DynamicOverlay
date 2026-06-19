@@ -11,8 +11,8 @@ use crate::view_model::{CheckPanelRow, CheckPanelSection, OverlayViewModel};
 const DONE_COLOR: [f32; 4] = [0.5, 0.5, 0.5, 0.7];
 const UNTRACEABLE_COLOR: [f32; 4] = [0.55, 0.55, 0.62, 0.6];
 const GAP_BELOW_HUD: f32 = 8.0;
-/// Default auto layout: left edge, full height (mirrors the boss panel on the right).
-const DEFAULT_PANEL_LAYOUT: [f32; 4] = [5.0, 10.0, 0.25, 0.92];
+/// Default auto layout: `-5, 10, 25%, 92%` (same placement as the boss panel).
+const DEFAULT_PANEL_LAYOUT: [f32; 4] = [-5.0, 10.0, 0.25, 0.92];
 
 /// Drag position + scroll bookkeeping for the checks panel window.
 #[derive(Debug, Clone, Default)]
@@ -323,22 +323,21 @@ mod tests {
     use super::*;
 
     #[test]
-    fn default_panel_is_left_anchored() {
+    fn default_panel_matches_boss_panel_layout_on_1080p() {
         let geom = default_checks_panel_geometry([1920.0, 1080.0], None, &OverlayConfig::default());
-        assert_eq!(geom.pivot, [0.0, 0.0]);
-        assert!((geom.pos[0] - 5.0).abs() < 0.01);
+        assert_eq!(geom.pivot, [1.0, 0.0]);
+        assert!((geom.pos[0] - 1915.0).abs() < 0.01);
         assert!((geom.width - 480.0).abs() < 0.01);
     }
 
     #[test]
-    fn left_panel_unaffected_by_right_hud() {
-        // HUD on the right does not overlap a left-anchored panel: no vertical shift.
+    fn default_panel_shifts_below_minimalist_hud() {
         let hud = HudBounds {
             pos: [1412.0, 16.0],
             size: [492.0, 84.0],
         };
         let geom =
             default_checks_panel_geometry([1920.0, 1080.0], Some(hud), &OverlayConfig::default());
-        assert!((panel_top_y(&geom) - 10.0).abs() < 0.01);
+        assert!((panel_top_y(&geom) - 108.0).abs() < 0.01);
     }
 }
