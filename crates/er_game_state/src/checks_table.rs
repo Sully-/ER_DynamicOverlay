@@ -96,7 +96,8 @@ struct CheckRow {
 }
 
 static CHECKS_STORE: LazyLock<RwLock<Arc<ChecksTableData>>> = LazyLock::new(|| {
-    let data = parse_checks_table(EMBEDDED_CHECKS_TOML).expect("embedded en/checks.toml must parse");
+    let data =
+        parse_checks_table(EMBEDDED_CHECKS_TOML).expect("embedded en/checks.toml must parse");
     RwLock::new(Arc::new(data))
 });
 
@@ -290,8 +291,7 @@ pub fn reload_checks_table_if_modified(
         if locale_changed {
             *active_locale = Some(effective_locale.to_string());
             *last_mtime = None;
-            let data =
-                parse_checks_table(EMBEDDED_CHECKS_TOML).expect("embedded en/checks.toml");
+            let data = parse_checks_table(EMBEDDED_CHECKS_TOML).expect("embedded en/checks.toml");
             apply_checks_table(data, DEFAULT_LOCALE_ID);
             return true;
         }
@@ -334,7 +334,10 @@ pub fn checks_seed_flags() -> Option<Arc<ChecksFlagsData>> {
 }
 
 pub fn checks_seed_flags_loaded() -> bool {
-    CHECKS_FLAGS.read().expect("checks flags poisoned").is_some()
+    CHECKS_FLAGS
+        .read()
+        .expect("checks flags poisoned")
+        .is_some()
 }
 
 pub fn checks_seed_regulation_hash() -> Option<String> {

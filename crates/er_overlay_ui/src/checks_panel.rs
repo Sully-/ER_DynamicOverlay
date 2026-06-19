@@ -147,11 +147,7 @@ pub fn render_checks_panel(
 }
 
 fn render_header(ui: &Ui, vm: &OverlayViewModel) {
-    let seed = if vm.checks_seed_active {
-        " [seed]"
-    } else {
-        ""
-    };
+    let seed = if vm.checks_seed_active { " [seed]" } else { "" };
     match vm.checks_panel_scope {
         BossPanelScope::CurrentRegion => {
             if let Some(section) = vm.checks_panel_sections.first() {
@@ -328,8 +324,7 @@ mod tests {
 
     #[test]
     fn default_panel_is_left_anchored() {
-        let geom =
-            default_checks_panel_geometry([1920.0, 1080.0], None, &OverlayConfig::default());
+        let geom = default_checks_panel_geometry([1920.0, 1080.0], None, &OverlayConfig::default());
         assert_eq!(geom.pivot, [0.0, 0.0]);
         assert!((geom.pos[0] - 5.0).abs() < 0.01);
         assert!((geom.width - 480.0).abs() < 0.01);

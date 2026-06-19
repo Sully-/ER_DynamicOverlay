@@ -505,7 +505,10 @@ impl OverlayApp {
         let Ok(meta) = std::fs::metadata(regulation) else {
             return;
         };
-        let sig = (meta.modified().ok().unwrap_or(SystemTime::UNIX_EPOCH), meta.len());
+        let sig = (
+            meta.modified().ok().unwrap_or(SystemTime::UNIX_EPOCH),
+            meta.len(),
+        );
         if self.regulation_sig == Some(sig) {
             return;
         }
@@ -580,7 +583,11 @@ impl OverlayApp {
             .filter(|p| !p.is_empty())
         {
             let p = Path::new(raw);
-            let resolved = if p.is_absolute() { p.to_path_buf() } else { base.join(p) };
+            let resolved = if p.is_absolute() {
+                p.to_path_buf()
+            } else {
+                base.join(p)
+            };
             return resolved.is_file().then_some(resolved);
         }
         let candidates = [

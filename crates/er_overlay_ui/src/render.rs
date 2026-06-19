@@ -48,7 +48,15 @@ pub fn render_overlay(
     }
 
     if show_checks_panel {
-        render_checks_panel(ui, config, style, vm, checks_panel, hud_anchor, border_radius);
+        render_checks_panel(
+            ui,
+            config,
+            style,
+            vm,
+            checks_panel,
+            hud_anchor,
+            border_radius,
+        );
     }
 
     if config.show_debug {
@@ -184,11 +192,7 @@ fn render_debug(ui: &Ui, vm: &OverlayViewModel) {
         vm.checks_panel_done,
         vm.checks_panel_total,
         vm.checks_current_region.as_deref().unwrap_or("?"),
-        if vm.checks_seed_active {
-            " [seed]"
-        } else {
-            ""
-        }
+        if vm.checks_seed_active { " [seed]" } else { "" }
     ));
     if let Some(hash) = checks_seed_regulation_hash() {
         ui.text(format!("  regulation: {}…", &hash[..hash.len().min(12)]));

@@ -1,0 +1,1469 @@
+# Les 207 boss en checks, regroupés dans une seule région toujours ouverte.
+# Source : tables/fr/bosses.toml (flag_id -> flag). Aucune [[region]] => toujours affichée.
+
+region_display_order = ["Bosses"]
+
+[[check]]
+region = "Bosses"
+name = """[1] Soldat de Godrick"""
+place = """Cimetière abandonné"""
+dynamic = false
+flag = 18000850
+
+[[check]]
+region = "Bosses"
+name = """[3] Sentinelle de l'Arbre"""
+place = """Église d'Elleh"""
+dynamic = false
+flag = 1042360800
+
+[[check]]
+region = "Bosses"
+name = """[1] Chef semi-humain(x2)"""
+place = """Grotte marine"""
+dynamic = false
+flag = 31150800
+
+[[check]]
+region = "Bosses"
+name = """[1] Veilleur de l'Arbre-Monde"""
+place = """Catacombes orageuses"""
+dynamic = false
+flag = 30020800
+
+[[check]]
+region = "Bosses"
+name = """[1] Homme-bête de Farum Azula"""
+place = """Grotte du bosquet"""
+dynamic = false
+flag = 31030800
+
+[[check]]
+region = "Bosses"
+name = """[1] Troll fouisseur"""
+place = """Galeries de Nécrolimbe"""
+dynamic = false
+flag = 32010800
+
+[[check]]
+region = "Bosses"
+name = """[1] Tête de citrouille démente"""
+place = """Relais en ruines"""
+dynamic = false
+flag = 1044360800
+
+[[check]]
+region = "Bosses"
+name = """[3] Darriwil, Chevalier-limier"""
+place = """Geôle éternelle du limier esseulé"""
+dynamic = false
+flag = 1044350800
+
+[[check]]
+region = "Bosses"
+name = """[1] Pat"""
+place = """Cavernes des eaux noires"""
+dynamic = false
+flag = 31000800
+
+[[check]]
+region = "Bosses"
+name = """[1] Duelliste gardien du tombeau"""
+place = """Catacombes des eaux noires"""
+dynamic = false
+flag = 30040800
+
+[[check]]
+region = "Bosses"
+name = """[1] Golem gardien"""
+place = """Cavernes de la Chaussée royale"""
+dynamic = false
+flag = 31170800
+
+[[check]]
+region = "Bosses"
+name = """[1] Assassin des Couteaux noirs"""
+place = """Catacombes funestes"""
+dynamic = false
+flag = 30110800
+
+[[check]]
+region = "Bosses"
+name = """[6] Esprit d'arbre ulcéreux"""
+place = """Tombe des héros des confins"""
+dynamic = false
+flag = 18000800
+
+[[check]]
+region = "Bosses"
+name = """[5] Agheel le dragon volant"""
+place = """Lac d'Agheel"""
+dynamic = false
+flag = 1043360800
+
+[[check]]
+region = "Bosses"
+name = """[3] Nocher diaphane"""
+place = """Village des Eaux nécromantes"""
+dynamic = false
+flag = 1045390800
+
+[[check]]
+region = "Bosses"
+name = """[3] Chevalier du Creuset"""
+place = """Geôle éternelle de Valorage"""
+dynamic = false
+flag = 1042370800
+
+[[check]]
+region = "Bosses"
+name = """[3] Cavalier crépusculaire"""
+dynamic = false
+flag = 1043370800
+
+[[check]]
+region = "Bosses"
+name = """[3] Rapace funeste"""
+dynamic = false
+flag = 1042380800
+
+[[check]]
+region = "Bosses"
+name = """[3] Chasseur de perles cinéraires"""
+place = """Cabane du maître de guerre"""
+dynamic = false
+flag = 1042380850
+
+[[check]]
+region = "Bosses"
+name = """[2] Ours runique"""
+place = """Cavernes insondables"""
+dynamic = false
+flag = 31010800
+
+[[check]]
+region = "Bosses"
+name = """[2] Chimère écailleuse"""
+place = """Galerie de Vent-Hurlant"""
+dynamic = false
+flag = 32000800
+
+[[check]]
+region = "Bosses"
+name = """[2] Veilleur de l'Arbre-Monde"""
+place = """Catacombes de l'Empaleur"""
+dynamic = false
+flag = 30010800
+
+[[check]]
+region = "Bosses"
+name = """[2] Ombre du cimetière"""
+place = """Catacombes du Val-aux-Tombes"""
+dynamic = false
+flag = 30000800
+
+[[check]]
+region = "Bosses"
+name = """[2] Miranda la Fleur galeuse"""
+place = """Cavernes du Val-aux-Tombes"""
+dynamic = false
+flag = 31020800
+
+[[check]]
+region = "Bosses"
+name = """[4] Avatar de l'Arbre-Monde"""
+place = """Arbre-Monde mineur"""
+dynamic = false
+flag = 1043330800
+
+[[check]]
+region = "Bosses"
+name = """[4] Ancien héros de Zamor"""
+place = """Geôle éternelle des lamentations"""
+dynamic = false
+flag = 1042330800
+
+[[check]]
+region = "Bosses"
+name = """[4] Cavalier crépusculaire"""
+place = """Rempart du Château de Vent-Hurlant"""
+dynamic = false
+flag = 1044320850
+
+[[check]]
+region = "Bosses"
+name = """[2] Rapace funeste"""
+dynamic = false
+flag = 1044320800
+
+[[check]]
+region = "Bosses"
+name = """[3] Chimère léonine"""
+place = """Tombe de Vent-Hurlant"""
+dynamic = false
+flag = 1043300800
+
+[[check]]
+region = "Bosses"
+name = """[3] Margit le Déchu"""
+place = """Château de Voilorage"""
+dynamic = false
+flag = 10000850
+
+[[check]]
+region = "Bosses"
+name = """[4] Godrick le Greffé"""
+place = """Château de Voilorage"""
+dynamic = false
+flag = 10000800
+
+[[check]]
+region = "Bosses"
+name = """[6] Chevalier de la Noble putréfaction"""
+place = """Grotte aux eaux stagnantes"""
+dynamic = false
+flag = 31040800
+
+[[check]]
+region = "Bosses"
+name = """[6] Chevalier-limier"""
+place = """Grotte cristalline du lac"""
+dynamic = false
+flag = 31050800
+
+[[check]]
+region = "Bosses"
+name = """[6] Veilleur de l'Arbre-Monde"""
+place = """Catacombes au pied des falaises"""
+dynamic = false
+flag = 30060800
+
+[[check]]
+region = "Bosses"
+name = """[6] Sorcier cristalien & Lancier cristalien"""
+place = """Grotte cristalline de l'Académie"""
+dynamic = false
+flag = 31060800
+
+[[check]]
+region = "Bosses"
+name = """[6] Danseur cristalien"""
+place = """Galerie cristalline de Raya Lucaria"""
+dynamic = false
+flag = 32020800
+
+[[check]]
+region = "Bosses"
+name = """[6] Ombre du cimetière"""
+place = """Catacombes des Couteaux noirs"""
+dynamic = false
+flag = 30050800
+
+[[check]]
+region = "Bosses"
+name = """[6] Assassin des Couteaux noirs"""
+place = """Catacombes des Couteaux noirs"""
+dynamic = false
+flag = 30050850
+
+[[check]]
+region = "Bosses"
+name = """[6] Escargot mande-esprit"""
+place = """Catacombes de l'impasse"""
+dynamic = false
+flag = 30030800
+
+[[check]]
+region = "Bosses"
+name = """[6] Rejeton greffé"""
+place = """Chapelle de l'anticipation"""
+dynamic = false
+flag = 10010800
+
+[[check]]
+region = "Bosses"
+name = """[10] Smarag, dragon de pierre d'éclat"""
+place = """Quartier du temple"""
+dynamic = false
+flag = 1034450800
+
+[[check]]
+region = "Bosses"
+name = """[8] Tueur de Réprouvés"""
+place = """Village des Albinauriques"""
+dynamic = false
+flag = 1035420800
+
+[[check]]
+region = "Bosses"
+name = """[6] Spectre royal"""
+place = """Ruines du domaine royal"""
+dynamic = false
+flag = 1034480800
+
+[[check]]
+region = "Bosses"
+name = """[8] Nocher diaphane"""
+dynamic = false
+flag = 1039440800
+
+[[check]]
+region = "Bosses"
+name = """[8] Avatar de l'Arbre-Monde"""
+place = """Tour du prosélyte"""
+dynamic = false
+flag = 1033430800
+
+[[check]]
+region = "Bosses"
+name = """[8] Avatar de l'Arbre-Monde"""
+place = """Enceinte du Mausolée"""
+dynamic = false
+flag = 1038480800
+
+[[check]]
+region = "Bosses"
+name = """[8] Adan le Voleur du feu"""
+place = """Geôle éternelle du scélérat"""
+dynamic = false
+flag = 1038410800
+
+[[check]]
+region = "Bosses"
+name = """[8] Bols, chevalier de Caria"""
+place = """Geôle éternelle du Coucou"""
+dynamic = false
+flag = 1033450800
+
+[[check]]
+region = "Bosses"
+name = """[8] Seigneur d'onyx"""
+place = """Geôle éternelle de la tombe royale"""
+dynamic = false
+flag = 1036500800
+
+[[check]]
+region = "Bosses"
+name = """[8] Cavalier crépusculaire"""
+place = """Pont du village"""
+dynamic = false
+flag = 1039430800
+
+[[check]]
+region = "Bosses"
+name = """[8] Cavalier crépusculaire"""
+place = """Église martiale"""
+dynamic = false
+flag = 1036480800
+
+[[check]]
+region = "Bosses"
+name = """[8] Rapace funeste"""
+place = """Île panoramique"""
+dynamic = false
+flag = 1037420800
+
+[[check]]
+region = "Bosses"
+name = """[8] Volatile funèbre"""
+place = """Porte nord de la ville"""
+dynamic = false
+flag = 1036450800
+
+[[check]]
+region = "Bosses"
+name = """[8] Chasseur de perles cinéraires"""
+place = """Église des vœux"""
+dynamic = false
+flag = 1037460800
+
+[[check]]
+region = "Bosses"
+name = """[6] Loretta, chevaleresse royale"""
+place = """Manoir de Caria"""
+dynamic = false
+flag = 1035500800
+
+[[check]]
+region = "Bosses"
+name = """[7] Makar le Dragon du magma"""
+place = """Ruines des falaises"""
+dynamic = false
+flag = 39200800
+
+[[check]]
+region = "Bosses"
+name = """[17] Adula, dragon de pierre d'éclat"""
+place = """Autel lunaire"""
+dynamic = false
+flag = 1034420800
+
+[[check]]
+region = "Bosses"
+name = """[15] Alecto, meneuse des Couteaux noirs"""
+place = """Geôle éternelle de la meneuse des Couteaux noirs"""
+dynamic = false
+flag = 1033420800
+
+[[check]]
+region = "Bosses"
+name = """[6] Loup cramoisi de Radagon"""
+dynamic = false
+flag = 14000850
+
+[[check]]
+region = "Bosses"
+name = """[7] Rennala, reine de la pleine lune"""
+dynamic = false
+flag = 14000800
+
+[[check]]
+region = "Bosses"
+name = """[7] Dragon du magma"""
+place = """Galerie de Gael"""
+dynamic = false
+flag = 32070800
+
+[[check]]
+region = "Bosses"
+name = """[7] Veilleur épéiste de l'Arbre-Monde & Veilleur sorcier de l'Arbre-Monde"""
+place = """Catacombes de l'Arbre-Monde mineur"""
+dynamic = false
+flag = 30140800
+
+[[check]]
+region = "Bosses"
+name = """[7] Duelliste frénétique"""
+place = """Cavernes aux geôles"""
+dynamic = false
+flag = 31210800
+
+[[check]]
+region = "Bosses"
+name = """[7] Ombre du cimetière"""
+place = """Catacombes de Caelid"""
+dynamic = false
+flag = 30150800
+
+[[check]]
+region = "Bosses"
+name = """[7] Créature stellaire"""
+place = """Galerie cristalline de Sellia"""
+dynamic = false
+flag = 32080800
+
+[[check]]
+region = "Bosses"
+name = """[7] Danseur cristalien putride & Lancier cristalien putride & Sorcier cristalien putride"""
+place = """Antre de Sellia"""
+dynamic = false
+flag = 31110800
+
+[[check]]
+region = "Bosses"
+name = """[7] Tête de citrouille démente au marteau & Tête de citrouille démente au fléau d'armes"""
+place = """Ruines de Caelem"""
+dynamic = false
+flag = 1048400800
+
+[[check]]
+region = "Bosses"
+name = """[11] Ekzykes le Putréfié"""
+place = """Église de la putréfaction"""
+dynamic = false
+flag = 1048370800
+
+[[check]]
+region = "Bosses"
+name = """[7] Moine nokrien & Épéiste nokrienne"""
+place = """Sellia, cité de la sorcellerie"""
+dynamic = false
+flag = 1049390800
+
+[[check]]
+region = "Bosses"
+name = """[9] Commandant O'Neil"""
+place = """Marais d'Ivoine"""
+dynamic = false
+flag = 1049380800
+
+[[check]]
+region = "Bosses"
+name = """[9] Avatar putride"""
+place = """Arbre-Monde mineur"""
+dynamic = false
+flag = 1047400800
+
+[[check]]
+region = "Bosses"
+name = """[9] Cavalier crépusculaire"""
+place = """Sud de la chaussée de Caelid"""
+dynamic = false
+flag = 1049370800
+
+[[check]]
+region = "Bosses"
+name = """[9] Volatile funèbre"""
+place = """Rive sud du marais d'Ivoine"""
+dynamic = false
+flag = 1049370850
+
+[[check]]
+region = "Bosses"
+name = """[8] Chevalier du Creuset & Chimère léonine"""
+place = """Château du Lion rouge"""
+dynamic = false
+flag = 1051360800
+
+[[check]]
+region = "Bosses"
+name = """[10] Radahn le Fléau des astres"""
+place = """Dunes gémissantes"""
+dynamic = false
+flag = 1252380800
+
+[[check]]
+region = "Bosses"
+name = """[7] Chevalier lancier de la Noble putréfaction & Chevalier faucheur de la Noble putréfaction"""
+place = """Grotte désertée"""
+dynamic = false
+flag = 31200800
+
+[[check]]
+region = "Bosses"
+name = """[15] Homme-bête guerrier de Farum Azula & Homme-bête aux couteaux de Farum Azula"""
+place = """Cavernes du Tertre draconique"""
+dynamic = false
+flag = 31100800
+
+[[check]]
+region = "Bosses"
+name = """[15] Esprit d'arbre putride"""
+place = """Catacombes des défunts valeureux"""
+dynamic = false
+flag = 30160800
+
+[[check]]
+region = "Bosses"
+name = """[15] Apôtre sanctechair"""
+place = """Tour divine de Caelid"""
+dynamic = false
+flag = 34130800
+
+[[check]]
+region = "Bosses"
+name = """[17] Adepte de la Lame d'ébène"""
+place = """Sanctuaire bestial"""
+dynamic = false
+flag = 1051430800
+
+[[check]]
+region = "Bosses"
+name = """[17] Greyll le Dragon volant"""
+place = """Tertre draconique de Greyoll"""
+dynamic = false
+flag = 1052410800
+
+[[check]]
+region = "Bosses"
+name = """[17] Avatar putride"""
+place = """Arbre-Monde mineur"""
+dynamic = false
+flag = 1051400800
+
+[[check]]
+region = "Bosses"
+name = """[9] Mage de bataille Hugues"""
+place = """Geôle éternelle de Sellia"""
+dynamic = false
+flag = 1049390850
+
+[[check]]
+region = "Bosses"
+name = """[17] Cavalier crépusculaire"""
+place = """Tour de Lenne"""
+dynamic = false
+flag = 1052410850
+
+[[check]]
+region = "Bosses"
+name = """[17] Chasseur de perles cinéraires"""
+place = """Cabane du marchand ascétique"""
+dynamic = false
+flag = 1048410800
+
+[[check]]
+region = "Bosses"
+name = """[10] Garris le Nécromancien"""
+place = """Cavernes du sage"""
+dynamic = false
+flag = 31190850
+
+[[check]]
+region = "Bosses"
+name = """[8] Assassin des Couteaux noirs"""
+place = """Cavernes du sage"""
+dynamic = false
+flag = 31190800
+
+[[check]]
+region = "Bosses"
+name = """[8] Troll fouisseur"""
+place = """Vieille galerie d'Altus"""
+dynamic = false
+flag = 32040800
+
+[[check]]
+region = "Bosses"
+name = """[8] Lancier cristalien & Danseur cristalien"""
+place = """Galerie d'Altus"""
+dynamic = false
+flag = 32050800
+
+[[check]]
+region = "Bosses"
+name = """[10] Assassin des Couteaux noirs"""
+place = """Tombe du héros canonisé"""
+dynamic = false
+flag = 1040520800
+
+[[check]]
+region = "Bosses"
+name = """[8] Ancien héros de Zamor"""
+place = """Tombe du héros canonisé"""
+dynamic = false
+flag = 30080800
+
+[[check]]
+region = "Bosses"
+name = """[8] Tueur de Réprouvés & Miranda la Fleur galeuse"""
+place = """Grotte du Parfumeur"""
+dynamic = false
+flag = 31180800
+
+[[check]]
+region = "Bosses"
+name = """[8] Parfumeuse Tricia & Chimère léonine"""
+place = """Catacombes des aberrations"""
+dynamic = false
+flag = 30120800
+
+[[check]]
+region = "Bosses"
+name = """[9] Veilleur de l'Arbre-Monde"""
+place = """Catacombes de Wyndham"""
+dynamic = false
+flag = 30070800
+
+[[check]]
+region = "Bosses"
+name = """[12] Lansseax le Dragon ancien"""
+place = """Chemin des remparts"""
+dynamic = false
+flag = 1041520800
+
+[[check]]
+region = "Bosses"
+name = """[8] Gilika, reine semi-humaine"""
+place = """Ruines de Lux"""
+dynamic = false
+flag = 1038510800
+
+[[check]]
+region = "Bosses"
+name = """[8] Noble sanglant"""
+place = """Ruines Grouille-Sang"""
+dynamic = false
+flag = 1040530800
+
+[[check]]
+region = "Bosses"
+name = """[10] Apôtre sanctechair"""
+place = """Dominula, village aux moulins"""
+dynamic = false
+flag = 1042550800
+
+[[check]]
+region = "Bosses"
+name = """[10] Créature stellaire"""
+place = """Cratère stellaire"""
+dynamic = false
+flag = 1041500800
+
+[[check]]
+region = "Bosses"
+name = """[10] Sentinelle de l'Arbre(x2)"""
+dynamic = false
+flag = 1041510800
+
+[[check]]
+region = "Bosses"
+name = """[11] Nocher diaphane"""
+place = """Ruines de Wyndham"""
+dynamic = false
+flag = 1038520800
+
+[[check]]
+region = "Bosses"
+name = """[10] Face de ver"""
+place = """Arbre-Monde mineur"""
+dynamic = false
+flag = 1041530800
+
+[[check]]
+region = "Bosses"
+name = """[10] Godefroy le Greffé"""
+place = """Geôle étern. de la lignée dorée"""
+dynamic = false
+flag = 1039500800
+
+[[check]]
+region = "Bosses"
+name = """[10] Cavalier crépusculaire"""
+place = """Croisée de la chaussée d'Altus"""
+dynamic = false
+flag = 1039510800
+
+[[check]]
+region = "Bosses"
+name = """[9] Elemer du Roncier"""
+place = """Le Bastiombre"""
+dynamic = false
+flag = 1039540800
+
+[[check]]
+region = "Bosses"
+name = """[9] Seigneur d'onyx"""
+place = """Galerie scellée"""
+dynamic = false
+flag = 34120800
+
+[[check]]
+region = "Bosses"
+name = """[9] Duelliste gardien du tombeau"""
+place = """Tombe auxiliaire d'Auriza"""
+dynamic = false
+flag = 30130800
+
+[[check]]
+region = "Bosses"
+name = """[9] Chevalier du Creuset & Ordovis, chevalier du Creuset"""
+place = """Tombe des héros d'Auriza"""
+dynamic = false
+flag = 30100800
+
+[[check]]
+region = "Bosses"
+name = """[11] Sentinelle draconique de l'Arbre"""
+place = """Rempart de la capitale"""
+dynamic = false
+flag = 1045520800
+
+[[check]]
+region = "Bosses"
+name = """[11] Rapace funeste"""
+dynamic = false
+flag = 1044530800
+
+[[check]]
+region = "Bosses"
+name = """[11] Chasseur de perles cinéraires"""
+place = """Cabane du marchand ermite"""
+dynamic = false
+flag = 1043530800
+
+[[check]]
+region = "Bosses"
+name = """[9] Margot, reine semi-humaine"""
+place = """Grotte volcanique"""
+dynamic = false
+flag = 31090800
+
+[[check]]
+region = "Bosses"
+name = """[9] Adepte de la putréfaction(x2)"""
+place = """Cavernes aux eaux ignées"""
+dynamic = false
+flag = 31070800
+
+[[check]]
+region = "Bosses"
+name = """[9] Loup rouge du champion"""
+place = """Tombe des héros de Gelmir"""
+dynamic = false
+flag = 30090800
+
+[[check]]
+region = "Bosses"
+name = """[11] Dragon du magma"""
+place = """Fort Laiedd"""
+dynamic = false
+flag = 1035530800
+
+[[check]]
+region = "Bosses"
+name = """[11] Créature stellaire adulte"""
+place = """Neuvième camp du Mont Gelmir"""
+dynamic = false
+flag = 1036540800
+
+[[check]]
+region = "Bosses"
+name = """[11] Maggie, reine semi-humaine"""
+place = """Village des ermites"""
+dynamic = false
+flag = 1037530800
+
+[[check]]
+region = "Bosses"
+name = """[11] Esprit d'arbre ulcéreux"""
+place = """Arbre-Monde mineur"""
+dynamic = false
+flag = 1037540810
+
+[[check]]
+region = "Bosses"
+name = """[8] Vierge ravisseuse aux faucilles & Vierge ravisseuse aux rouets"""
+place = """Chambre souterraine de l'Inquisition"""
+dynamic = false
+flag = 16000860
+
+[[check]]
+region = "Bosses"
+name = """[11] Noble sanctechair"""
+place = """Temple d'Eiglay"""
+dynamic = false
+flag = 16000850
+
+[[check]]
+region = "Bosses"
+name = """[12] Serpent dévoreur de dieux & Rykard, seigneur du blasphème"""
+place = """Manoir du volcan"""
+dynamic = false
+flag = 16000800
+
+[[check]]
+region = "Bosses"
+name = """[13] Esgar, prêtre du sang"""
+place = """Catacombes de Leyndell"""
+dynamic = false
+flag = 35000850
+
+[[check]]
+region = "Bosses"
+name = """[12] Jumeau abominable(x2)"""
+place = """Tour divine d'Altus-Est"""
+dynamic = false
+flag = 34140850
+
+[[check]]
+region = "Bosses"
+name = """[13] Mohg le Réprouvé"""
+place = """Cathédrale des parias"""
+dynamic = false
+flag = 35000800
+
+[[check]]
+region = "Bosses"
+name = """[11] Godfrey, premier Seigneur d'Elden"""
+place = """Sanctuaire de l'Arbre-Monde"""
+dynamic = false
+flag = 11000850
+
+[[check]]
+region = "Bosses"
+name = """[11] Morgott, roi Réprouvé"""
+place = """Trône d'Elden"""
+dynamic = false
+flag = 11000800
+
+[[check]]
+region = "Bosses"
+name = """[14] Cavalier crépusculaire"""
+dynamic = false
+flag = 1048510800
+
+[[check]]
+region = "Bosses"
+name = """[12] Adepte de la Lame d'ébène"""
+dynamic = false
+flag = 1049520800
+
+[[check]]
+region = "Bosses"
+name = """[12] Ancien héros de Zamor"""
+place = """Tombe des pourfendeurs de Géants"""
+dynamic = false
+flag = 30170800
+
+[[check]]
+region = "Bosses"
+name = """[12] Esprit d'arbre ulcéreux"""
+place = """Catacombes des Cimes des Géants"""
+dynamic = false
+flag = 30180800
+
+[[check]]
+region = "Bosses"
+name = """[12] Apôtre sanctechair & Noble sanctechair & Escargot mande-esprit"""
+place = """Grotte du mande-esprit"""
+dynamic = false
+flag = 31220800
+
+[[check]]
+region = "Bosses"
+name = """[16] Borealis la Brume glaciale"""
+place = """Lac gelé"""
+dynamic = false
+flag = 1254560800
+
+[[check]]
+region = "Bosses"
+name = """[14] Avatar de l'Arbre-Monde"""
+place = """Arbre-Monde mineur"""
+dynamic = false
+flag = 1052560800
+
+[[check]]
+region = "Bosses"
+name = """[14] Vyke, chevalier de la Table ronde"""
+place = """Geôle éternelle du prétendant"""
+dynamic = false
+flag = 1053560800
+
+[[check]]
+region = "Bosses"
+name = """[14] Volatile funèbre"""
+dynamic = false
+flag = 1050570800
+
+[[check]]
+region = "Bosses"
+name = """[13] Commandant Niall"""
+place = """Solcastel"""
+dynamic = false
+flag = 1051570800
+
+[[check]]
+region = "Bosses"
+name = """[14] Géant de feu"""
+place = """Pic de la Flamme"""
+dynamic = false
+flag = 1052520800
+
+[[check]]
+region = "Bosses"
+name = """[14] Duo sanctechair"""
+place = """Autel du Temple des dragons"""
+dynamic = false
+flag = 13000850
+
+[[check]]
+region = "Bosses"
+name = """[17] Placidusax, seigneur draconique"""
+place = """Abords du grand pont"""
+dynamic = false
+flag = 13000830
+
+[[check]]
+region = "Bosses"
+name = """[15] Maliketh la Lame d'ébène"""
+dynamic = false
+flag = 13000800
+
+[[check]]
+region = "Bosses"
+name = """[16] Larme imitatrice égarée"""
+place = """Chemin secret vers l'Arbre-Sacré"""
+dynamic = false
+flag = 30200800
+
+[[check]]
+region = "Bosses"
+name = """[16] Duelliste putride gardien du tombeau"""
+place = """Crypte des Champs enneigés consacrés"""
+dynamic = false
+flag = 30190800
+
+[[check]]
+region = "Bosses"
+name = """[16] Astel la Constellation des ténèbres"""
+place = """Galerie d'anis jaune"""
+dynamic = false
+flag = 32110800
+
+[[check]]
+region = "Bosses"
+name = """[16] Croisé chimérique"""
+place = """Grotte des parias"""
+dynamic = false
+flag = 31120800
+
+[[check]]
+region = "Bosses"
+name = """[18] Theodorix le Grand ver"""
+dynamic = false
+flag = 1050560800
+
+[[check]]
+region = "Bosses"
+name = """[18] Avatar putride"""
+place = """Arbre-Monde mineur"""
+dynamic = false
+flag = 1050570850
+
+[[check]]
+region = "Bosses"
+name = """[18] Cavalier crépusculaire au glaive & Cavalier crépusculaire au fléau"""
+place = """Champs enneigés consacrés intérieurs"""
+dynamic = false
+flag = 1248550800
+
+[[check]]
+region = "Bosses"
+name = """[18] Volatile funèbre"""
+dynamic = false
+flag = 1048570800
+
+[[check]]
+region = "Bosses"
+name = """[18] Loretta, chevaleresse de l'Arbre-Sacré"""
+dynamic = false
+flag = 15000850
+
+[[check]]
+region = "Bosses"
+name = """[20] Malenia, épée de Miquella & Malenia, déesse de la putréfaction"""
+dynamic = false
+flag = 15000800
+
+[[check]]
+region = "Bosses"
+name = """[11] Soldat draconide"""
+place = """Berge de la Siofra"""
+dynamic = false
+flag = 12020830
+
+[[check]]
+region = "Bosses"
+name = """[6] Esprit ancestral"""
+place = """Berge de la Siofra"""
+dynamic = false
+flag = 12080800
+
+[[check]]
+region = "Bosses"
+name = """[9] Larme imitatrice"""
+dynamic = false
+flag = 12020850
+
+[[check]]
+region = "Bosses"
+name = """[9] Esprit ancestral royal"""
+place = """Domaine de Sacrecorne"""
+dynamic = false
+flag = 12090800
+
+[[check]]
+region = "Bosses"
+name = """[9] Gargouille vaillante & Gargouille vaillante à la lame double"""
+place = """Aqueduc de Siofra"""
+dynamic = false
+flag = 12020800
+
+[[check]]
+region = "Bosses"
+name = """[18] Mohg, seigneur du sang"""
+dynamic = false
+flag = 12050800
+
+[[check]]
+region = "Bosses"
+name = """[5] Soldat draconide de Nokstella"""
+dynamic = false
+flag = 12010800
+
+[[check]]
+region = "Bosses"
+name = """[13] Soldat draconide"""
+dynamic = false
+flag = 12010850
+
+[[check]]
+region = "Bosses"
+name = """[11] Astel le Rejeton du vide"""
+place = """Grand cloître"""
+dynamic = false
+flag = 12040800
+
+[[check]]
+region = "Bosses"
+name = """[13] Siluria du Creuset"""
+dynamic = false
+flag = 12030390
+
+[[check]]
+region = "Bosses"
+name = """[11] Champion de Fia & Rogier le Sorcier & Lionel Cœur-de-Lion"""
+dynamic = false
+flag = 12030800
+
+[[check]]
+region = "Bosses"
+name = """[11] Fortissax la Liche draconique"""
+dynamic = false
+flag = 12030850
+
+[[check]]
+region = "Bosses"
+name = """[15] Sire Gideon Ofnir l'Omniscient"""
+place = """Sanctuaire de l'Arbre-Monde"""
+dynamic = false
+flag = 11050850
+
+[[check]]
+region = "Bosses"
+name = """[16] Godfrey, premier Seigneur d'Elden"""
+place = """Trône d'Elden"""
+dynamic = false
+flag = 11050800
+
+[[check]]
+region = "Bosses"
+name = """[17] Radagon de l'Ordre d'or & Bête d'Elden"""
+place = """Marika brisée"""
+dynamic = false
+flag = 19000800
+
+[[check]]
+region = "Bosses"
+name = """[23] Dragon de flammes spectrales"""
+dlc = true
+dynamic = false
+flag = 2045440800
+
+[[check]]
+region = "Bosses"
+name = """[21] Chevalier de la Geôle Solitaire"""
+place = """Mausolée occidental sans nom"""
+dlc = true
+dynamic = false
+flag = 2046410800
+
+[[check]]
+region = "Bosses"
+name = """[25] Chef des démons sanglants"""
+place = """Grotte de l'embouchure"""
+dlc = true
+dynamic = false
+flag = 43000800
+
+[[check]]
+region = "Bosses"
+name = """[26] Larmoyeur"""
+place = """Geôle de larmoyeur"""
+dlc = true
+dynamic = false
+flag = 41020800
+
+[[check]]
+region = "Bosses"
+name = """[21] Onze, épéiste semi-humain"""
+place = """Geôles de Belurat"""
+dlc = true
+dynamic = false
+flag = 41000800
+
+[[check]]
+region = "Bosses"
+name = """[24] Lion dansant de la bête divine"""
+place = """Belurat, colonie de la tour"""
+dlc = true
+dynamic = false
+flag = 20000800
+
+[[check]]
+region = "Bosses"
+name = """[26] Rellana, chevaleresse des Lunes jumelles"""
+place = """Château d'Ensis"""
+dlc = true
+dynamic = false
+flag = 2048440800
+
+[[check]]
+region = "Bosses"
+name = """[27] Dragon de flammes spectrales"""
+dlc = true
+dynamic = false
+flag = 2049430800
+
+[[check]]
+region = "Bosses"
+name = """[27] Ralva, grand ours écarlate"""
+dlc = true
+dynamic = false
+flag = 2049450800
+
+[[check]]
+region = "Bosses"
+name = """[28] Rugalea, grand ours écarlate"""
+place = """Base de Rauh"""
+dlc = true
+dynamic = false
+flag = 2044470800
+
+[[check]]
+region = "Bosses"
+name = """[25] Dane Mortefeuille"""
+place = """Ruines de Moorth"""
+dlc = true
+dynamic = false
+flag = 2049440800
+
+[[check]]
+region = "Bosses"
+name = """[27] Edredd, chevalier Noir"""
+place = """Fort de la Réprimande"""
+dlc = true
+dynamic = false
+flag = 2049430850
+
+[[check]]
+region = "Bosses"
+name = """[27] Garrew, chevalier Noir"""
+place = """Fort de la faille brumeuse"""
+dlc = true
+dynamic = false
+flag = 2047450800
+
+[[check]]
+region = "Bosses"
+name = """[26] Ours écarlate"""
+place = """Mausolée septentrional sans nom"""
+dlc = true
+dynamic = false
+flag = 2046450800
+
+[[check]]
+region = "Bosses"
+name = """[28] Rakshasa"""
+place = """Mausolée oriental sans nom"""
+dlc = true
+dynamic = false
+flag = 2051440800
+
+[[check]]
+region = "Bosses"
+name = """[32] Metyr, mère des Doigts"""
+place = """Cathédrale de Manus Metyr"""
+dlc = true
+dynamic = false
+flag = 25000800
+
+[[check]]
+region = "Bosses"
+name = """[25] Comte Ymir, mère des Doigts"""
+place = """Cathédrale de Manus Metyr"""
+dlc = true
+dynamic = false
+flag = 2051450800
+
+[[check]]
+region = "Bosses"
+name = """[23] Chevalier de la Mort"""
+place = """Catacombes de la faille brumeuse"""
+dlc = true
+dynamic = false
+flag = 40000800
+
+[[check]]
+region = "Bosses"
+name = """[26] Chevalier de la Mort"""
+place = """Catacombes du Scorpion"""
+dlc = true
+dynamic = false
+flag = 40010800
+
+[[check]]
+region = "Bosses"
+name = """[25] Labirith l'Exécrable"""
+place = """Geôles de Bonny"""
+dlc = true
+dynamic = false
+flag = 41010800
+
+[[check]]
+region = "Bosses"
+name = """[27] Hippopotame doré"""
+place = """Château noir"""
+dlc = true
+dynamic = false
+flag = 21000850
+
+[[check]]
+region = "Bosses"
+name = """[30] Messmer l'Empaleur & Messmer, serpent maléfique"""
+place = """Château noir"""
+dlc = true
+dynamic = false
+flag = 21010800
+
+[[check]]
+region = "Bosses"
+name = """[32] Lion dansant de la bête divine"""
+dlc = true
+dynamic = false
+flag = 2046460800
+
+[[check]]
+region = "Bosses"
+name = """[32] Romina, sainte du bourgeon"""
+place = """Église du bourgeon"""
+dlc = true
+dynamic = false
+flag = 2044450800
+
+[[check]]
+region = "Bosses"
+name = """[26] Dragon de flammes spectrales"""
+dlc = true
+dynamic = false
+flag = 2048380850
+
+[[check]]
+region = "Bosses"
+name = """[24] Danseuse de Ranah"""
+place = """Mausolée austral sans nom"""
+dlc = true
+dynamic = false
+flag = 2046380800
+
+[[check]]
+region = "Bosses"
+name = """[28] Chevalier putride"""
+place = """Fissure des cercueils de pierre"""
+dlc = true
+dynamic = false
+flag = 22000800
+
+[[check]]
+region = "Bosses"
+name = """[28] Volatile funèbre"""
+dlc = true
+dynamic = false
+flag = 2047390800
+
+[[check]]
+region = "Bosses"
+name = """[26] Marigga, reine semi-humaine"""
+dlc = true
+dynamic = false
+flag = 2046400800
+
+[[check]]
+region = "Bosses"
+name = """[28] Dragon du Pic déchiqueté"""
+place = """Pied du Pic déchiqueté"""
+dlc = true
+dynamic = false
+flag = 2049410800
+
+[[check]]
+region = "Bosses"
+name = """[33] Dragon du Pic déchiqueté"""
+place = """Flanc du Pic déchiqueté"""
+dlc = true
+dynamic = false
+flag = 2052400800
+
+[[check]]
+region = "Bosses"
+name = """[23] Homme-dragon ancien"""
+place = """Fosse au dragon"""
+dlc = true
+dynamic = false
+flag = 43010800
+
+[[check]]
+region = "Bosses"
+name = """[33] Senessax, Dragon ancien"""
+place = """Flanc du Pic déchiqueté"""
+dlc = true
+dynamic = false
+flag = 2054390850
+
+[[check]]
+region = "Bosses"
+name = """[34] Bayle l'Effroyable"""
+place = """Sommet du Pic déchiqueté"""
+dlc = true
+dynamic = false
+flag = 2054390800
+
+[[check]]
+region = "Bosses"
+name = """[32] Sentinelle de l'Arbre"""
+place = """Arrière-pays"""
+dlc = true
+dynamic = false
+flag = 2050470800
+
+[[check]]
+region = "Bosses"
+name = """[32] Sentinelle de l'Arbre"""
+place = """Pont de l’Arrière-Pays"""
+dlc = true
+dynamic = false
+flag = 2050480860
+
+[[check]]
+region = "Bosses"
+name = """[32] Créature stellaire"""
+place = """Colline des Doigts de pierre"""
+dlc = true
+dynamic = false
+flag = 2052480800
+
+[[check]]
+region = "Bosses"
+name = """[29] Commandant Gaïus"""
+dlc = true
+dynamic = false
+flag = 2049480800
+
+[[check]]
+region = "Bosses"
+name = """[28] Avatar de l'Arbre-Occulte"""
+place = """Base de l'Arbre-Occulte"""
+dlc = true
+dynamic = false
+flag = 2050480800
+
+[[check]]
+region = "Bosses"
+name = """[31] Jori, inquisiteur en chef"""
+place = """Catacombes de la lumière noire"""
+dlc = true
+dynamic = false
+flag = 2052430800
+
+[[check]]
+region = "Bosses"
+name = """[32] Midra, seigneur de la Flamme exaltée"""
+place = """Presbytère de Midra"""
+dlc = true
+dynamic = false
+flag = 28000800
+
+[[check]]
+region = "Bosses"
+name = """[33] Radahn, futur consort & Radahn, consort de Miquella"""
+dlc = true
+dynamic = false
+flag = 20010800
+
+# Single always-open region: every subregion id maps to "Bosses" so it is always
+# the current region and the checks accordion auto-opens whatever zone the player is in.
+[[region]]
+name = "Bosses"
+subregions = [1000, 1001, 1100, 1105, 1110, 1201, 1202, 1203, 1204, 1205, 1207, 1208, 1209, 1300, 1400, 1500, 1600, 1800, 1900, 2000, 2001, 2100, 2101, 2102, 2200, 2500, 2800, 3000, 3001, 3002, 3003, 3004, 3005, 3006, 3007, 3008, 3009, 3010, 3011, 3012, 3013, 3014, 3015, 3016, 3017, 3018, 3019, 3020, 3100, 3101, 3102, 3103, 3104, 3105, 3106, 3107, 3109, 3110, 3111, 3112, 3115, 3117, 3118, 3119, 3120, 3121, 3122, 3200, 3201, 3202, 3204, 3205, 3207, 3208, 3211, 3410, 3411, 3412, 3413, 3414, 3415, 3500, 3900, 3920, 4000, 4001, 4002, 4100, 4101, 4102, 4200, 4202, 4203, 4300, 4301, 6100, 6101, 6102, 6200, 6201, 6202, 6300, 6301, 6302, 6400, 6402, 6500, 6501, 6502, 6503, 6800, 6801, 6804, 6805, 6806, 6810, 6815, 6820, 6830, 6835, 6840, 6841, 6850, 6860, 6900, 6901, 6902, 6903, 6904, 6905, 6906, 6920, 6930, 6940, 6960]

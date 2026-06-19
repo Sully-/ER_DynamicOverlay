@@ -1,0 +1,1469 @@
+# All 207 boss encounters as checks, grouped under a single always-open region.
+# Source: tables/en/bosses.toml (flag_id -> flag). No [[region]] => always shown.
+
+region_display_order = ["Bosses"]
+
+[[check]]
+region = "Bosses"
+name = """[1] Soldier of Godrick"""
+place = """Stranded Graveyard"""
+dynamic = false
+flag = 18000850
+
+[[check]]
+region = "Bosses"
+name = """[3] Tree Sentinel"""
+place = """Church of Elleh"""
+dynamic = false
+flag = 1042360800
+
+[[check]]
+region = "Bosses"
+name = """[1] Demi-Human Chief(x2)"""
+place = """Coastal Cave"""
+dynamic = false
+flag = 31150800
+
+[[check]]
+region = "Bosses"
+name = """[1] Erdtree Burial Watchdog"""
+place = """Stormfoot Catacombs"""
+dynamic = false
+flag = 30020800
+
+[[check]]
+region = "Bosses"
+name = """[1] Beastman of Farum Azula"""
+place = """Groveside Cave"""
+dynamic = false
+flag = 31030800
+
+[[check]]
+region = "Bosses"
+name = """[1] Stonedigger Troll"""
+place = """Limgrave Tunnels"""
+dynamic = false
+flag = 32010800
+
+[[check]]
+region = "Bosses"
+name = """[1] Mad Pumpkin Head"""
+place = """Waypoint Ruins"""
+dynamic = false
+flag = 1044360800
+
+[[check]]
+region = "Bosses"
+name = """[3] Bloodhound Knight Darriwil"""
+place = """Forlorn Hound Evergaol"""
+dynamic = false
+flag = 1044350800
+
+[[check]]
+region = "Bosses"
+name = """[1] Patches"""
+place = """Murkwater Cave"""
+dynamic = false
+flag = 31000800
+
+[[check]]
+region = "Bosses"
+name = """[1] Grave Warden Duelist"""
+place = """Murkwater Catacombs"""
+dynamic = false
+flag = 30040800
+
+[[check]]
+region = "Bosses"
+name = """[1] Guardian Golem"""
+place = """Highroad Cave"""
+dynamic = false
+flag = 31170800
+
+[[check]]
+region = "Bosses"
+name = """[1] Black Knife Assassin"""
+place = """Deathtouched Catacombs"""
+dynamic = false
+flag = 30110800
+
+[[check]]
+region = "Bosses"
+name = """[6] Ulcerated Tree Spirit"""
+place = """Fringefolk Hero's Grave"""
+dynamic = false
+flag = 18000800
+
+[[check]]
+region = "Bosses"
+name = """[5] Flying Dragon Agheel"""
+place = """Agheel Lake"""
+dynamic = false
+flag = 1043360800
+
+[[check]]
+region = "Bosses"
+name = """[3] Tibia Mariner"""
+place = """Summonwater Village"""
+dynamic = false
+flag = 1045390800
+
+[[check]]
+region = "Bosses"
+name = """[3] Crucible Knight"""
+place = """Stormhill Evergaol"""
+dynamic = false
+flag = 1042370800
+
+[[check]]
+region = "Bosses"
+name = """[3] Night's Cavalry"""
+dynamic = false
+flag = 1043370800
+
+[[check]]
+region = "Bosses"
+name = """[3] Deathbird"""
+dynamic = false
+flag = 1042380800
+
+[[check]]
+region = "Bosses"
+name = """[3] Bell Bearing Hunter"""
+place = """Warmaster's Shack"""
+dynamic = false
+flag = 1042380850
+
+[[check]]
+region = "Bosses"
+name = """[2] Runebear"""
+place = """Earthbore Cave"""
+dynamic = false
+flag = 31010800
+
+[[check]]
+region = "Bosses"
+name = """[2] Scaly Misbegotten"""
+place = """Morne Tunnel"""
+dynamic = false
+flag = 32000800
+
+[[check]]
+region = "Bosses"
+name = """[2] Erdtree Burial Watchdog"""
+place = """Impaler's Catacombs"""
+dynamic = false
+flag = 30010800
+
+[[check]]
+region = "Bosses"
+name = """[2] Cemetery Shade"""
+place = """Tombsward Catacombs"""
+dynamic = false
+flag = 30000800
+
+[[check]]
+region = "Bosses"
+name = """[2] Miranda the Blighted Bloom"""
+place = """Tombsward Cave"""
+dynamic = false
+flag = 31020800
+
+[[check]]
+region = "Bosses"
+name = """[4] Erdtree Avatar"""
+place = """Minor Erdtree"""
+dynamic = false
+flag = 1043330800
+
+[[check]]
+region = "Bosses"
+name = """[4] Ancient Hero of Zamor"""
+place = """Weeping Evergaol"""
+dynamic = false
+flag = 1042330800
+
+[[check]]
+region = "Bosses"
+name = """[4] Night's Cavalry"""
+place = """Castle Morne Rampart"""
+dynamic = false
+flag = 1044320850
+
+[[check]]
+region = "Bosses"
+name = """[2] Deathbird"""
+dynamic = false
+flag = 1044320800
+
+[[check]]
+region = "Bosses"
+name = """[3] Leonine Misbegotten"""
+place = """Morne Moangrave"""
+dynamic = false
+flag = 1043300800
+
+[[check]]
+region = "Bosses"
+name = """[3] Margit, the Fell Omen"""
+place = """Stormveil Castle"""
+dynamic = false
+flag = 10000850
+
+[[check]]
+region = "Bosses"
+name = """[4] Godrick the Grafted"""
+place = """Stormveil Castle"""
+dynamic = false
+flag = 10000800
+
+[[check]]
+region = "Bosses"
+name = """[6] Cleanrot Knight"""
+place = """Stillwater Cave"""
+dynamic = false
+flag = 31040800
+
+[[check]]
+region = "Bosses"
+name = """[6] Bloodhound Knight"""
+place = """Lakeside Crystal Cave"""
+dynamic = false
+flag = 31050800
+
+[[check]]
+region = "Bosses"
+name = """[6] Erdtree Burial Watchdog"""
+place = """Cliffbottom Catacombs"""
+dynamic = false
+flag = 30060800
+
+[[check]]
+region = "Bosses"
+name = """[6] Crystalian (Staff) & Crystalian (Spear)"""
+place = """Academy Crystal Cave"""
+dynamic = false
+flag = 31060800
+
+[[check]]
+region = "Bosses"
+name = """[6] Crystalian (Ringblade)"""
+place = """Raya Lucaria Crystal Tunnel"""
+dynamic = false
+flag = 32020800
+
+[[check]]
+region = "Bosses"
+name = """[6] Cemetery Shade"""
+place = """Black Knife Catacombs"""
+dynamic = false
+flag = 30050800
+
+[[check]]
+region = "Bosses"
+name = """[6] Black Knife Assassin"""
+place = """Black Knife Catacombs"""
+dynamic = false
+flag = 30050850
+
+[[check]]
+region = "Bosses"
+name = """[6] Spiritcaller Snail"""
+place = """Road's End Catacombs"""
+dynamic = false
+flag = 30030800
+
+[[check]]
+region = "Bosses"
+name = """[6] Grafted Scion"""
+place = """Chapel of Anticipation"""
+dynamic = false
+flag = 10010800
+
+[[check]]
+region = "Bosses"
+name = """[10] Glintstone Dragon Smarag"""
+place = """Temple Quarter"""
+dynamic = false
+flag = 1034450800
+
+[[check]]
+region = "Bosses"
+name = """[8] Omenkiller"""
+place = """Village of the Albinaurics"""
+dynamic = false
+flag = 1035420800
+
+[[check]]
+region = "Bosses"
+name = """[6] Royal Revenant"""
+place = """Kingsrealm Ruins"""
+dynamic = false
+flag = 1034480800
+
+[[check]]
+region = "Bosses"
+name = """[8] Tibia Mariner"""
+dynamic = false
+flag = 1039440800
+
+[[check]]
+region = "Bosses"
+name = """[8] Erdtree Avatar"""
+place = """Converted Tower"""
+dynamic = false
+flag = 1033430800
+
+[[check]]
+region = "Bosses"
+name = """[8] Erdtree Avatar"""
+place = """Mausoleum Compound"""
+dynamic = false
+flag = 1038480800
+
+[[check]]
+region = "Bosses"
+name = """[8] Adan, Thief of Fire"""
+place = """Malefactor's Evergaol"""
+dynamic = false
+flag = 1038410800
+
+[[check]]
+region = "Bosses"
+name = """[8] Bols, Carian Knight"""
+place = """Cuckoo's Evergaol"""
+dynamic = false
+flag = 1033450800
+
+[[check]]
+region = "Bosses"
+name = """[8] Onyx Lord"""
+place = """Royal Grave Evergaol"""
+dynamic = false
+flag = 1036500800
+
+[[check]]
+region = "Bosses"
+name = """[8] Night's Cavalry"""
+place = """Gate Town Bridge"""
+dynamic = false
+flag = 1039430800
+
+[[check]]
+region = "Bosses"
+name = """[8] Night's Cavalry"""
+place = """Bellum Church"""
+dynamic = false
+flag = 1036480800
+
+[[check]]
+region = "Bosses"
+name = """[8] Deathbird"""
+place = """Scenic Isle"""
+dynamic = false
+flag = 1037420800
+
+[[check]]
+region = "Bosses"
+name = """[8] Death Rite Bird"""
+place = """Gate Town North"""
+dynamic = false
+flag = 1036450800
+
+[[check]]
+region = "Bosses"
+name = """[8] Bell Bearing Hunter"""
+place = """Church of Vows"""
+dynamic = false
+flag = 1037460800
+
+[[check]]
+region = "Bosses"
+name = """[6] Royal Knight Loretta"""
+place = """Caria Manor"""
+dynamic = false
+flag = 1035500800
+
+[[check]]
+region = "Bosses"
+name = """[7] Magma Wyrm Makar"""
+place = """Ruin-Strewn Precipice"""
+dynamic = false
+flag = 39200800
+
+[[check]]
+region = "Bosses"
+name = """[17] Glintstone Dragon Adula"""
+place = """Moonlight Altar"""
+dynamic = false
+flag = 1034420800
+
+[[check]]
+region = "Bosses"
+name = """[15] Alecto, Black Knife Ringleader"""
+place = """Ringleader's Evergaol"""
+dynamic = false
+flag = 1033420800
+
+[[check]]
+region = "Bosses"
+name = """[6] Red Wolf of Radagon"""
+dynamic = false
+flag = 14000850
+
+[[check]]
+region = "Bosses"
+name = """[7] Rennala, Queen of the Full Moon"""
+dynamic = false
+flag = 14000800
+
+[[check]]
+region = "Bosses"
+name = """[7] Magma Wyrm"""
+place = """Gael Tunnel"""
+dynamic = false
+flag = 32070800
+
+[[check]]
+region = "Bosses"
+name = """[7] Erdtree Burial Watchdog (Sword) & Erdtree Burial Watchdog (Scepter)"""
+place = """Minor Erdtree Catacombs"""
+dynamic = false
+flag = 30140800
+
+[[check]]
+region = "Bosses"
+name = """[7] Frenzied Duelist"""
+place = """Gaol Cave"""
+dynamic = false
+flag = 31210800
+
+[[check]]
+region = "Bosses"
+name = """[7] Cemetery Shade"""
+place = """Caelid Catacombs"""
+dynamic = false
+flag = 30150800
+
+[[check]]
+region = "Bosses"
+name = """[7] Fallingstar Beast"""
+place = """Sellia Crystal Tunnel"""
+dynamic = false
+flag = 32080800
+
+[[check]]
+region = "Bosses"
+name = """[7] Putrid Crystalian (Ringblade) & Putrid Crystalian (Spear) & Putrid Crystalian (Staff)"""
+place = """Sellia Hideaway"""
+dynamic = false
+flag = 31110800
+
+[[check]]
+region = "Bosses"
+name = """[7] Mad Pumpkin Head (Hammer) & Mad Pumpkin Head (Flail)"""
+place = """Caelem Ruins"""
+dynamic = false
+flag = 1048400800
+
+[[check]]
+region = "Bosses"
+name = """[11] Decaying Ekzykes"""
+place = """Church of the Plague"""
+dynamic = false
+flag = 1048370800
+
+[[check]]
+region = "Bosses"
+name = """[7] Nox Monk & Nox Swordstress"""
+place = """Sellia, Town of Sorcery"""
+dynamic = false
+flag = 1049390800
+
+[[check]]
+region = "Bosses"
+name = """[9] Commander O'Neil"""
+place = """Swamp of Aeonia"""
+dynamic = false
+flag = 1049380800
+
+[[check]]
+region = "Bosses"
+name = """[9] Putrid Avatar"""
+place = """Minor Erdtree"""
+dynamic = false
+flag = 1047400800
+
+[[check]]
+region = "Bosses"
+name = """[9] Night's Cavalry"""
+place = """Caelid Highway South"""
+dynamic = false
+flag = 1049370800
+
+[[check]]
+region = "Bosses"
+name = """[9] Death Rite Bird"""
+place = """Southern Aeonia Swamp Bank"""
+dynamic = false
+flag = 1049370850
+
+[[check]]
+region = "Bosses"
+name = """[8] Crucible Knight & Misbegotten Warrior"""
+place = """Redmane Castle"""
+dynamic = false
+flag = 1051360800
+
+[[check]]
+region = "Bosses"
+name = """[10] Starscourge Radahn"""
+place = """Wailing Dunes"""
+dynamic = false
+flag = 1252380800
+
+[[check]]
+region = "Bosses"
+name = """[7] Cleanrot Knight (Spear) & Cleanrot Knight (Sickle)"""
+place = """Abandoned Cave"""
+dynamic = false
+flag = 31200800
+
+[[check]]
+region = "Bosses"
+name = """[15] Beastman of Farum Azula (Cleaver) & Beastman of Farum Azula (Throwing Knife)"""
+place = """Dragonbarrow Cave"""
+dynamic = false
+flag = 31100800
+
+[[check]]
+region = "Bosses"
+name = """[15] Putrid Tree Spirit"""
+place = """War-Dead Catacombs"""
+dynamic = false
+flag = 30160800
+
+[[check]]
+region = "Bosses"
+name = """[15] Godskin Apostle"""
+place = """Divine Tower of Caelid"""
+dynamic = false
+flag = 34130800
+
+[[check]]
+region = "Bosses"
+name = """[17] Black Blade Kindred"""
+place = """Bestial Sanctum"""
+dynamic = false
+flag = 1051430800
+
+[[check]]
+region = "Bosses"
+name = """[17] Flying Dragon Greyll"""
+place = """Greyoll's Dragonbarrow"""
+dynamic = false
+flag = 1052410800
+
+[[check]]
+region = "Bosses"
+name = """[17] Putrid Avatar"""
+place = """Minor Erdtree"""
+dynamic = false
+flag = 1051400800
+
+[[check]]
+region = "Bosses"
+name = """[9] Battlemage Hugues"""
+place = """Sellia Evergaol"""
+dynamic = false
+flag = 1049390850
+
+[[check]]
+region = "Bosses"
+name = """[17] Night's Cavalry"""
+place = """Lenne's Rise"""
+dynamic = false
+flag = 1052410850
+
+[[check]]
+region = "Bosses"
+name = """[17] Bell Bearing Hunter"""
+place = """Isolated Merchant's Shack"""
+dynamic = false
+flag = 1048410800
+
+[[check]]
+region = "Bosses"
+name = """[10] Necromancer Garris"""
+place = """Sage's Cave"""
+dynamic = false
+flag = 31190850
+
+[[check]]
+region = "Bosses"
+name = """[8] Black Knife Assassin"""
+place = """Sage's Cave"""
+dynamic = false
+flag = 31190800
+
+[[check]]
+region = "Bosses"
+name = """[8] Stonedigger Troll"""
+place = """Old Altus Tunnel"""
+dynamic = false
+flag = 32040800
+
+[[check]]
+region = "Bosses"
+name = """[8] Crystalian (Spear) & Crystalian (Ringblade)"""
+place = """Altus Tunnel"""
+dynamic = false
+flag = 32050800
+
+[[check]]
+region = "Bosses"
+name = """[10] Black Knife Assassin"""
+place = """Sainted Hero's Grave"""
+dynamic = false
+flag = 1040520800
+
+[[check]]
+region = "Bosses"
+name = """[8] Ancient Hero of Zamor"""
+place = """Sainted Hero's Grave"""
+dynamic = false
+flag = 30080800
+
+[[check]]
+region = "Bosses"
+name = """[8] Omenkiller & Miranda the Blighted Bloom"""
+place = """Perfumer's Grotto"""
+dynamic = false
+flag = 31180800
+
+[[check]]
+region = "Bosses"
+name = """[8] Perfumer Tricia & Misbegotten Warrior"""
+place = """Unsightly Catacombs"""
+dynamic = false
+flag = 30120800
+
+[[check]]
+region = "Bosses"
+name = """[9] Erdtree Burial Watchdog"""
+place = """Wyndham Catacombs"""
+dynamic = false
+flag = 30070800
+
+[[check]]
+region = "Bosses"
+name = """[12] Ancient Dragon Lansseax"""
+place = """Rampartside Path"""
+dynamic = false
+flag = 1041520800
+
+[[check]]
+region = "Bosses"
+name = """[8] Demi-Human Queen Gilika"""
+place = """Lux Ruins"""
+dynamic = false
+flag = 1038510800
+
+[[check]]
+region = "Bosses"
+name = """[8] Sanguine Noble"""
+place = """Writheblood Ruins"""
+dynamic = false
+flag = 1040530800
+
+[[check]]
+region = "Bosses"
+name = """[10] Godskin Apostle"""
+place = """Dominula, Windmill Village"""
+dynamic = false
+flag = 1042550800
+
+[[check]]
+region = "Bosses"
+name = """[10] Fallingstar Beast"""
+place = """Starfall Crater"""
+dynamic = false
+flag = 1041500800
+
+[[check]]
+region = "Bosses"
+name = """[10] Tree Sentinel(x2)"""
+dynamic = false
+flag = 1041510800
+
+[[check]]
+region = "Bosses"
+name = """[11] Tibia Mariner"""
+place = """Wyndham Ruins"""
+dynamic = false
+flag = 1038520800
+
+[[check]]
+region = "Bosses"
+name = """[10] Wormface"""
+place = """Minor Erdtree"""
+dynamic = false
+flag = 1041530800
+
+[[check]]
+region = "Bosses"
+name = """[10] Godefroy the Grafted"""
+place = """Golden Lineage Evergaol"""
+dynamic = false
+flag = 1039500800
+
+[[check]]
+region = "Bosses"
+name = """[10] Night's Cavalry"""
+place = """Altus Highway Junction"""
+dynamic = false
+flag = 1039510800
+
+[[check]]
+region = "Bosses"
+name = """[9] Elemer of the Briar"""
+place = """The Shaded Castle"""
+dynamic = false
+flag = 1039540800
+
+[[check]]
+region = "Bosses"
+name = """[9] Onyx Lord"""
+place = """Sealed Tunnel"""
+dynamic = false
+flag = 34120800
+
+[[check]]
+region = "Bosses"
+name = """[9] Grave Warden Duelist"""
+place = """Auriza Side Tomb"""
+dynamic = false
+flag = 30130800
+
+[[check]]
+region = "Bosses"
+name = """[9] Crucible Knight & Crucible Knight Ordovis"""
+place = """Auriza Hero's Grave"""
+dynamic = false
+flag = 30100800
+
+[[check]]
+region = "Bosses"
+name = """[11] Draconic Tree Sentinel"""
+place = """Capital Rampart"""
+dynamic = false
+flag = 1045520800
+
+[[check]]
+region = "Bosses"
+name = """[11] Deathbird"""
+dynamic = false
+flag = 1044530800
+
+[[check]]
+region = "Bosses"
+name = """[11] Bell Bearing Hunter"""
+place = """Hermit Merchant's Shack"""
+dynamic = false
+flag = 1043530800
+
+[[check]]
+region = "Bosses"
+name = """[9] Demi-Human Queen Margot"""
+place = """Volcano Cave"""
+dynamic = false
+flag = 31090800
+
+[[check]]
+region = "Bosses"
+name = """[9] Kindred of Rot(x2)"""
+place = """Seethewater Cave"""
+dynamic = false
+flag = 31070800
+
+[[check]]
+region = "Bosses"
+name = """[9] Red Wolf of the Champion"""
+place = """Gelmir Hero's Grave"""
+dynamic = false
+flag = 30090800
+
+[[check]]
+region = "Bosses"
+name = """[11] Magma Wyrm"""
+place = """Fort Laiedd"""
+dynamic = false
+flag = 1035530800
+
+[[check]]
+region = "Bosses"
+name = """[11] Full-Grown Fallingstar Beast"""
+place = """Ninth Mt. Gelmir Campsite"""
+dynamic = false
+flag = 1036540800
+
+[[check]]
+region = "Bosses"
+name = """[11] Demi-Human Queen Maggie"""
+place = """Hermit Village"""
+dynamic = false
+flag = 1037530800
+
+[[check]]
+region = "Bosses"
+name = """[11] Ulcerated Tree Spirit"""
+place = """Minor Erdtree"""
+dynamic = false
+flag = 1037540810
+
+[[check]]
+region = "Bosses"
+name = """[8] Abductor Virgin (Swinging Sickle) & Abductor Virgin (Wheel)"""
+place = """Subterranean Inquisition Chamber"""
+dynamic = false
+flag = 16000860
+
+[[check]]
+region = "Bosses"
+name = """[11] Godskin Noble"""
+place = """Temple of Eiglay"""
+dynamic = false
+flag = 16000850
+
+[[check]]
+region = "Bosses"
+name = """[12] God-Devouring Serpent & Rykard, Lord of Blasphemy"""
+place = """Volcano Manor"""
+dynamic = false
+flag = 16000800
+
+[[check]]
+region = "Bosses"
+name = """[13] Esgar, Priest of Blood"""
+place = """Leyndell Catacombs"""
+dynamic = false
+flag = 35000850
+
+[[check]]
+region = "Bosses"
+name = """[12] Fell Twin(x2)"""
+place = """Divine Tower of East Altus"""
+dynamic = false
+flag = 34140850
+
+[[check]]
+region = "Bosses"
+name = """[13] Mohg, the Omen"""
+place = """Cathedral of the Forsaken"""
+dynamic = false
+flag = 35000800
+
+[[check]]
+region = "Bosses"
+name = """[11] Godfrey, First Elden Lord"""
+place = """Erdtree Sanctuary"""
+dynamic = false
+flag = 11000850
+
+[[check]]
+region = "Bosses"
+name = """[11] Morgott, the Omen King"""
+place = """Elden Throne"""
+dynamic = false
+flag = 11000800
+
+[[check]]
+region = "Bosses"
+name = """[14] Night's Cavalry"""
+dynamic = false
+flag = 1048510800
+
+[[check]]
+region = "Bosses"
+name = """[12] Black Blade Kindred"""
+dynamic = false
+flag = 1049520800
+
+[[check]]
+region = "Bosses"
+name = """[12] Ancient Hero of Zamor"""
+place = """Giant-Conquering Hero's Grave"""
+dynamic = false
+flag = 30170800
+
+[[check]]
+region = "Bosses"
+name = """[12] Ulcerated Tree Spirit"""
+place = """Giants' Mountaintop Catacombs"""
+dynamic = false
+flag = 30180800
+
+[[check]]
+region = "Bosses"
+name = """[12] Godskin Apostle & Godskin Noble & Spiritcaller Snail"""
+place = """Spiritcaller Cave"""
+dynamic = false
+flag = 31220800
+
+[[check]]
+region = "Bosses"
+name = """[16] Borealis the Freezing Fog"""
+place = """Freezing Lake"""
+dynamic = false
+flag = 1254560800
+
+[[check]]
+region = "Bosses"
+name = """[14] Erdtree Avatar"""
+place = """Minor Erdtree"""
+dynamic = false
+flag = 1052560800
+
+[[check]]
+region = "Bosses"
+name = """[14] Roundtable Knight Vyke"""
+place = """Lord Contender's Evergaol"""
+dynamic = false
+flag = 1053560800
+
+[[check]]
+region = "Bosses"
+name = """[14] Death Rite Bird"""
+dynamic = false
+flag = 1050570800
+
+[[check]]
+region = "Bosses"
+name = """[13] Commander Niall"""
+place = """Castle Sol"""
+dynamic = false
+flag = 1051570800
+
+[[check]]
+region = "Bosses"
+name = """[14] Fire Giant"""
+place = """Flame Peak"""
+dynamic = false
+flag = 1052520800
+
+[[check]]
+region = "Bosses"
+name = """[14] Godskin Duo"""
+place = """Dragon Temple Altar"""
+dynamic = false
+flag = 13000850
+
+[[check]]
+region = "Bosses"
+name = """[17] Dragonlord Placidusax"""
+place = """Beside the Great Bridge"""
+dynamic = false
+flag = 13000830
+
+[[check]]
+region = "Bosses"
+name = """[15] Maliketh, the Black Blade"""
+dynamic = false
+flag = 13000800
+
+[[check]]
+region = "Bosses"
+name = """[16] Stray Mimic Tear"""
+place = """Hidden Path to the Haligtree"""
+dynamic = false
+flag = 30200800
+
+[[check]]
+region = "Bosses"
+name = """[16] Putrid Grave Warden Duelist"""
+place = """Consecrated Snowfield Catacombs"""
+dynamic = false
+flag = 30190800
+
+[[check]]
+region = "Bosses"
+name = """[16] Astel, Stars of Darkness"""
+place = """Yelough Anix Tunnel"""
+dynamic = false
+flag = 32110800
+
+[[check]]
+region = "Bosses"
+name = """[16] Misbegotten Crusader"""
+place = """Cave of the Forlorn"""
+dynamic = false
+flag = 31120800
+
+[[check]]
+region = "Bosses"
+name = """[18] Great Wyrm Theodorix"""
+dynamic = false
+flag = 1050560800
+
+[[check]]
+region = "Bosses"
+name = """[18] Putrid Avatar"""
+place = """Minor Erdtree"""
+dynamic = false
+flag = 1050570850
+
+[[check]]
+region = "Bosses"
+name = """[18] Night's Cavalry (Glaive) & Night's Cavalry (Flail)"""
+place = """Inner Consecrated Snowfield"""
+dynamic = false
+flag = 1248550800
+
+[[check]]
+region = "Bosses"
+name = """[18] Death Rite Bird"""
+dynamic = false
+flag = 1048570800
+
+[[check]]
+region = "Bosses"
+name = """[18] Loretta, Knight of the Haligtree"""
+dynamic = false
+flag = 15000850
+
+[[check]]
+region = "Bosses"
+name = """[20] Malenia, Blade of Miquella & Malenia, Goddess of Rot"""
+dynamic = false
+flag = 15000800
+
+[[check]]
+region = "Bosses"
+name = """[11] Dragonkin Soldier"""
+place = """Siofra River Bank"""
+dynamic = false
+flag = 12020830
+
+[[check]]
+region = "Bosses"
+name = """[6] Ancestor Spirit"""
+place = """Siofra River Bank"""
+dynamic = false
+flag = 12080800
+
+[[check]]
+region = "Bosses"
+name = """[9] Mimic Tear"""
+dynamic = false
+flag = 12020850
+
+[[check]]
+region = "Bosses"
+name = """[9] Regal Ancestor Spirit"""
+place = """Hallowhorn Grounds"""
+dynamic = false
+flag = 12090800
+
+[[check]]
+region = "Bosses"
+name = """[9] Valiant Gargoyle & Valiant Gargoyle (Twinblade)"""
+place = """Siofra Aqueduct"""
+dynamic = false
+flag = 12020800
+
+[[check]]
+region = "Bosses"
+name = """[18] Mohg, Lord of Blood"""
+dynamic = false
+flag = 12050800
+
+[[check]]
+region = "Bosses"
+name = """[5] Dragonkin Soldier of Nokstella"""
+dynamic = false
+flag = 12010800
+
+[[check]]
+region = "Bosses"
+name = """[13] Dragonkin Soldier"""
+dynamic = false
+flag = 12010850
+
+[[check]]
+region = "Bosses"
+name = """[11] Astel, Naturalborn of the Void"""
+place = """Grand Cloister"""
+dynamic = false
+flag = 12040800
+
+[[check]]
+region = "Bosses"
+name = """[13] Crucible Knight Siluria"""
+dynamic = false
+flag = 12030390
+
+[[check]]
+region = "Bosses"
+name = """[11] Fia's Champion & Sorcerer Rogier & Lionel the Lionhearted"""
+dynamic = false
+flag = 12030800
+
+[[check]]
+region = "Bosses"
+name = """[11] Lichdragon Fortissax"""
+dynamic = false
+flag = 12030850
+
+[[check]]
+region = "Bosses"
+name = """[15] Sir Gideon Ofnir, the All-Knowing"""
+place = """Erdtree Sanctuary"""
+dynamic = false
+flag = 11050850
+
+[[check]]
+region = "Bosses"
+name = """[16] Godfrey, First Elden Lord"""
+place = """Elden Throne"""
+dynamic = false
+flag = 11050800
+
+[[check]]
+region = "Bosses"
+name = """[17] Radagon of the Golden Order & Elden Beast"""
+place = """Fractured Marika"""
+dynamic = false
+flag = 19000800
+
+[[check]]
+region = "Bosses"
+name = """[23] Ghostflame Dragon"""
+dlc = true
+dynamic = false
+flag = 2045440800
+
+[[check]]
+region = "Bosses"
+name = """[21] Blackgaol Knight"""
+place = """Western Nameless Mausoleum"""
+dlc = true
+dynamic = false
+flag = 2046410800
+
+[[check]]
+region = "Bosses"
+name = """[25] Chief Bloodfiend"""
+place = """Rivermouth Cave"""
+dlc = true
+dynamic = false
+flag = 43000800
+
+[[check]]
+region = "Bosses"
+name = """[26] Lamenter"""
+place = """Lamenter's Gaol"""
+dlc = true
+dynamic = false
+flag = 41020800
+
+[[check]]
+region = "Bosses"
+name = """[21] Demi-Human Swordmaster Onze"""
+place = """Belurat Gaol"""
+dlc = true
+dynamic = false
+flag = 41000800
+
+[[check]]
+region = "Bosses"
+name = """[24] Divine Beast Dancing Lion"""
+place = """Belurat, Tower Settlement"""
+dlc = true
+dynamic = false
+flag = 20000800
+
+[[check]]
+region = "Bosses"
+name = """[26] Rellana, Twin Moon Knight"""
+place = """Castle Ensis"""
+dlc = true
+dynamic = false
+flag = 2048440800
+
+[[check]]
+region = "Bosses"
+name = """[27] Ghostflame Dragon"""
+dlc = true
+dynamic = false
+flag = 2049430800
+
+[[check]]
+region = "Bosses"
+name = """[27] Ralva the Great Red Bear"""
+dlc = true
+dynamic = false
+flag = 2049450800
+
+[[check]]
+region = "Bosses"
+name = """[28] Rugalea the Great Red Bear"""
+place = """Rauh Base"""
+dlc = true
+dynamic = false
+flag = 2044470800
+
+[[check]]
+region = "Bosses"
+name = """[25] Dryleaf Dane"""
+place = """Moorth Ruins"""
+dlc = true
+dynamic = false
+flag = 2049440800
+
+[[check]]
+region = "Bosses"
+name = """[27] Black Knight Edredd"""
+place = """Fort of Reprimand"""
+dlc = true
+dynamic = false
+flag = 2049430850
+
+[[check]]
+region = "Bosses"
+name = """[27] Black Knight Garrew"""
+place = """Fog Rift Fort"""
+dlc = true
+dynamic = false
+flag = 2047450800
+
+[[check]]
+region = "Bosses"
+name = """[26] Red Bear"""
+place = """Northern Nameless Mausoleum"""
+dlc = true
+dynamic = false
+flag = 2046450800
+
+[[check]]
+region = "Bosses"
+name = """[28] Rakshasa"""
+place = """Eastern Nameless Mausoleum"""
+dlc = true
+dynamic = false
+flag = 2051440800
+
+[[check]]
+region = "Bosses"
+name = """[32] Metyr, Mother of Fingers"""
+place = """Cathedral of Manus Metyr"""
+dlc = true
+dynamic = false
+flag = 25000800
+
+[[check]]
+region = "Bosses"
+name = """[25] Count Ymir, Mother of Fingers"""
+place = """Cathedral of Manus Metyr"""
+dlc = true
+dynamic = false
+flag = 2051450800
+
+[[check]]
+region = "Bosses"
+name = """[23] Death Knight"""
+place = """Fog Rift Catacombs"""
+dlc = true
+dynamic = false
+flag = 40000800
+
+[[check]]
+region = "Bosses"
+name = """[26] Death Knight"""
+place = """Scorpion River Catacombs"""
+dlc = true
+dynamic = false
+flag = 40010800
+
+[[check]]
+region = "Bosses"
+name = """[25] Curseblade Labirith"""
+place = """Bonny Gaol"""
+dlc = true
+dynamic = false
+flag = 41010800
+
+[[check]]
+region = "Bosses"
+name = """[27] Golden Hippopotamus"""
+place = """Shadow Keep"""
+dlc = true
+dynamic = false
+flag = 21000850
+
+[[check]]
+region = "Bosses"
+name = """[30] Messmer the Impaler & Base Serpent Messmer"""
+place = """Shadow Keep"""
+dlc = true
+dynamic = false
+flag = 21010800
+
+[[check]]
+region = "Bosses"
+name = """[32] Divine Beast Dancing Lion"""
+dlc = true
+dynamic = false
+flag = 2046460800
+
+[[check]]
+region = "Bosses"
+name = """[32] Romina, Saint of the Bud"""
+place = """Church of the Bud"""
+dlc = true
+dynamic = false
+flag = 2044450800
+
+[[check]]
+region = "Bosses"
+name = """[26] Ghostflame Dragon"""
+dlc = true
+dynamic = false
+flag = 2048380850
+
+[[check]]
+region = "Bosses"
+name = """[24] Dancer of Ranah"""
+place = """Southern Nameless Mausoleum"""
+dlc = true
+dynamic = false
+flag = 2046380800
+
+[[check]]
+region = "Bosses"
+name = """[28] Putrescent Knight"""
+place = """Stone Coffin Fissure"""
+dlc = true
+dynamic = false
+flag = 22000800
+
+[[check]]
+region = "Bosses"
+name = """[28] Death Rite Bird"""
+dlc = true
+dynamic = false
+flag = 2047390800
+
+[[check]]
+region = "Bosses"
+name = """[26] Demi-Human Queen Marigga"""
+dlc = true
+dynamic = false
+flag = 2046400800
+
+[[check]]
+region = "Bosses"
+name = """[28] Jagged Peak Drake"""
+place = """Foot of the Jagged Peak"""
+dlc = true
+dynamic = false
+flag = 2049410800
+
+[[check]]
+region = "Bosses"
+name = """[33] Jagged Peak Drake"""
+place = """Jagged Peak Mountainside"""
+dlc = true
+dynamic = false
+flag = 2052400800
+
+[[check]]
+region = "Bosses"
+name = """[23] Ancient Dragon-Man"""
+place = """Dragon's Pit"""
+dlc = true
+dynamic = false
+flag = 43010800
+
+[[check]]
+region = "Bosses"
+name = """[33] Ancient Dragon Senessax"""
+place = """Jagged Peak Mountainside"""
+dlc = true
+dynamic = false
+flag = 2054390850
+
+[[check]]
+region = "Bosses"
+name = """[34] Bayle the Dread"""
+place = """Jagged Peak Summit"""
+dlc = true
+dynamic = false
+flag = 2054390800
+
+[[check]]
+region = "Bosses"
+name = """[32] Tree Sentinel 1"""
+place = """Hinterland"""
+dlc = true
+dynamic = false
+flag = 2050470800
+
+[[check]]
+region = "Bosses"
+name = """[32] Tree Sentinel 2"""
+place = """Hinterland Bridge"""
+dlc = true
+dynamic = false
+flag = 2050480860
+
+[[check]]
+region = "Bosses"
+name = """[32] Fallingstar Beast"""
+place = """Fingerstone Hill"""
+dlc = true
+dynamic = false
+flag = 2052480800
+
+[[check]]
+region = "Bosses"
+name = """[29] Commander Gaius"""
+dlc = true
+dynamic = false
+flag = 2049480800
+
+[[check]]
+region = "Bosses"
+name = """[28] Scadutree Avatar"""
+place = """Scadutree Base"""
+dlc = true
+dynamic = false
+flag = 2050480800
+
+[[check]]
+region = "Bosses"
+name = """[31] Jori, Elder Inquisitor"""
+place = """Darklight Catacombs"""
+dlc = true
+dynamic = false
+flag = 2052430800
+
+[[check]]
+region = "Bosses"
+name = """[32] Midra, Lord of Frenzied Flame"""
+place = """Midra's Manse"""
+dlc = true
+dynamic = false
+flag = 28000800
+
+[[check]]
+region = "Bosses"
+name = """[33] Promised Consort Radahn & Radahn, Consort of Miquella"""
+dlc = true
+dynamic = false
+flag = 20010800
+
+# Single always-open region: every subregion id maps to "Bosses" so it is always
+# the current region and the checks accordion auto-opens whatever zone the player is in.
+[[region]]
+name = "Bosses"
+subregions = [1000, 1001, 1100, 1105, 1110, 1201, 1202, 1203, 1204, 1205, 1207, 1208, 1209, 1300, 1400, 1500, 1600, 1800, 1900, 2000, 2001, 2100, 2101, 2102, 2200, 2500, 2800, 3000, 3001, 3002, 3003, 3004, 3005, 3006, 3007, 3008, 3009, 3010, 3011, 3012, 3013, 3014, 3015, 3016, 3017, 3018, 3019, 3020, 3100, 3101, 3102, 3103, 3104, 3105, 3106, 3107, 3109, 3110, 3111, 3112, 3115, 3117, 3118, 3119, 3120, 3121, 3122, 3200, 3201, 3202, 3204, 3205, 3207, 3208, 3211, 3410, 3411, 3412, 3413, 3414, 3415, 3500, 3900, 3920, 4000, 4001, 4002, 4100, 4101, 4102, 4200, 4202, 4203, 4300, 4301, 6100, 6101, 6102, 6200, 6201, 6202, 6300, 6301, 6302, 6400, 6402, 6500, 6501, 6502, 6503, 6800, 6801, 6804, 6805, 6806, 6810, 6815, 6820, 6830, 6835, 6840, 6841, 6850, 6860, 6900, 6901, 6902, 6903, 6904, 6905, 6906, 6920, 6930, 6940, 6960]
