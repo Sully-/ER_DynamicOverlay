@@ -2,8 +2,9 @@ use std::collections::{HashMap, HashSet};
 
 use er_game_state::{
     bosses_in_region, checks_in_region, checks_region_label_for_subregion, checks_region_names,
-    checks_seed_flags_loaded, effective_flag, good_by_key, group_names, group_progress, group_size,
-    item_owned, region_label_for_subregion, region_names, GameStateSource,
+    checks_seed_flags_loaded, checks_total_count, effective_flag, good_by_key, group_names,
+    group_progress, group_size, item_owned, region_label_for_subregion, region_names, CheckEntry,
+    GameStateSource,
 };
 use er_overlay_common::{
     BossPanelScope, ChallengeSnapshot, GameStateDiagnostics, GameTime, TrackKind,
@@ -86,6 +87,8 @@ pub struct OverlayViewModel {
     pub checks_panel_sections: Vec<CheckPanelSection>,
     pub checks_panel_done: u32,
     pub checks_panel_total: u32,
+    pub checks_done: u32,
+    pub checks_total: u32,
     pub checks_current_region: Option<String>,
     /// Whether a per-seed flag mapping is loaded (regulation parsed). Surfaced in the panel.
     pub checks_seed_active: bool,
@@ -185,10 +188,7 @@ fn check_rows_for_region(
     let mut done = 0u32;
     let mut traceable_total = 0u32;
     for check in checks_in_region(region) {
-        let (done_state, traceable) = match effective_flag(&check) {
-            Some(flag) => (source.get_flag(flag), true),
-            None => (None, false),
-        };
+        let (done_state, traceable) = check_done_state(source, &check);
         if traceable {
             traceable_total += 1;
         }
@@ -204,6 +204,32 @@ fn check_rows_for_region(
         });
     }
     (rows, done, traceable_total)
+}
+
+fn check_done_state(source: &dyn GameStateSource, check: &CheckEntry) -> (Option<bool>, bool) {
+    match effective_flag(check) {
+        Some(flag) => (source.get_flag(flag), true),
+        None => (None, false),
+    }
+}
+
+fn build_all_checks_progress(source: &dyn GameStateSource) -> (u32, u32) {
+    let mut done_total = 0u32;
+    let mut checks_total = 0u32;
+
+    for region in checks_region_names() {
+        for check in checks_in_region(&region) {
+            let (done_state, traceable) = check_done_state(source, &check);
+            if traceable {
+                checks_total += 1;
+            }
+            if done_state == Some(true) {
+                done_total += 1;
+            }
+        }
+    }
+
+    (done_total, checks_total)
 }
 
 fn build_checks_panel_sections(
@@ -263,6 +289,7 @@ pub fn empty_view_model(
     checks_panel_scope: BossPanelScope,
 ) -> OverlayViewModel {
     let bosses_total = er_game_state::bosses_total_count() as u32;
+    let checks_total = checks_total_count() as u32;
     OverlayViewModel {
         igt: None,
         bosses_killed: None,
@@ -283,6 +310,8 @@ pub fn empty_view_model(
         checks_panel_sections: Vec::new(),
         checks_panel_done: 0,
         checks_panel_total: 0,
+        checks_done: 0,
+        checks_total,
         checks_current_region: None,
         checks_seed_active: false,
         challenge: ChallengeSnapshot::default(),
@@ -348,6 +377,7 @@ pub fn build_view_model(
     let checks_current_region = current_subregion_id.and_then(checks_region_label_for_subregion);
     let (checks_panel_sections, checks_panel_done, checks_panel_total) =
         build_checks_panel_sections(source, checks_panel_scope, checks_current_region.as_deref());
+    let (checks_done, checks_total) = build_all_checks_progress(source);
 
     OverlayViewModel {
         igt: source.get_igt(),
@@ -369,6 +399,8 @@ pub fn build_view_model(
         checks_panel_sections,
         checks_panel_done,
         checks_panel_total,
+        checks_done,
+        checks_total,
         checks_current_region,
         checks_seed_active: checks_seed_flags_loaded(),
         challenge,

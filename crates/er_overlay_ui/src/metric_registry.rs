@@ -34,6 +34,10 @@ pub fn resolve_metric(metric: &str, vm: &OverlayViewModel) -> MetricValue {
             current: vm.bosses_killed,
             max: Some(vm.bosses_total),
         },
+        "checks" => MetricValue::Count {
+            current: Some(vm.checks_done),
+            max: Some(vm.checks_total),
+        },
         "pb" | "challenge_pb" => {
             if vm.challenge.enabled {
                 MetricValue::Count {
@@ -210,6 +214,25 @@ mod tests {
                 true
             ),
             "12/20"
+        );
+    }
+
+    #[test]
+    fn checks_metric_resolves_global_progress() {
+        let vm = build_view_model(
+            &MockGameState::default(),
+            &[],
+            &HashSet::new(),
+            er_overlay_common::BossPanelScope::CurrentRegion,
+            er_overlay_common::BossPanelScope::CurrentRegion,
+            er_overlay_common::ChallengeSnapshot::default(),
+        );
+        assert_eq!(
+            resolve_metric("checks", &vm),
+            MetricValue::Count {
+                current: Some(0),
+                max: Some(er_game_state::checks_total_count() as u32),
+            }
         );
     }
 
