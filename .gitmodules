@@ -1,0 +1,3 @@
+[submodule "companion/SoulsFormatsNEXT"]
+	path = companion/SoulsFormatsNEXT
+	url = https://github.com/soulsmods/SoulsFormatsNEXT.git

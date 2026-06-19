@@ -25,6 +25,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using SoulsFormats;
+using SoulsFormats.Cryptography;
 
 // CLI arguments (all provided automatically by the overlay):
 //   args[0] regPath    : path to the regulation.bin the game LOADS (the ModEngine mod), to read.
@@ -95,21 +96,20 @@ if (wanted.Count > 0)
     BND4 bnd;
     try
     {
-        bnd = SFUtil.DecryptERRegulation(regBytes);
+        bnd = RegulationDecryptor.DecryptERRegulation(regPath);
     }
     catch (Exception e)
     {
         Console.Error.WriteLine($"Failed to read regulation.bin: {e.Message}");
         return 3;
     }
-    using var _bnd = bnd;
 
     // Step 3: pull the world/ground treasure item-lot table out of the archive.
     PARAM? mapParam = null;
     foreach (var file in bnd.Files)
     {
         if (file.Name.EndsWith("ItemLotParam_map.param", StringComparison.OrdinalIgnoreCase))
-            mapParam = PARAM.ReadIgnoreCompression(file.Bytes);
+            mapParam = PARAM.Read(file.Bytes);
     }
 
     // A param is just raw rows until a paramdef tells us the field layout (offsets/types/names).

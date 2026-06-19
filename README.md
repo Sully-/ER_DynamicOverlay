@@ -158,6 +158,7 @@ The build copies `er_overlay.toml`, `layouts/`, `tables/<lang>/bosses.toml`, `ta
 The randomizer helper (`companion/er_checks_extractor`) is a separate .NET project, published self-contained:
 
 ```powershell
+git submodule update --init companion/SoulsFormatsNEXT
 dotnet publish companion/er_checks_extractor/er_checks_extractor.csproj -c Release
 ```
 

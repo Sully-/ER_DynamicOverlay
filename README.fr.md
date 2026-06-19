@@ -158,6 +158,7 @@ La compilation copie `er_overlay.toml`, `layouts/`, `tables/<lang>/bosses.toml`,
 L'assistant randomizer (`companion/er_checks_extractor`) est un projet .NET séparé, publié en self-contained :
 
 ```powershell
+git submodule update --init companion/SoulsFormatsNEXT
 dotnet publish companion/er_checks_extractor/er_checks_extractor.csproj -c Release
 ```
 

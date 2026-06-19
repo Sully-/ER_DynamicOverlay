@@ -21,12 +21,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Modding\Smithbox\code\Smithbox\src\Andre\SoulsFormats\SoulsFormats\Andre.SoulsFormats.csproj" />
+    <ProjectReference Include="..\SoulsFormatsNEXT\SoulsFormats\SoulsFormats.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <!-- Keep reflection-heavy assemblies whole so trimming cannot remove members used dynamically. -->
-    <TrimmerRootAssembly Include="Andre.SoulsFormats" />
+    <TrimmerRootAssembly Include="SoulsFormats" />
     <TrimmerRootAssembly Include="er_checks_extractor" />
   </ItemGroup>
 
