@@ -153,7 +153,7 @@ Artifacts in `target/release/`:
 - `er_overlay_injector.exe` — the injector
 - `er_overlay.dll` — the overlay itself
 
-The build copies `er_overlay.toml`, `layouts/`, `tables/<lang>/bosses.toml`, `tables/<lang>/checks.toml` and `assets/icons/` next to the binaries. To produce a release-style zip locally: `.\tools\bundle_release.ps1`.
+The build copies `er_overlay.toml`, `layouts/`, `tables/<lang>/bosses.toml`, `tables/<lang>/checks.toml` and `assets/icons/` next to the binaries. To produce a release-style zip locally, including the randomizer helper: `.\tools\bundle_release.ps1`.
 
 The randomizer helper (`companion/er_checks_extractor`) is a separate .NET project, published self-contained:
 
@@ -161,7 +161,7 @@ The randomizer helper (`companion/er_checks_extractor`) is a separate .NET proje
 dotnet publish companion/er_checks_extractor/er_checks_extractor.csproj -c Release
 ```
 
-Copy the resulting `er_checks_extractor.exe` to `companion/` next to the DLL (or point `checks_extractor_path` at it).
+The release bundle publishes it to `companion/er_checks_extractor.exe` next to the DLL automatically (or point `checks_extractor_path` at a custom build).
 
 ### Advanced injector (command line)
 
@@ -501,7 +501,7 @@ The checklist behind the [checks panel](#checks-panel-randomizer-aware). One `[[
 | `dynamic` | yes | `false` = fixed `flag`. `true` = randomizer-sensitive ground loot resolved per seed. |
 | `flag` | for static | Event flag checked when `dynamic = false`. |
 | `vanilla_flag` | for dynamic | Vanilla acquisition flag; used as fallback when no seed mapping is loaded. |
-| `lot_id`, `lot_param` | for dynamic | Stable `ItemLotParam` row id (`map` or `enemy`) used to look up the current flag in a randomizer regulation. |
+| `lot_id` | for dynamic | Stable `ItemLotParam_map` row id used to look up the current flag in a randomizer regulation. |
 
 When `regulation_path` is set, the companion writes a `checks_flags.toml` (`lot_id → current flag` + regulation hash) that the overlay hot-reloads to resolve dynamic checks for the active seed.
 

@@ -21,11 +21,19 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Install .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
       - name: Cache cargo registry and target
         uses: Swatinem/rust-cache@v2
 
       - name: Build release
         run: cargo build --release
+
+      - name: Publish companion
+        run: dotnet publish companion/er_checks_extractor/er_checks_extractor.csproj -c Release -o target/release/companion
 
       - name: Bundle artifacts
         shell: pwsh
@@ -40,6 +48,7 @@ jobs:
           Copy-Item target/release/layouts $out/ -Recurse
           Copy-Item target/release/tables  $out/ -Recurse
           Copy-Item target/release/assets  $out/ -Recurse
+          Copy-Item target/release/companion $out/ -Recurse
           Copy-Item README.md, LICENSE     $out/
 
           # Layout editor — HTML at zip root, assets in layout_editor_assets/

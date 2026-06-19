@@ -10,9 +10,9 @@
 //
 // Pipeline
 // --------
-//   1. Parse checks.toml -> the list of dynamic lots we care about (lot_id + which param table).
+//   1. Parse checks.toml -> the list of dynamic map lots we care about (lot_id).
 //   2. Decrypt + decompress the regulation.bin (BND4 archive) using the game's Oodle DLL.
-//   3. Read ItemLotParam_map / ItemLotParam_enemy and apply the (embedded) paramdef.
+//   3. Read ItemLotParam_map and apply the (embedded) paramdef.
 //   4. For each wanted lot_id, read its current getItemFlagId.
 //   5. Write checks_flags.toml: "lot_id = flag" lines + the regulation SHA-256.
 //
@@ -104,32 +104,25 @@ if (wanted.Count > 0)
     }
     using var _bnd = bnd;
 
-    // Step 3: pull the two item-lot tables out of the archive.
-    //   ItemLotParam_map   = world / ground treasure.
-    //   ItemLotParam_enemy = enemy drops.
+    // Step 3: pull the world/ground treasure item-lot table out of the archive.
     PARAM? mapParam = null;
-    PARAM? enemyParam = null;
     foreach (var file in bnd.Files)
     {
         if (file.Name.EndsWith("ItemLotParam_map.param", StringComparison.OrdinalIgnoreCase))
             mapParam = PARAM.ReadIgnoreCompression(file.Bytes);
-        else if (file.Name.EndsWith("ItemLotParam_enemy.param", StringComparison.OrdinalIgnoreCase))
-            enemyParam = PARAM.ReadIgnoreCompression(file.Bytes);
     }
 
     // A param is just raw rows until a paramdef tells us the field layout (offsets/types/names).
     var def = LoadItemLotParamDef();
     mapParam?.ApplyParamdef(def);
-    enemyParam?.ApplyParamdef(def);
 
     // Step 4: for each wanted lot, read the flag that flips when its current item is acquired.
-    foreach (var (lotId, param) in wanted)
+    foreach (var lotId in wanted)
     {
-        var p = param == "enemy" ? enemyParam : mapParam;
-        var row = p?[lotId]; // PARAM indexer: look up the row by its (stable) Row ID.
+        var row = mapParam?[lotId]; // PARAM indexer: look up the row by its (stable) Row ID.
         if (row is null)
         {
-            Console.Error.WriteLine($"warn: lot {lotId} ({param}) not found in regulation");
+            Console.Error.WriteLine($"warn: map lot {lotId} not found in regulation");
             missing++;
             continue;
         }
@@ -153,28 +146,26 @@ Console.WriteLine(
     $"Wrote {outPath}: {resolved} resolved, {untraceable} untraceable, {missing} missing (of {wanted.Count} dynamic).");
 return 0;
 
-// Lightweight, dependency-free parse of checks.toml: collect (lot_id, lot_param) of every
+// Lightweight, dependency-free parse of checks.toml: collect lot_id of every
 // [[check]] table whose `dynamic = true`. We don't pull in a full TOML library because the file
 // is generated with a stable, one-key-per-line layout; we just scan it line by line.
 //
-// We track the current [[check]] block and remember its dynamic/lot_id/lot_param fields, then
+// We track the current [[check]] block and remember its dynamic/lot_id fields, then
 // "flush" (emit a result if it qualifies) when the next block header arrives or the file ends.
-static List<(int lotId, string param)> ParseWantedLots(string path)
+static List<int> ParseWantedLots(string path)
 {
-    var result = new List<(int, string)>();
+    var result = new List<int>();
     var inCheck = false; // are we inside a [[check]] table right now?
     var dynamic = false; // did this block declare dynamic = true?
     int? lotId = null; // the block's lot_id (the stable anchor), if any.
-    var param = "map"; // which lot table: "map" (default) or "enemy".
 
     // Commit the block we just finished reading, then reset for the next one.
     void Flush()
     {
         if (inCheck && dynamic && lotId is int id)
-            result.Add((id, param));
+            result.Add(id);
         dynamic = false;
         lotId = null;
-        param = "map";
     }
 
     foreach (var raw in File.ReadLines(path))
@@ -207,9 +198,6 @@ static List<(int lotId, string param)> ParseWantedLots(string path)
             case "lot_id":
                 if (int.TryParse(val, out var v))
                     lotId = v;
-                break;
-            case "lot_param":
-                param = val.Trim('"'); // value is quoted in the TOML, e.g. "map".
                 break;
         }
     }

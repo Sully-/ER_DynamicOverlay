@@ -153,7 +153,7 @@ Artefacts dans `target/release/` :
 - `er_overlay_injector.exe` — l'injecteur
 - `er_overlay.dll` — l'overlay lui-même
 
-La compilation copie `er_overlay.toml`, `layouts/`, `tables/<lang>/bosses.toml`, `tables/<lang>/checks.toml` et `assets/icons/` à côté des binaires. Pour produire localement un zip similaire à une release : `.\tools\bundle_release.ps1`.
+La compilation copie `er_overlay.toml`, `layouts/`, `tables/<lang>/bosses.toml`, `tables/<lang>/checks.toml` et `assets/icons/` à côté des binaires. Pour produire localement un zip similaire à une release, avec l'assistant randomizer inclus : `.\tools\bundle_release.ps1`.
 
 L'assistant randomizer (`companion/er_checks_extractor`) est un projet .NET séparé, publié en self-contained :
 
@@ -161,7 +161,7 @@ L'assistant randomizer (`companion/er_checks_extractor`) est un projet .NET sép
 dotnet publish companion/er_checks_extractor/er_checks_extractor.csproj -c Release
 ```
 
-Copiez le `er_checks_extractor.exe` généré dans `companion/` à côté de la DLL (ou pointez `checks_extractor_path` vers lui).
+Le bundle de release le publie automatiquement dans `companion/er_checks_extractor.exe` à côté de la DLL (ou pointez `checks_extractor_path` vers un build personnalisé).
 
 ### Injecteur avancé (ligne de commande)
 
@@ -501,7 +501,7 @@ La checklist derrière le [panneau des checks](#panneau-des-checks-compatible-ra
 | `dynamic` | oui | `false` = `flag` fixe. `true` = loot au sol sensible au randomizer, résolu par seed. |
 | `flag` | pour static | Event flag vérifié quand `dynamic = false`. |
 | `vanilla_flag` | pour dynamic | Flag d'acquisition vanilla ; utilisé comme fallback quand aucun mapping de seed n'est chargé. |
-| `lot_id`, `lot_param` | pour dynamic | Id de ligne `ItemLotParam` stable (`map` ou `enemy`) utilisé pour chercher le flag actuel dans une regulation randomizer. |
+| `lot_id` | pour dynamic | Id de ligne `ItemLotParam_map` stable utilisé pour chercher le flag actuel dans une regulation randomizer. |
 
 Quand `regulation_path` est défini, le companion écrit un `checks_flags.toml` (`lot_id → flag actuel` + hash de regulation) que l'overlay recharge à chaud pour résoudre les checks dynamiques de la seed active.
 

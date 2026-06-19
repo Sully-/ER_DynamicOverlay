@@ -4,7 +4,7 @@
 //! - fixed (`dynamic = false`): the flag is stable across seeds (bosses, chests, events,
 //!   non-relocated items). Read directly from `flag`.
 //! - dynamic (`dynamic = true`): a ground loot the item randomizer relocates, so the flag
-//!   changes per seed. We anchor on the stable `lot_id` (an `ItemLotParam` row) and read the
+//!   changes per seed. We anchor on the stable `lot_id` (an `ItemLotParam_map` row) and read the
 //!   current `getItemFlagId` from `checks_flags.toml` (generated per seed by er_checks_extractor).
 //!   Falls back to `vanilla_flag` when no seed mapping is loaded (vanilla / no regulation).
 //!
@@ -24,17 +24,6 @@ use crate::boss_table::DEFAULT_LOCALE_ID;
 
 const EMBEDDED_CHECKS_TOML: &str = include_str!("../tables/en/checks.toml");
 
-/// Which `ItemLotParam` table a dynamic check's `lot_id` lives in.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum LotParam {
-    /// `ItemLotParam_map` — world treasure / ground loot.
-    #[default]
-    Map,
-    /// `ItemLotParam_enemy` — enemy drops.
-    Enemy,
-}
-
 #[derive(Debug, Clone)]
 pub struct CheckEntry {
     pub name: String,
@@ -43,9 +32,8 @@ pub struct CheckEntry {
     pub dlc: bool,
     /// Whether the flag must be resolved per seed from the regulation (relocated ground loot).
     pub dynamic: bool,
-    /// Stable anchor for dynamic checks: the `ItemLotParam` row id.
+    /// Stable anchor for dynamic checks: the `ItemLotParam_map` row id.
     pub lot_id: Option<u32>,
-    pub lot_param: LotParam,
     /// Vanilla `getItemFlagId` of the lot; fallback when no seed mapping is loaded.
     pub vanilla_flag: Option<u32>,
     /// Fixed flag for non-dynamic checks.
@@ -88,8 +76,6 @@ struct CheckRow {
     #[serde(default)]
     lot_id: Option<u32>,
     #[serde(default)]
-    lot_param: LotParam,
-    #[serde(default)]
     vanilla_flag: Option<u32>,
     #[serde(default)]
     flag: Option<u32>,
@@ -126,7 +112,6 @@ pub fn parse_checks_table(raw: &str) -> Result<ChecksTableData, String> {
             dlc: row.dlc,
             dynamic: row.dynamic,
             lot_id: row.lot_id,
-            lot_param: row.lot_param,
             vanilla_flag: row.vanilla_flag,
             flag: row.flag,
         });
@@ -474,7 +459,6 @@ mod tests {
         assert!(key.dynamic);
         assert_eq!(key.lot_id, Some(1034450100));
         assert_eq!(key.vanilla_flag, Some(1034457100));
-        assert_eq!(key.lot_param, LotParam::Map);
     }
 
     #[test]
@@ -486,7 +470,6 @@ mod tests {
             dlc: false,
             dynamic: true,
             lot_id: Some(1034450100),
-            lot_param: LotParam::Map,
             vanilla_flag: Some(1034457100),
             flag: None,
         };
@@ -521,7 +504,6 @@ mod tests {
             dlc: false,
             dynamic: false,
             lot_id: None,
-            lot_param: LotParam::Map,
             vanilla_flag: None,
             flag: Some(10000800),
         };

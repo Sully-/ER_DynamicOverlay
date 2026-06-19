@@ -25,7 +25,7 @@ pub use checks_table::{
     checks_seed_flags_loaded, checks_seed_regulation_hash, checks_total_count,
     clear_checks_seed_flags, effective_flag, load_checks_flags_from_path,
     load_checks_table_from_path, reload_checks_flags_if_modified, reload_checks_table_if_modified,
-    resolve_checks_table_path, CheckEntry, ChecksFlagsData, ChecksTableData, LotParam,
+    resolve_checks_table_path, CheckEntry, ChecksFlagsData, ChecksTableData,
 };
 pub use tables::{
     boss_entries_full, bosses_in_region, good_by_key, group_members, group_names, group_progress,
