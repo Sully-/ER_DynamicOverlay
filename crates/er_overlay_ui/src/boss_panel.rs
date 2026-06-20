@@ -23,6 +23,7 @@ pub struct BossPanelState {
     /// Second scroll pass once the tree node has expanded (updates scroll_max).
     scroll_follow_up_frames: u8,
     last_current_section: Option<usize>,
+    region_open_generation: u32,
 }
 
 impl BossPanelState {
@@ -120,17 +121,23 @@ pub fn render_boss_panel(
                         let region_just_changed = state.last_current_section != current_index;
                         if region_just_changed {
                             state.last_current_section = current_index;
+                            state.region_open_generation =
+                                state.region_open_generation.wrapping_add(1);
                         }
                         let scroll_to_current = state.should_scroll_to_section(current_index);
                         let scroll_follow_up = state.consume_scroll_follow_up();
                         let scroll_current = scroll_to_current || scroll_follow_up;
                         for (i, section) in vm.boss_panel_sections.iter().enumerate() {
-                            let forced_open =
-                                region_just_changed.then_some(current_index == Some(i));
+                            let force_open = region_just_changed && current_index == Some(i);
                             if current_index == Some(i) && scroll_current {
                                 scroll_current_region_into_view(ui);
                             }
-                            render_region_tree(ui, section, forced_open);
+                            render_region_tree(
+                                ui,
+                                section,
+                                state.region_open_generation,
+                                force_open,
+                            );
                         }
                     }
                     BossPanelScope::CurrentRegion => {
@@ -177,17 +184,18 @@ fn scroll_current_region_into_view(ui: &Ui) {
 fn render_region_tree(
     ui: &Ui,
     section: &crate::view_model::BossPanelSection,
-    forced_open: Option<bool>,
+    open_generation: u32,
+    force_open: bool,
 ) {
     // Stable ImGui id after `###`: otherwise the node id changes with the killed/total counters,
     // and ImGui collapses the node every time a boss flips to killed.
     let label = format!(
-        "{} ({}/{})###boss_region_{}",
-        section.region, section.killed, section.total, section.region
+        "{} ({}/{})###boss_region_{}_{}",
+        section.region, section.killed, section.total, open_generation, section.region
     );
     let mut node = ui.tree_node_config(&label);
-    if let Some(open) = forced_open {
-        node = node.opened(open, Condition::Always);
+    if force_open {
+        node = node.opened(true, Condition::Always);
     }
     node.build(|| {
         for boss in &section.bosses {
