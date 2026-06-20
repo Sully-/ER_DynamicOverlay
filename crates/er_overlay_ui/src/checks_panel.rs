@@ -122,11 +122,12 @@ pub fn render_checks_panel(
                         let scroll_follow_up = state.consume_scroll_follow_up();
                         let scroll_current = scroll_to_current || scroll_follow_up;
                         for (i, section) in vm.checks_panel_sections.iter().enumerate() {
-                            let force_open = region_just_changed && current_index == Some(i);
+                            let forced_open =
+                                region_just_changed.then_some(current_index == Some(i));
                             if current_index == Some(i) && scroll_current {
                                 scroll_current_region_into_view(ui);
                             }
-                            render_region_tree(ui, section, force_open);
+                            render_region_tree(ui, section, forced_open);
                         }
                     }
                     BossPanelScope::CurrentRegion => {
@@ -163,7 +164,7 @@ fn render_header(ui: &Ui, vm: &OverlayViewModel) {
                 .clone()
                 .unwrap_or_else(|| "?".to_string());
             ui.text(format!(
-                "Checks {}/{} — region: {region}{seed}",
+                "Checks {}/{} - region: {region}{seed}",
                 vm.checks_panel_done, vm.checks_panel_total
             ));
         }
@@ -174,7 +175,7 @@ fn scroll_current_region_into_view(ui: &Ui) {
     ui.set_scroll_from_pos_y_with_ratio(ui.cursor_pos()[1], 0.2);
 }
 
-fn render_region_tree(ui: &Ui, section: &CheckPanelSection, force_open: bool) {
+fn render_region_tree(ui: &Ui, section: &CheckPanelSection, forced_open: Option<bool>) {
     // The text after `###` is a stable ImGui id: without it the node id would change as
     // done/total move, making ImGui treat it as a new (collapsed) node every time a check flips.
     let label = format!(
@@ -182,8 +183,8 @@ fn render_region_tree(ui: &Ui, section: &CheckPanelSection, force_open: bool) {
         section.region, section.done, section.total, section.region
     );
     let mut node = ui.tree_node_config(&label);
-    if force_open {
-        node = node.opened(true, Condition::Always);
+    if let Some(open) = forced_open {
+        node = node.opened(open, Condition::Always);
     }
     node.build(|| {
         for row in &section.rows {

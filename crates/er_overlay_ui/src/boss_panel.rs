@@ -125,11 +125,12 @@ pub fn render_boss_panel(
                         let scroll_follow_up = state.consume_scroll_follow_up();
                         let scroll_current = scroll_to_current || scroll_follow_up;
                         for (i, section) in vm.boss_panel_sections.iter().enumerate() {
-                            let force_open = region_just_changed && current_index == Some(i);
+                            let forced_open =
+                                region_just_changed.then_some(current_index == Some(i));
                             if current_index == Some(i) && scroll_current {
                                 scroll_current_region_into_view(ui);
                             }
-                            render_region_tree(ui, section, force_open);
+                            render_region_tree(ui, section, forced_open);
                         }
                     }
                     BossPanelScope::CurrentRegion => {
@@ -162,7 +163,7 @@ fn render_header(ui: &Ui, vm: &OverlayViewModel) {
         BossPanelScope::AllRegions => {
             let region = vm.current_region.clone().unwrap_or_else(|| "?".to_string());
             ui.text(format!(
-                "Bosses {}/{} — region: {}",
+                "Bosses {}/{} - region: {}",
                 vm.boss_panel_killed, vm.boss_panel_total, region
             ));
         }
@@ -173,7 +174,11 @@ fn scroll_current_region_into_view(ui: &Ui) {
     ui.set_scroll_from_pos_y_with_ratio(ui.cursor_pos()[1], 0.2);
 }
 
-fn render_region_tree(ui: &Ui, section: &crate::view_model::BossPanelSection, force_open: bool) {
+fn render_region_tree(
+    ui: &Ui,
+    section: &crate::view_model::BossPanelSection,
+    forced_open: Option<bool>,
+) {
     // Stable ImGui id after `###`: otherwise the node id changes with the killed/total counters,
     // and ImGui collapses the node every time a boss flips to killed.
     let label = format!(
@@ -181,8 +186,8 @@ fn render_region_tree(ui: &Ui, section: &crate::view_model::BossPanelSection, fo
         section.region, section.killed, section.total, section.region
     );
     let mut node = ui.tree_node_config(&label);
-    if force_open {
-        node = node.opened(true, Condition::Always);
+    if let Some(open) = forced_open {
+        node = node.opened(open, Condition::Always);
     }
     node.build(|| {
         for boss in &section.bosses {

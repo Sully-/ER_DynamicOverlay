@@ -449,6 +449,24 @@ mod tests {
     }
 
     #[test]
+    fn parse_checks_table_allows_duplicate_flags() {
+        let raw = r#"
+[[check]]
+name = "A"
+region = "Limgrave"
+flag = 1
+
+[[check]]
+name = "B"
+region = "Limgrave"
+flag = 1
+"#;
+        let data = parse_checks_table(raw).unwrap();
+        assert_eq!(data.checks.len(), 2);
+        assert_eq!(data.checks[0].flag, data.checks[1].flag);
+    }
+
+    #[test]
     fn academy_key_is_dynamic_with_lot() {
         let data = parse_checks_table(EMBEDDED_CHECKS_TOML).unwrap();
         let key = data

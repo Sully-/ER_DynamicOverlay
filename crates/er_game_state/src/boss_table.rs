@@ -104,14 +104,7 @@ pub fn parse_boss_table(raw: &str) -> Result<BossTableData, String> {
     }
 
     let mut bosses = Vec::with_capacity(table.boss.len());
-    let mut seen_flags = HashMap::new();
     for row in table.boss {
-        if seen_flags.insert(row.flag_id, ()).is_some() {
-            return Err(format!(
-                "duplicate boss flag_id {} in boss table",
-                row.flag_id
-            ));
-        }
         bosses.push(BossEntry {
             flag_id: row.flag_id,
             name: row.name,
@@ -299,6 +292,26 @@ region = "Limgrave"
 icon = "b"
 "#;
         assert_eq!(parse_boss_table(raw).unwrap().bosses.len(), 2);
+    }
+
+    #[test]
+    fn parse_boss_table_allows_duplicate_flags() {
+        let raw = r#"
+[[boss]]
+flag_id = 1
+name = "A"
+region = "Limgrave"
+icon = "a"
+
+[[boss]]
+flag_id = 1
+name = "B"
+region = "Limgrave"
+icon = "b"
+"#;
+        let data = parse_boss_table(raw).unwrap();
+        assert_eq!(data.bosses.len(), 2);
+        assert_eq!(data.bosses[0].flag_id, data.bosses[1].flag_id);
     }
 
     #[test]

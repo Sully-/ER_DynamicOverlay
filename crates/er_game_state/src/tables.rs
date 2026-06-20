@@ -229,16 +229,9 @@ mod tests {
     }
 
     #[test]
-    fn boss_table_unique_flags() {
+    fn boss_total_counts_rows_not_unique_flags() {
         let all = &boss_entries().bosses;
-        let mut ids: Vec<u32> = all.iter().map(|b| b.flag_id).collect();
-        ids.sort_unstable();
-        ids.dedup();
-        assert_eq!(
-            ids.len(),
-            all.len(),
-            "duplicate boss flag_id in bosses.toml"
-        );
+        assert_eq!(crate::boss_table::bosses_total_count(), all.len());
     }
 
     #[test]
