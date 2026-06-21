@@ -194,6 +194,11 @@ impl OverlayApp {
             .as_ref()
             .map(|l| l.collect_equipped_refs())
             .unwrap_or_default();
+        let historic_refs = self
+            .layout
+            .as_ref()
+            .map(|l| l.collect_historic_refs())
+            .unwrap_or_default();
         let challenge_snapshot = if self.reader.challenge_update_ready() {
             self.challenge.update(
                 self.reader.get_death_count(),
@@ -208,6 +213,7 @@ impl OverlayApp {
             &self.reader,
             &data_refs,
             &equipped_refs,
+            &historic_refs,
             self.config.boss_panel_scope,
             self.config.checks_panel_scope,
             challenge_snapshot,
@@ -479,7 +485,13 @@ impl OverlayApp {
         match regulation {
             Some(reg) => {
                 self.maybe_run_extractor(&base, &locale_id, Path::new(&reg));
-                let flags_path = base.join("checks_flags.toml");
+                let lot_flags_path = base.join("lot_flags.toml");
+                let legacy_flags_path = base.join("checks_flags.toml");
+                let flags_path = if lot_flags_path.is_file() {
+                    lot_flags_path
+                } else {
+                    legacy_flags_path
+                };
                 if reload_checks_flags_if_modified(&flags_path, &mut self.checks_flags_mtime) {
                     changed = true;
                 }
@@ -531,7 +543,9 @@ impl OverlayApp {
                 resolve_checks_table_path(base, er_game_state::DEFAULT_LOCALE_ID)
             }
         };
-        let out_path = base.join("checks_flags.toml");
+        let out_path = base.join("lot_flags.toml");
+        let goods_toml = base.join("tables").join("goods.toml");
+        let layout_path = resolve_layout_path(base, self.config.layout_file.as_deref());
         let regulation = regulation.to_path_buf();
         // The game install dir holds oo2core_*.dll, which the extractor needs to decompress the
         // regulation. We run inside the game, so current_exe() is the game executable.
@@ -549,6 +563,14 @@ impl OverlayApp {
                 cmd.arg(&regulation).arg(&checks_toml).arg(&out_path);
                 if let Some(dir) = game_dir.as_deref() {
                     cmd.arg(dir);
+                }
+                // `goods.toml` is normally embedded in the companion like it is in er_game_state.
+                // Only pass a loose file when an explicit runtime override exists.
+                if goods_toml.is_file() {
+                    cmd.arg("--goods").arg(&goods_toml);
+                }
+                if let Some(layout) = layout_path.as_deref() {
+                    cmd.arg("--layout").arg(layout);
                 }
                 let result = cmd.output();
                 match result {

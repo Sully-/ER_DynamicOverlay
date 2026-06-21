@@ -17,6 +17,9 @@ key = "godrick_rune"
 item_id = 191
 name = "Godrick's Great Rune"
 pickup_flag = 171
+historic_lot_table = "map"
+historic_lot_id = 34100500
+historic_vanilla_flag = 191
 icon_id = 3201
 
 [[good]]
@@ -24,6 +27,9 @@ key = "radahn_rune"
 item_id = 192
 name = "Radahn's Great Rune"
 pickup_flag = 172
+historic_lot_table = "map"
+historic_lot_id = 34130050
+historic_vanilla_flag = 192
 icon_id = 3204
 
 [[good]]
@@ -31,6 +37,9 @@ key = "morgott_rune"
 item_id = 193
 name = "Morgott's Great Rune"
 pickup_flag = 173
+historic_lot_table = "map"
+historic_lot_id = 34140700
+historic_vanilla_flag = 193
 icon_id = 3200
 
 [[good]]
@@ -38,6 +47,9 @@ key = "rykard_rune"
 item_id = 194
 name = "Rykard's Great Rune"
 pickup_flag = 174
+historic_lot_table = "map"
+historic_lot_id = 34120500
+historic_vanilla_flag = 194
 icon_id = 3203
 
 [[good]]
@@ -45,6 +57,9 @@ key = "mohg_rune"
 item_id = 195
 name = "Mohg's Great Rune"
 pickup_flag = 175
+historic_lot_table = "map"
+historic_lot_id = 34140710
+historic_vanilla_flag = 195
 icon_id = 3205
 
 [[good]]
@@ -52,6 +67,9 @@ key = "malenia_rune"
 item_id = 196
 name = "Malenia's Great Rune"
 pickup_flag = 176
+historic_lot_table = "map"
+historic_lot_id = 34150000
+historic_vanilla_flag = 196
 icon_id = 3206
 
 [[good]]
@@ -59,12 +77,18 @@ key = "unborn_rune"
 item_id = 10080
 name = "Great Rune of the Unborn"
 pickup_flag = 197
+historic_lot_table = "map"
+historic_lot_id = 10181
+historic_vanilla_flag = 197
 icon_id = 3202
 
 # HUD icon "Great Runes X/7" — no group
 [[good]]
 key = "great_rune_generic"
 item_id = 191
+historic_lot_table = "map"
+historic_lot_id = 34100500
+historic_vanilla_flag = 191
 icon_id = 3201
 
 [[good]]
@@ -229,6 +253,9 @@ category = "accessory"
 key = "crimson_amber_medallion_1"
 item_id = 1001
 name = "Crimson Amber Medallion +1"
+historic_lot_table = "map"
+historic_lot_id = 16000540
+historic_vanilla_flag = 16007540
 icon_id = 18001
 
 [[good]]
@@ -236,6 +263,9 @@ category = "accessory"
 key = "crimson_amber_medallion_2"
 item_id = 1002
 name = "Crimson Amber Medallion +2"
+historic_lot_table = "map"
+historic_lot_id = 35000030
+historic_vanilla_flag = 35007030
 icon_id = 18002
 
 [[good]]
@@ -243,6 +273,9 @@ category = "accessory"
 key = "cerulean_amber_medallion"
 item_id = 1010
 name = "Cerulean Amber Medallion"
+historic_lot_table = "map"
+historic_lot_id = 20370
+historic_vanilla_flag = 520370
 icon_id = 18010
 
 [[good]]
@@ -250,6 +283,9 @@ category = "accessory"
 key = "cerulean_amber_medallion_1"
 item_id = 1011
 name = "Cerulean Amber Medallion +1"
+historic_lot_table = "map"
+historic_lot_id = 1051570070
+historic_vanilla_flag = 1051577070
 icon_id = 18011
 
 [[good]]
@@ -257,6 +293,9 @@ category = "accessory"
 key = "cerulean_amber_medallion_2"
 item_id = 1012
 name = "Cerulean Amber Medallion +2"
+historic_lot_table = "map"
+historic_lot_id = 1035410100
+historic_vanilla_flag = 1035417100
 icon_id = 18012
 
 [[good]]
@@ -264,6 +303,9 @@ category = "accessory"
 key = "viridian_amber_medallion"
 item_id = 1020
 name = "Viridian Amber Medallion"
+historic_lot_table = "map"
+historic_lot_id = 20300
+historic_vanilla_flag = 520300
 icon_id = 18020
 
 [[good]]
@@ -271,6 +313,9 @@ category = "accessory"
 key = "viridian_amber_medallion_1"
 item_id = 1021
 name = "Viridian Amber Medallion +1"
+historic_lot_table = "map"
+historic_lot_id = 1043520500
+historic_vanilla_flag = 1043527500
 icon_id = 18021
 
 [[good]]
@@ -278,6 +323,9 @@ category = "accessory"
 key = "viridian_amber_medallion_2"
 item_id = 1022
 name = "Viridian Amber Medallion +2"
+historic_lot_table = "map"
+historic_lot_id = 15000350
+historic_vanilla_flag = 15007350
 icon_id = 18022
 
 [[good]]
@@ -285,6 +333,9 @@ category = "accessory"
 key = "arsenal_charm"
 item_id = 1030
 name = "Arsenal Charm"
+historic_lot_table = "map"
+historic_lot_id = 104200
+historic_vanilla_flag = 400420
 icon_id = 18030
 
 [[good]]
@@ -292,6 +343,9 @@ category = "accessory"
 key = "arsenal_charm_1"
 item_id = 1031
 name = "Arsenal Charm +1"
+historic_lot_table = "map"
+historic_lot_id = 32050030
+historic_vanilla_flag = 32057030
 icon_id = 18031
 
 [[good]]
@@ -299,6 +353,9 @@ category = "accessory"
 key = "great_jar_s_arsenal"
 item_id = 1032
 name = "Great-Jar's Arsenal"
+historic_lot_table = "map"
+historic_lot_id = 104700
+historic_vanilla_flag = 400470
 icon_id = 18032
 
 [[good]]
@@ -306,6 +363,9 @@ category = "accessory"
 key = "erdtree_s_favor"
 item_id = 1040
 name = "Erdtree's Favor"
+historic_lot_table = "map"
+historic_lot_id = 18000050
+historic_vanilla_flag = 18007050
 icon_id = 18040
 
 [[good]]
@@ -313,6 +373,9 @@ category = "accessory"
 key = "erdtree_s_favor_1"
 item_id = 1041
 name = "Erdtree's Favor +1"
+historic_lot_table = "map"
+historic_lot_id = 35000700
+historic_vanilla_flag = 35007700
 icon_id = 18041
 
 [[good]]
@@ -320,6 +383,9 @@ category = "accessory"
 key = "erdtree_s_favor_2"
 item_id = 1042
 name = "Erdtree's Favor +2"
+historic_lot_table = "map"
+historic_lot_id = 11050100
+historic_vanilla_flag = 11057100
 icon_id = 18042
 
 [[good]]
@@ -327,6 +393,9 @@ category = "accessory"
 key = "radagon_s_scarseal"
 item_id = 1050
 name = "Radagon's Scarseal"
+historic_lot_table = "map"
+historic_lot_id = 1042330100
+historic_vanilla_flag = 1042337100
 icon_id = 18050
 
 [[good]]
@@ -334,6 +403,9 @@ category = "accessory"
 key = "radagon_s_soreseal"
 item_id = 1051
 name = "Radagon's Soreseal"
+historic_lot_table = "map"
+historic_lot_id = 1051390060
+historic_vanilla_flag = 1051397060
 icon_id = 18051
 
 [[good]]
@@ -341,6 +413,9 @@ category = "accessory"
 key = "starscourge_heirloom"
 item_id = 1060
 name = "Starscourge Heirloom"
+historic_lot_table = "map"
+historic_lot_id = 1047380900
+historic_vanilla_flag = 1047387900
 icon_id = 18070
 
 [[good]]
@@ -348,6 +423,9 @@ category = "accessory"
 key = "prosthesis_wearer_heirloom"
 item_id = 1070
 name = "Prosthesis-Wearer Heirloom"
+historic_lot_table = "map"
+historic_lot_id = 103200
+historic_vanilla_flag = 400320
 icon_id = 18080
 
 [[good]]
@@ -355,6 +433,9 @@ category = "accessory"
 key = "stargazer_heirloom"
 item_id = 1080
 name = "Stargazer Heirloom"
+historic_lot_table = "map"
+historic_lot_id = 34110501
+historic_vanilla_flag = 34117500
 icon_id = 18090
 
 [[good]]
@@ -362,6 +443,9 @@ category = "accessory"
 key = "two_fingers_heirloom"
 item_id = 1090
 name = "Two Fingers Heirloom"
+historic_lot_table = "map"
+historic_lot_id = 1039410100
+historic_vanilla_flag = 1039417100
 icon_id = 18100
 
 [[good]]
@@ -369,6 +453,9 @@ category = "accessory"
 key = "silver_scarab"
 item_id = 1100
 name = "Silver Scarab"
+historic_lot_table = "map"
+historic_lot_id = 30200900
+historic_vanilla_flag = 30207900
 icon_id = 18110
 
 [[good]]
@@ -376,6 +463,9 @@ category = "accessory"
 key = "gold_scarab"
 item_id = 1110
 name = "Gold Scarab"
+historic_lot_table = "map"
+historic_lot_id = 20450
+historic_vanilla_flag = 520450
 icon_id = 18120
 
 [[good]]
@@ -383,6 +473,9 @@ category = "accessory"
 key = "moon_of_nokstella"
 item_id = 1140
 name = "Moon of Nokstella"
+historic_lot_table = "map"
+historic_lot_id = 12010960
+historic_vanilla_flag = 12017960
 icon_id = 18150
 
 [[good]]
@@ -390,6 +483,9 @@ category = "accessory"
 key = "green_turtle_talisman"
 item_id = 1150
 name = "Green Turtle Talisman"
+historic_lot_table = "map"
+historic_lot_id = 1045390120
+historic_vanilla_flag = 1045397120
 icon_id = 18160
 
 [[good]]
@@ -397,6 +493,9 @@ category = "accessory"
 key = "stalwart_horn_charm"
 item_id = 1160
 name = "Stalwart Horn Charm"
+historic_lot_table = "map"
+historic_lot_id = 1037470020
+historic_vanilla_flag = 1037477020
 icon_id = 18170
 
 [[good]]
@@ -404,6 +503,9 @@ category = "accessory"
 key = "stalwart_horn_charm_1"
 item_id = 1161
 name = "Stalwart Horn Charm +1"
+historic_lot_table = "map"
+historic_lot_id = 1048550600
+historic_vanilla_flag = 1048557600
 icon_id = 18171
 
 [[good]]
@@ -411,6 +513,9 @@ category = "accessory"
 key = "immunizing_horn_charm"
 item_id = 1170
 name = "Immunizing Horn Charm"
+historic_lot_table = "map"
+historic_lot_id = 12010180
+historic_vanilla_flag = 12017180
 icon_id = 18180
 
 [[good]]
@@ -418,6 +523,9 @@ category = "accessory"
 key = "immunizing_horn_charm_1"
 item_id = 1171
 name = "Immunizing Horn Charm +1"
+historic_lot_table = "enemy"
+historic_lot_id = 336000707
+historic_vanilla_flag = 12017992
 icon_id = 18181
 
 [[good]]
@@ -425,6 +533,9 @@ category = "accessory"
 key = "clarifying_horn_charm"
 item_id = 1180
 name = "Clarifying Horn Charm"
+historic_lot_table = "map"
+historic_lot_id = 12020470
+historic_vanilla_flag = 12027470
 icon_id = 18190
 
 [[good]]
@@ -432,6 +543,9 @@ category = "accessory"
 key = "clarifying_horn_charm_1"
 item_id = 1181
 name = "Clarifying Horn Charm +1"
+historic_lot_table = "map"
+historic_lot_id = 12020490
+historic_vanilla_flag = 12027490
 icon_id = 18191
 
 [[good]]
@@ -439,6 +553,9 @@ category = "accessory"
 key = "prince_of_death_s_pustule"
 item_id = 1190
 name = "Prince of Death's Pustule"
+historic_lot_table = "map"
+historic_lot_id = 10000940
+historic_vanilla_flag = 10007940
 icon_id = 3220
 
 [[good]]
@@ -446,6 +563,9 @@ category = "accessory"
 key = "prince_of_death_s_cyst"
 item_id = 1191
 name = "Prince of Death's Cyst"
+historic_lot_table = "enemy"
+historic_lot_id = 463000704
+historic_vanilla_flag = 12037990
 icon_id = 18201
 
 [[good]]
@@ -453,6 +573,9 @@ category = "accessory"
 key = "mottled_necklace"
 item_id = 1200
 name = "Mottled Necklace"
+historic_lot_table = "map"
+historic_lot_id = 12020000
+historic_vanilla_flag = 12027000
 icon_id = 18210
 
 [[good]]
@@ -460,6 +583,9 @@ category = "accessory"
 key = "mottled_necklace_1"
 item_id = 1201
 name = "Mottled Necklace +1"
+historic_lot_table = "map"
+historic_lot_id = 12020620
+historic_vanilla_flag = 12027620
 icon_id = 18211
 
 [[good]]
@@ -467,6 +593,9 @@ category = "accessory"
 key = "bull_goat_s_talisman"
 item_id = 1210
 name = "Bull-Goat's Talisman"
+historic_lot_table = "map"
+historic_lot_id = 31100050
+historic_vanilla_flag = 31107050
 icon_id = 18220
 
 [[good]]
@@ -474,6 +603,9 @@ category = "accessory"
 key = "marika_s_scarseal"
 item_id = 1220
 name = "Marika's Scarseal"
+historic_lot_table = "map"
+historic_lot_id = 12020050
+historic_vanilla_flag = 12027050
 icon_id = 18060
 
 [[good]]
@@ -481,6 +613,9 @@ category = "accessory"
 key = "marika_s_soreseal"
 item_id = 1221
 name = "Marika's Soreseal"
+historic_lot_table = "map"
+historic_lot_id = 15000800
+historic_vanilla_flag = 15007800
 icon_id = 18061
 
 [[good]]
@@ -488,6 +623,9 @@ category = "accessory"
 key = "warrior_jar_shard"
 item_id = 1230
 name = "Warrior Jar Shard"
+historic_lot_table = "map"
+historic_lot_id = 111700
+historic_vanilla_flag = 400175
 icon_id = 18870
 
 [[good]]
@@ -509,6 +647,9 @@ category = "accessory"
 key = "magic_scorpion_charm"
 item_id = 2000
 name = "Magic Scorpion Charm"
+historic_lot_table = "map"
+historic_lot_id = 101410
+historic_vanilla_flag = 400141
 icon_id = 18230
 
 [[good]]
@@ -516,6 +657,9 @@ category = "accessory"
 key = "lightning_scorpion_charm"
 item_id = 2010
 name = "Lightning Scorpion Charm"
+historic_lot_table = "map"
+historic_lot_id = 30070600
+historic_vanilla_flag = 30077600
 icon_id = 18240
 
 [[good]]
@@ -523,6 +667,9 @@ category = "accessory"
 key = "fire_scorpion_charm"
 item_id = 2020
 name = "Fire Scorpion Charm"
+historic_lot_table = "map"
+historic_lot_id = 1035540050
+historic_vanilla_flag = 1035547050
 icon_id = 18250
 
 [[good]]
@@ -530,6 +677,9 @@ category = "accessory"
 key = "sacred_scorpion_charm"
 item_id = 2030
 name = "Sacred Scorpion Charm"
+historic_lot_table = "map"
+historic_lot_id = 1046400700
+historic_vanilla_flag = 1046407700
 icon_id = 18260
 
 [[good]]
@@ -537,6 +687,9 @@ category = "accessory"
 key = "red_feathered_branchsword"
 item_id = 2040
 name = "Red-Feathered Branchsword"
+historic_lot_table = "map"
+historic_lot_id = 1037420400
+historic_vanilla_flag = 1037427400
 icon_id = 18270
 
 [[good]]
@@ -544,6 +697,9 @@ category = "accessory"
 key = "ritual_sword_talisman"
 item_id = 2050
 name = "Ritual Sword Talisman"
+historic_lot_table = "map"
+historic_lot_id = 1038510050
+historic_vanilla_flag = 1038517050
 icon_id = 18280
 
 [[good]]
@@ -551,6 +707,9 @@ category = "accessory"
 key = "spear_talisman"
 item_id = 2060
 name = "Spear Talisman"
+historic_lot_table = "map"
+historic_lot_id = 31050100
+historic_vanilla_flag = 31057100
 icon_id = 18290
 
 [[good]]
@@ -558,6 +717,9 @@ category = "accessory"
 key = "hammer_talisman"
 item_id = 2070
 name = "Hammer Talisman"
+historic_lot_table = "map"
+historic_lot_id = 1042390700
+historic_vanilla_flag = 1042397700
 icon_id = 18300
 
 [[good]]
@@ -565,6 +727,9 @@ category = "accessory"
 key = "winged_sword_insignia"
 item_id = 2080
 name = "Winged Sword Insignia"
+historic_lot_table = "map"
+historic_lot_id = 20360
+historic_vanilla_flag = 520360
 icon_id = 18310
 
 [[good]]
@@ -572,6 +737,9 @@ category = "accessory"
 key = "rotten_winged_sword_insignia"
 item_id = 2081
 name = "Rotten Winged Sword Insignia"
+historic_lot_table = "map"
+historic_lot_id = 104800
+historic_vanilla_flag = 400480
 icon_id = 18311
 
 [[good]]
@@ -579,6 +747,9 @@ category = "accessory"
 key = "dagger_talisman"
 item_id = 2090
 name = "Dagger Talisman"
+historic_lot_table = "map"
+historic_lot_id = 16000620
+historic_vanilla_flag = 16007620
 icon_id = 18320
 
 [[good]]
@@ -586,6 +757,9 @@ category = "accessory"
 key = "arrow_s_reach_talisman"
 item_id = 2100
 name = "Arrow's Reach Talisman"
+historic_lot_table = "map"
+historic_lot_id = 1042371300
+historic_vanilla_flag = 1042377300
 icon_id = 18330
 
 [[good]]
@@ -593,6 +767,9 @@ category = "accessory"
 key = "blue_dancer_charm"
 item_id = 2110
 name = "Blue Dancer Charm"
+historic_lot_table = "map"
+historic_lot_id = 20350
+historic_vanilla_flag = 520350
 icon_id = 18350
 
 [[good]]
@@ -600,6 +777,9 @@ category = "accessory"
 key = "twinblade_talisman"
 item_id = 2120
 name = "Twinblade Talisman"
+historic_lot_table = "map"
+historic_lot_id = 1043310900
+historic_vanilla_flag = 1043317900
 icon_id = 18360
 
 [[good]]
@@ -607,6 +787,9 @@ category = "accessory"
 key = "axe_talisman"
 item_id = 2130
 name = "Axe Talisman"
+historic_lot_table = "map"
+historic_lot_id = 1045371000
+historic_vanilla_flag = 1045377100
 icon_id = 18370
 
 [[good]]
@@ -614,6 +797,9 @@ category = "accessory"
 key = "lance_talisman"
 item_id = 2140
 name = "Lance Talisman"
+historic_lot_table = "map"
+historic_lot_id = 1043400010
+historic_vanilla_flag = 1043407010
 icon_id = 18380
 
 [[good]]
@@ -621,6 +807,9 @@ category = "accessory"
 key = "arrow_s_sting_talisman"
 item_id = 2150
 name = "Arrow's Sting Talisman"
+historic_lot_table = "map"
+historic_lot_id = 1050360900
+historic_vanilla_flag = 1050367900
 icon_id = 18340
 
 [[good]]
@@ -628,6 +817,9 @@ category = "accessory"
 key = "lord_of_blood_s_exultation"
 item_id = 2160
 name = "Lord of Blood's Exultation"
+historic_lot_table = "map"
+historic_lot_id = 20220
+historic_vanilla_flag = 520220
 icon_id = 18390
 
 [[good]]
@@ -635,6 +827,9 @@ category = "accessory"
 key = "kindred_of_rot_s_exultation"
 item_id = 2170
 name = "Kindred of Rot's Exultation"
+historic_lot_table = "map"
+historic_lot_id = 20390
+historic_vanilla_flag = 520390
 icon_id = 18400
 
 [[good]]
@@ -642,6 +837,9 @@ category = "accessory"
 key = "claw_talisman"
 item_id = 2180
 name = "Claw Talisman"
+historic_lot_table = "map"
+historic_lot_id = 10000230
+historic_vanilla_flag = 10007230
 icon_id = 18800
 
 [[good]]
@@ -649,6 +847,9 @@ category = "accessory"
 key = "roar_medallion"
 item_id = 2190
 name = "Roar Medallion"
+historic_lot_table = "map"
+historic_lot_id = 20610
+historic_vanilla_flag = 520610
 icon_id = 18810
 
 [[good]]
@@ -656,6 +857,9 @@ category = "accessory"
 key = "curved_sword_talisman"
 item_id = 2200
 name = "Curved Sword Talisman"
+historic_lot_table = "map"
+historic_lot_id = 10000975
+historic_vanilla_flag = 10007975
 icon_id = 18820
 
 [[good]]
@@ -663,6 +867,9 @@ category = "accessory"
 key = "companion_jar"
 item_id = 2210
 name = "Companion Jar"
+historic_lot_table = "map"
+historic_lot_id = 104600
+historic_vanilla_flag = 400460
 icon_id = 18830
 
 [[good]]
@@ -670,6 +877,9 @@ category = "accessory"
 key = "perfumer_s_talisman"
 item_id = 2220
 name = "Perfumer's Talisman"
+historic_lot_table = "map"
+historic_lot_id = 1036520010
+historic_vanilla_flag = 1036527010
 icon_id = 18840
 
 [[good]]
@@ -677,6 +887,9 @@ category = "accessory"
 key = "graven_school_talisman"
 item_id = 3000
 name = "Graven-School Talisman"
+historic_lot_table = "map"
+historic_lot_id = 14000890
+historic_vanilla_flag = 14007890
 icon_id = 18410
 
 [[good]]
@@ -684,6 +897,9 @@ category = "accessory"
 key = "graven_mass_talisman"
 item_id = 3001
 name = "Graven-Mass Talisman"
+historic_lot_table = "map"
+historic_lot_id = 1050560820
+historic_vanilla_flag = 1050567820
 icon_id = 18411
 
 [[good]]
@@ -691,6 +907,9 @@ category = "accessory"
 key = "faithful_s_canvas_talisman"
 item_id = 3040
 name = "Faithful's Canvas Talisman"
+historic_lot_table = "map"
+historic_lot_id = 32080120
+historic_vanilla_flag = 32087120
 icon_id = 18440
 
 [[good]]
@@ -705,6 +924,9 @@ category = "accessory"
 key = "old_lord_s_talisman"
 item_id = 3060
 name = "Old Lord's Talisman"
+historic_lot_table = "map"
+historic_lot_id = 13000950
+historic_vanilla_flag = 13007950
 icon_id = 18460
 
 [[good]]
@@ -712,6 +934,9 @@ category = "accessory"
 key = "radagon_icon"
 item_id = 3070
 name = "Radagon Icon"
+historic_lot_table = "map"
+historic_lot_id = 14000940
+historic_vanilla_flag = 14007940
 icon_id = 18470
 
 [[good]]
@@ -719,6 +944,9 @@ category = "accessory"
 key = "primal_glintstone_blade"
 item_id = 3080
 name = "Primal Glintstone Blade"
+historic_lot_table = "map"
+historic_lot_id = 1051560900
+historic_vanilla_flag = 1051567900
 icon_id = 18480
 
 [[good]]
@@ -726,6 +954,9 @@ category = "accessory"
 key = "godfrey_icon"
 item_id = 3090
 name = "Godfrey Icon"
+historic_lot_table = "map"
+historic_lot_id = 1039500100
+historic_vanilla_flag = 1039507100
 icon_id = 18860
 
 [[good]]
@@ -733,6 +964,9 @@ category = "accessory"
 key = "dragoncrest_shield_talisman"
 item_id = 4000
 name = "Dragoncrest Shield Talisman"
+historic_lot_table = "map"
+historic_lot_id = 1051430030
+historic_vanilla_flag = 1051417030
 icon_id = 18490
 
 [[good]]
@@ -740,6 +974,9 @@ category = "accessory"
 key = "dragoncrest_shield_talisman_1"
 item_id = 4001
 name = "Dragoncrest Shield Talisman +1"
+historic_lot_table = "map"
+historic_lot_id = 30080030
+historic_vanilla_flag = 30087030
 icon_id = 18491
 
 [[good]]
@@ -747,6 +984,9 @@ category = "accessory"
 key = "dragoncrest_shield_talisman_2"
 item_id = 4002
 name = "Dragoncrest Shield Talisman +2"
+historic_lot_table = "map"
+historic_lot_id = 13000500
+historic_vanilla_flag = 13007500
 icon_id = 18492
 
 [[good]]
@@ -754,6 +994,9 @@ category = "accessory"
 key = "dragoncrest_greatshield_talisman"
 item_id = 4003
 name = "Dragoncrest Greatshield Talisman"
+historic_lot_table = "map"
+historic_lot_id = 15000930
+historic_vanilla_flag = 15007930
 icon_id = 18493
 
 [[good]]
@@ -761,6 +1004,9 @@ category = "accessory"
 key = "spelldrake_talisman"
 item_id = 4010
 name = "Spelldrake Talisman"
+historic_lot_table = "map"
+historic_lot_id = 20310
+historic_vanilla_flag = 520310
 icon_id = 18500
 
 [[good]]
@@ -768,6 +1014,9 @@ category = "accessory"
 key = "spelldrake_talisman_1"
 item_id = 4011
 name = "Spelldrake Talisman +1"
+historic_lot_table = "map"
+historic_lot_id = 1049390910
+historic_vanilla_flag = 1049397910
 icon_id = 18501
 
 [[good]]
@@ -775,6 +1024,9 @@ category = "accessory"
 key = "spelldrake_talisman_2"
 item_id = 4012
 name = "Spelldrake Talisman +2"
+historic_lot_table = "map"
+historic_lot_id = 30200060
+historic_vanilla_flag = 30207060
 icon_id = 18502
 
 [[good]]
@@ -782,6 +1034,9 @@ category = "accessory"
 key = "flamedrake_talisman"
 item_id = 4020
 name = "Flamedrake Talisman"
+historic_lot_table = "map"
+historic_lot_id = 20330
+historic_vanilla_flag = 520330
 icon_id = 18510
 
 [[good]]
@@ -789,6 +1044,9 @@ category = "accessory"
 key = "flamedrake_talisman_1"
 item_id = 4021
 name = "Flamedrake Talisman +1"
+historic_lot_table = "map"
+historic_lot_id = 34140020
+historic_vanilla_flag = 34147020
 icon_id = 18511
 
 [[good]]
@@ -796,6 +1054,9 @@ category = "accessory"
 key = "flamedrake_talisman_2"
 item_id = 4022
 name = "Flamedrake Talisman +2"
+historic_lot_table = "map"
+historic_lot_id = 20440
+historic_vanilla_flag = 520440
 icon_id = 18512
 
 [[good]]
@@ -803,6 +1064,9 @@ category = "accessory"
 key = "boltdrake_talisman"
 item_id = 4030
 name = "Boltdrake Talisman"
+historic_lot_table = "map"
+historic_lot_id = 34100100
+historic_vanilla_flag = 34107100
 icon_id = 18520
 
 [[good]]
@@ -810,6 +1074,9 @@ category = "accessory"
 key = "boltdrake_talisman_1"
 item_id = 4031
 name = "Boltdrake Talisman +1"
+historic_lot_table = "map"
+historic_lot_id = 32040040
+historic_vanilla_flag = 32047040
 icon_id = 18521
 
 [[good]]
@@ -817,6 +1084,9 @@ category = "accessory"
 key = "boltdrake_talisman_2"
 item_id = 4032
 name = "Boltdrake Talisman +2"
+historic_lot_table = "map"
+historic_lot_id = 13000760
+historic_vanilla_flag = 13007760
 icon_id = 18522
 
 [[good]]
@@ -824,6 +1094,9 @@ category = "accessory"
 key = "haligdrake_talisman"
 item_id = 4040
 name = "Haligdrake Talisman"
+historic_lot_table = "map"
+historic_lot_id = 18000070
+historic_vanilla_flag = 18007070
 icon_id = 18530
 
 [[good]]
@@ -831,6 +1104,9 @@ category = "accessory"
 key = "haligdrake_talisman_1"
 item_id = 4041
 name = "Haligdrake Talisman +1"
+historic_lot_table = "map"
+historic_lot_id = 35000950
+historic_vanilla_flag = 35007950
 icon_id = 18531
 
 [[good]]
@@ -838,6 +1114,9 @@ category = "accessory"
 key = "haligdrake_talisman_2"
 item_id = 4042
 name = "Haligdrake Talisman +2"
+historic_lot_table = "map"
+historic_lot_id = 12050370
+historic_vanilla_flag = 12057370
 icon_id = 18532
 
 [[good]]
@@ -845,6 +1124,9 @@ category = "accessory"
 key = "pearldrake_talisman"
 item_id = 4050
 name = "Pearldrake Talisman"
+historic_lot_table = "map"
+historic_lot_id = 13000830
+historic_vanilla_flag = 13007830
 icon_id = 18540
 
 [[good]]
@@ -852,6 +1134,9 @@ category = "accessory"
 key = "pearldrake_talisman_1"
 item_id = 4051
 name = "Pearldrake Talisman +1"
+historic_lot_table = "map"
+historic_lot_id = 1038520000
+historic_vanilla_flag = 1038527000
 icon_id = 18541
 
 [[good]]
@@ -859,6 +1144,9 @@ category = "accessory"
 key = "pearldrake_talisman_2"
 item_id = 4052
 name = "Pearldrake Talisman +2"
+historic_lot_table = "map"
+historic_lot_id = 15000220
+historic_vanilla_flag = 15007220
 icon_id = 18542
 
 [[good]]
@@ -866,6 +1154,9 @@ category = "accessory"
 key = "crucible_scale_talisman"
 item_id = 4060
 name = "Crucible Scale Talisman"
+historic_lot_table = "map"
+historic_lot_id = 35000940
+historic_vanilla_flag = 35007940
 icon_id = 18550
 
 [[good]]
@@ -873,6 +1164,9 @@ category = "accessory"
 key = "crucible_feather_talisman"
 item_id = 4070
 name = "Crucible Feather Talisman"
+historic_lot_table = "map"
+historic_lot_id = 30100040
+historic_vanilla_flag = 30107040
 icon_id = 18560
 
 [[good]]
@@ -880,6 +1174,9 @@ category = "accessory"
 key = "blue_feathered_branchsword"
 item_id = 4080
 name = "Blue-Feathered Branchsword"
+historic_lot_table = "map"
+historic_lot_id = 1042380400
+historic_vanilla_flag = 1042387400
 icon_id = 18570
 
 [[good]]
@@ -887,6 +1184,9 @@ category = "accessory"
 key = "ritual_shield_talisman"
 item_id = 4090
 name = "Ritual Shield Talisman"
+historic_lot_table = "map"
+historic_lot_id = 11001030
+historic_vanilla_flag = 11007996
 icon_id = 18580
 
 [[good]]
@@ -894,6 +1194,9 @@ category = "accessory"
 key = "greatshield_talisman"
 item_id = 4100
 name = "Greatshield Talisman"
+historic_lot_table = "map"
+historic_lot_id = 1038510030
+historic_vanilla_flag = 1038517030
 icon_id = 18590
 
 [[good]]
@@ -901,6 +1204,9 @@ category = "accessory"
 key = "crucible_knot_talisman"
 item_id = 4110
 name = "Crucible Knot Talisman"
+historic_lot_table = "map"
+historic_lot_id = 30225
+historic_vanilla_flag = 530225
 icon_id = 18600
 
 [[good]]
@@ -908,6 +1214,9 @@ category = "accessory"
 key = "crimson_seed_talisman"
 item_id = 5000
 name = "Crimson Seed Talisman"
+historic_lot_table = "map"
+historic_lot_id = 30080010
+historic_vanilla_flag = 30087010
 icon_id = 18610
 
 [[good]]
@@ -915,6 +1224,9 @@ category = "accessory"
 key = "cerulean_seed_talisman"
 item_id = 5010
 name = "Cerulean Seed Talisman"
+historic_lot_table = "map"
+historic_lot_id = 34110080
+historic_vanilla_flag = 34117080
 icon_id = 18620
 
 [[good]]
@@ -922,6 +1234,9 @@ category = "accessory"
 key = "blessed_dew_talisman"
 item_id = 5020
 name = "Blessed Dew Talisman"
+historic_lot_table = "map"
+historic_lot_id = 11001020
+historic_vanilla_flag = 11007994
 icon_id = 18630
 
 [[good]]
@@ -929,6 +1244,9 @@ category = "accessory"
 key = "taker_s_cameo"
 item_id = 5030
 name = "Taker's Cameo"
+historic_lot_table = "map"
+historic_lot_id = 100780
+historic_vanilla_flag = 400078
 icon_id = 18640
 
 [[good]]
@@ -936,6 +1254,9 @@ category = "accessory"
 key = "godskin_swaddling_cloth"
 item_id = 5040
 name = "Godskin Swaddling Cloth"
+historic_lot_table = "map"
+historic_lot_id = 20480
+historic_vanilla_flag = 520480
 icon_id = 18650
 
 [[good]]
@@ -950,6 +1271,9 @@ category = "accessory"
 key = "assassin_s_cerulean_dagger"
 item_id = 5060
 name = "Assassin's Cerulean Dagger"
+historic_lot_table = "map"
+historic_lot_id = 20210
+historic_vanilla_flag = 520210
 icon_id = 18670
 
 [[good]]
@@ -957,6 +1281,9 @@ category = "accessory"
 key = "crepus_s_vial"
 item_id = 6000
 name = "Crepus's Vial"
+historic_lot_table = "map"
+historic_lot_id = 1039530700
+historic_vanilla_flag = 1039537700
 icon_id = 18680
 
 [[good]]
@@ -964,6 +1291,9 @@ category = "accessory"
 key = "concealing_veil"
 item_id = 6010
 name = "Concealing Veil"
+historic_lot_table = "map"
+historic_lot_id = 20420
+historic_vanilla_flag = 520420
 icon_id = 18690
 
 [[good]]
@@ -978,6 +1308,9 @@ category = "accessory"
 key = "longtail_cat_talisman"
 item_id = 6040
 name = "Longtail Cat Talisman"
+historic_lot_table = "map"
+historic_lot_id = 14000320
+historic_vanilla_flag = 14007320
 icon_id = 18720
 
 [[good]]
@@ -985,6 +1318,9 @@ category = "accessory"
 key = "shabriri_s_woe"
 item_id = 6050
 name = "Shabriri's Woe"
+historic_lot_table = "map"
+historic_lot_id = 1038480100
+historic_vanilla_flag = 1038487100
 icon_id = 18730
 
 [[good]]
@@ -1034,6 +1370,9 @@ category = "accessory"
 key = "crimson_amber_medallion_3"
 item_id = 7000
 name = "Crimson Amber Medallion +3"
+historic_lot_table = "map"
+historic_lot_id = 20701
+historic_vanilla_flag = 520700
 icon_id = 18900
 
 [[good]]
@@ -1041,6 +1380,9 @@ category = "accessory"
 key = "cerulean_amber_medallion_3"
 item_id = 7010
 name = "Cerulean Amber Medallion +3"
+historic_lot_table = "map"
+historic_lot_id = 20711
+historic_vanilla_flag = 520711
 icon_id = 18901
 
 [[good]]
@@ -1048,6 +1390,9 @@ category = "accessory"
 key = "viridian_amber_medallion_3"
 item_id = 7020
 name = "Viridian Amber Medallion +3"
+historic_lot_table = "map"
+historic_lot_id = 40020020
+historic_vanilla_flag = 40027020
 icon_id = 18902
 
 [[good]]
@@ -1055,6 +1400,9 @@ category = "accessory"
 key = "two_headed_turtle_talisman"
 item_id = 7030
 name = "Two-Headed Turtle Talisman"
+historic_lot_table = "map"
+historic_lot_id = 2046450000
+historic_vanilla_flag = 2046457000
 icon_id = 18903
 
 [[good]]
@@ -1062,6 +1410,9 @@ category = "accessory"
 key = "stalwart_horn_charm_2"
 item_id = 7040
 name = "Stalwart Horn Charm +2"
+historic_lot_table = "map"
+historic_lot_id = 41010020
+historic_vanilla_flag = 41017020
 icon_id = 18904
 
 [[good]]
@@ -1069,6 +1420,9 @@ category = "accessory"
 key = "immunizing_horn_charm_2"
 item_id = 7050
 name = "Immunizing Horn Charm +2"
+historic_lot_table = "map"
+historic_lot_id = 20001991
+historic_vanilla_flag = 20007991
 icon_id = 18905
 
 [[good]]
@@ -1076,6 +1430,9 @@ category = "accessory"
 key = "clarifying_horn_charm_2"
 item_id = 7060
 name = "Clarifying Horn Charm +2"
+historic_lot_table = "map"
+historic_lot_id = 41020210
+historic_vanilla_flag = 41027210
 icon_id = 18906
 
 [[good]]
@@ -1083,6 +1440,9 @@ category = "accessory"
 key = "mottled_necklace_2"
 item_id = 7080
 name = "Mottled Necklace +2"
+historic_lot_table = "map"
+historic_lot_id = 2045460900
+historic_vanilla_flag = 2045467900
 icon_id = 18908
 
 [[good]]
@@ -1090,6 +1450,9 @@ category = "accessory"
 key = "spelldrake_talisman_3"
 item_id = 7090
 name = "Spelldrake Talisman +3"
+historic_lot_table = "map"
+historic_lot_id = 2047440190
+historic_vanilla_flag = 2047447190
 icon_id = 18909
 
 [[good]]
@@ -1097,6 +1460,9 @@ category = "accessory"
 key = "flamedrake_talisman_3"
 item_id = 7100
 name = "Flamedrake Talisman +3"
+historic_lot_table = "map"
+historic_lot_id = 2049430270
+historic_vanilla_flag = 2049437270
 icon_id = 18910
 
 [[good]]
@@ -1104,6 +1470,9 @@ category = "accessory"
 key = "boltdrake_talisman_3"
 item_id = 7110
 name = "Boltdrake Talisman +3"
+historic_lot_table = "map"
+historic_lot_id = 21010100
+historic_vanilla_flag = 21017100
 icon_id = 18911
 
 [[good]]
@@ -1111,6 +1480,9 @@ category = "accessory"
 key = "golden_braid"
 item_id = 7120
 name = "Golden Braid"
+historic_lot_table = "map"
+historic_lot_id = 2051470510
+historic_vanilla_flag = 2051477510
 icon_id = 18912
 
 [[good]]
@@ -1118,6 +1490,9 @@ category = "accessory"
 key = "pearldrake_talisman_3"
 item_id = 7130
 name = "Pearldrake Talisman +3"
+historic_lot_table = "map"
+historic_lot_id = 21010120
+historic_vanilla_flag = 21017120
 icon_id = 18913
 
 [[good]]
@@ -1125,6 +1500,9 @@ category = "accessory"
 key = "crimson_seed_talisman_1"
 item_id = 7140
 name = "Crimson Seed Talisman +1"
+historic_lot_table = "map"
+historic_lot_id = 2050400000
+historic_vanilla_flag = 2050407000
 icon_id = 18914
 
 [[good]]
@@ -1132,6 +1510,9 @@ category = "accessory"
 key = "cerulean_seed_talisman_1"
 item_id = 7150
 name = "Cerulean Seed Talisman +1"
+historic_lot_table = "map"
+historic_lot_id = 2053460600
+historic_vanilla_flag = 2053467600
 icon_id = 18915
 
 [[good]]
@@ -1139,6 +1520,9 @@ category = "accessory"
 key = "blessed_blue_dew_talisman"
 item_id = 8000
 name = "Blessed Blue Dew Talisman"
+historic_lot_table = "map"
+historic_lot_id = 2046400700
+historic_vanilla_flag = 2046407700
 icon_id = 18916
 
 [[good]]
@@ -1146,6 +1530,9 @@ category = "accessory"
 key = "fine_crucible_feather_talisman"
 item_id = 8010
 name = "Fine Crucible Feather Talisman"
+historic_lot_table = "map"
+historic_lot_id = 2045480000
+historic_vanilla_flag = 2045487000
 icon_id = 18917
 
 [[good]]
@@ -1153,6 +1540,9 @@ category = "accessory"
 key = "outer_god_heirloom"
 item_id = 8020
 name = "Outer God Heirloom"
+historic_lot_table = "map"
+historic_lot_id = 2045410800
+historic_vanilla_flag = 2045417800
 icon_id = 18918
 
 [[good]]
@@ -1160,6 +1550,9 @@ category = "accessory"
 key = "shattered_stone_talisman"
 item_id = 8030
 name = "Shattered Stone Talisman"
+historic_lot_table = "map"
+historic_lot_id = 2049440090
+historic_vanilla_flag = 2049447090
 icon_id = 18924
 
 [[good]]
@@ -1167,6 +1560,9 @@ category = "accessory"
 key = "two_handed_sword_talisman"
 item_id = 8040
 name = "Two-Handed Sword Talisman"
+historic_lot_table = "map"
+historic_lot_id = 2046450910
+historic_vanilla_flag = 2046457910
 icon_id = 18919
 
 [[good]]
@@ -1174,6 +1570,9 @@ category = "accessory"
 key = "crusade_insignia"
 item_id = 8050
 name = "Crusade Insignia"
+historic_lot_table = "map"
+historic_lot_id = 106920
+historic_vanilla_flag = 400694
 icon_id = 18920
 
 [[good]]
@@ -1181,6 +1580,9 @@ category = "accessory"
 key = "aged_one_s_exultation"
 item_id = 8060
 name = "Aged One's Exultation"
+historic_lot_table = "map"
+historic_lot_id = 2051410700
+historic_vanilla_flag = 2051417700
 icon_id = 18921
 
 [[good]]
@@ -1188,6 +1590,9 @@ category = "accessory"
 key = "arrow_s_soaring_sting_talisman"
 item_id = 8070
 name = "Arrow's Soaring Sting Talisman"
+historic_lot_table = "map"
+historic_lot_id = 2047450910
+historic_vanilla_flag = 2047457910
 icon_id = 18922
 
 [[good]]
@@ -1195,6 +1600,9 @@ category = "accessory"
 key = "pearl_shield_talisman"
 item_id = 8090
 name = "Pearl Shield Talisman"
+historic_lot_table = "map"
+historic_lot_id = 2047470900
+historic_vanilla_flag = 2047477900
 icon_id = 18925
 
 [[good]]
@@ -1202,6 +1610,9 @@ category = "accessory"
 key = "dried_bouquet"
 item_id = 8100
 name = "Dried Bouquet"
+historic_lot_table = "map"
+historic_lot_id = 20000630
+historic_vanilla_flag = 20007630
 icon_id = 18923
 
 [[good]]
@@ -1209,6 +1620,9 @@ category = "accessory"
 key = "smithing_talisman"
 item_id = 8110
 name = "Smithing Talisman"
+historic_lot_table = "map"
+historic_lot_id = 42020030
+historic_vanilla_flag = 42027030
 icon_id = 18934
 
 [[good]]
@@ -1216,6 +1630,9 @@ category = "accessory"
 key = "ailment_talisman"
 item_id = 8120
 name = "Ailment Talisman"
+historic_lot_table = "map"
+historic_lot_id = 2046440030
+historic_vanilla_flag = 2046447030
 icon_id = 18926
 
 [[good]]
@@ -1223,6 +1640,9 @@ category = "accessory"
 key = "retaliatory_crossed_tree"
 item_id = 8130
 name = "Retaliatory Crossed-Tree"
+historic_lot_table = "map"
+historic_lot_id = 105910
+historic_vanilla_flag = 400592
 icon_id = 18937
 
 [[good]]
@@ -1230,6 +1650,9 @@ category = "accessory"
 key = "lacerating_crossed_tree"
 item_id = 8140
 name = "Lacerating Crossed-Tree"
+historic_lot_table = "map"
+historic_lot_id = 105900
+historic_vanilla_flag = 400590
 icon_id = 18938
 
 [[good]]
@@ -1237,6 +1660,9 @@ category = "accessory"
 key = "sharpshot_talisman"
 item_id = 8150
 name = "Sharpshot Talisman"
+historic_lot_table = "map"
+historic_lot_id = 2049490510
+historic_vanilla_flag = 2049497510
 icon_id = 18927
 
 [[good]]
@@ -1244,6 +1670,9 @@ category = "accessory"
 key = "st_trina_s_smile"
 item_id = 8160
 name = "St. Trina's Smile"
+historic_lot_table = "map"
+historic_lot_id = 106310
+historic_vanilla_flag = 400632
 icon_id = 18928
 
 [[good]]
@@ -1251,6 +1680,9 @@ category = "accessory"
 key = "talisman_of_the_dread"
 item_id = 8170
 name = "Talisman of the Dread"
+historic_lot_table = "map"
+historic_lot_id = 2049420000
+historic_vanilla_flag = 2049427000
 icon_id = 18929
 
 [[good]]
@@ -1272,6 +1704,9 @@ category = "accessory"
 key = "talisman_of_lord_s_bestowal"
 item_id = 8200
 name = "Talisman of Lord's Bestowal"
+historic_lot_table = "map"
+historic_lot_id = 21000070
+historic_vanilla_flag = 21007070
 icon_id = 18932
 
 [[good]]
@@ -1279,6 +1714,9 @@ category = "accessory"
 key = "verdigris_discus"
 item_id = 8210
 name = "Verdigris Discus"
+historic_lot_table = "map"
+historic_lot_id = 2046470720
+historic_vanilla_flag = 2046477720
 icon_id = 18933
 
 [[good]]
@@ -1286,6 +1724,9 @@ category = "accessory"
 key = "rellana_s_cameo"
 item_id = 8220
 name = "Rellana's Cameo"
+historic_lot_table = "map"
+historic_lot_id = 2047440700
+historic_vanilla_flag = 2047447700
 icon_id = 18935
 
 [[good]]
@@ -1293,6 +1734,9 @@ category = "accessory"
 key = "blade_of_mercy"
 item_id = 8230
 name = "Blade of Mercy"
+historic_lot_table = "map"
+historic_lot_id = 2047410800
+historic_vanilla_flag = 2047417800
 icon_id = 18936
 
 [[good]]
@@ -1300,6 +1744,9 @@ category = "accessory"
 key = "talisman_of_all_crucibles"
 item_id = 8240
 name = "Talisman of All Crucibles"
+historic_lot_table = "map"
+historic_lot_id = 2044450900
+historic_vanilla_flag = 2044457900
 icon_id = 18939
 
 # --- end talismans ---
@@ -1324,36 +1771,54 @@ icon_id = 3198
 key = "rusty_key"
 item_id = 8010
 name = "Rusty Key"
+historic_lot_table = "map"
+historic_lot_id = 10000500
+historic_vanilla_flag = 10007500
 icon_id = 229
 
 [[good]]
 key = "dectus_medallion_left"
 item_id = 8105
 name = "Dectus Medallion (Left)"
+historic_lot_table = "map"
+historic_lot_id = 1046360500
+historic_vanilla_flag = 1046367500
 icon_id = 3000
 
 [[good]]
 key = "dectus_medallion_right"
 item_id = 8106
 name = "Dectus Medallion (Right)"
+historic_lot_table = "map"
+historic_lot_id = 1051390900
+historic_vanilla_flag = 1051397900
 icon_id = 3001
 
 [[good]]
 key = "rold_medallion"
 item_id = 8107
 name = "Rold Medallion"
+historic_lot_table = "map"
+historic_lot_id = 100010
+historic_vanilla_flag = 400001
 icon_id = 3002
 
 [[good]]
 key = "academy_glintstone_key"
 item_id = 8109
 name = "Academy Glintstone Key"
+historic_lot_table = "map"
+historic_lot_id = 1034450100
+historic_vanilla_flag = 1034457100
 icon_id = 3006
 
 [[good]]
 key = "carian_inverted_statue"
 item_id = 8111
 name = "Carian Inverted Statue"
+historic_lot_table = "map"
+historic_lot_id = 103910
+historic_vanilla_flag = 400391
 icon_id = 3060
 
 [[good]]
@@ -1380,6 +1845,9 @@ key = "discarded_palace_key"
 item_id = 8199
 name = "Discarded Palace Key"
 pickup_flag = 1073750023
+historic_lot_table = "map"
+historic_lot_id = 101590
+historic_vanilla_flag = 400159
 icon_id = 3279
 
 [[good]]
@@ -1394,6 +1862,9 @@ key = "dark_moon_ring"
 item_id = 8121
 name = "Dark Moon Ring"
 pickup_flag = 14000676
+historic_lot_table = "map"
+historic_lot_id = 14000960
+historic_vanilla_flag = 114
 icon_id = 3050
 
 [[good]]
@@ -1401,6 +1872,9 @@ key = "hole_laden_necklace"
 item_id = 2008008
 name = "Hole-Laden Necklace"
 pickup_flag = 2051459220
+historic_lot_table = "map"
+historic_lot_id = 106600
+historic_vanilla_flag = 400660
 icon_id = 3806
 
 [[good]]
@@ -1408,6 +1882,9 @@ key = "o_mother"
 item_id = 2009004
 name = "O Mother"
 pickup_flag = 1032500030
+historic_lot_table = "map"
+historic_lot_id = 2050450510
+historic_vanilla_flag = 2050457510
 icon_id = 7104
 
 [[good]]
@@ -1415,4 +1892,7 @@ key = "pureblood_knights_medal"
 item_id = 2160
 name = "Pureblood Knight's Medal"
 pickup_flag = 1073743984
+historic_lot_table = "map"
+historic_lot_id = 100320
+historic_vanilla_flag = 400032
 icon_id = 625

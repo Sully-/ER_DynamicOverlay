@@ -295,6 +295,7 @@ row = 5
 kind = "item"
 key = "daedicar_s_woe"
 track_equipped = true
+historic = true
 col = 0
 row = 6
 
@@ -302,6 +303,7 @@ row = 6
 kind = "item"
 key = "radagon_s_scarseal"
 track_equipped = true
+historic = true
 col = 1
 row = 6
 
@@ -309,6 +311,7 @@ row = 6
 kind = "item"
 key = "radagon_s_soreseal"
 track_equipped = true
+historic = true
 col = 2
 row = 6
 
@@ -316,6 +319,7 @@ row = 6
 kind = "item"
 key = "marika_s_scarseal"
 track_equipped = true
+historic = true
 col = 3
 row = 6
 
@@ -323,6 +327,7 @@ row = 6
 kind = "item"
 key = "marika_s_soreseal"
 track_equipped = true
+historic = true
 col = 4
 row = 6
 
@@ -330,6 +335,7 @@ row = 6
 kind = "item"
 key = "beloved_stardust"
 track_equipped = true
+historic = true
 col = 5
 row = 6
 
@@ -337,6 +343,7 @@ row = 6
 kind = "item"
 key = "magic_scorpion_charm"
 track_equipped = true
+historic = true
 col = 0
 row = 7
 
@@ -344,6 +351,7 @@ row = 7
 kind = "item"
 key = "lightning_scorpion_charm"
 track_equipped = true
+historic = true
 col = 1
 row = 7
 
@@ -351,6 +359,7 @@ row = 7
 kind = "item"
 key = "fire_scorpion_charm"
 track_equipped = true
+historic = true
 col = 2
 row = 7
 
@@ -358,6 +367,7 @@ row = 7
 kind = "item"
 key = "sacred_scorpion_charm"
 track_equipped = true
+historic = true
 col = 3
 row = 7
 
@@ -371,5 +381,6 @@ row = 1
 kind = "item"
 key = "talisman_of_all_crucibles"
 track_equipped = true
+historic = true
 col = 6
 row = 6

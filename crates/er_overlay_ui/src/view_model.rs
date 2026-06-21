@@ -3,8 +3,8 @@ use std::collections::{HashMap, HashSet};
 use er_game_state::{
     bosses_in_region, checks_in_region, checks_region_label_for_subregion, checks_region_names,
     checks_seed_flags_loaded, checks_total_count, effective_flag, good_by_key, group_names,
-    group_progress, group_size, item_owned, region_label_for_subregion, region_names, CheckEntry,
-    GameStateSource,
+    group_progress, group_size, item_owned, item_owned_historic, region_label_for_subregion,
+    region_names, CheckEntry, GameStateSource,
 };
 use er_overlay_common::{
     BossPanelScope, ChallengeSnapshot, GameStateDiagnostics, GameTime, TrackKind,
@@ -326,6 +326,7 @@ pub fn build_view_model(
     source: &dyn GameStateSource,
     referenced_keys: &[String],
     equipped_keys: &HashSet<String>,
+    historic_keys: &HashSet<String>,
     boss_panel_scope: BossPanelScope,
     checks_panel_scope: BossPanelScope,
     challenge: ChallengeSnapshot,
@@ -340,8 +341,20 @@ pub fn build_view_model(
                 count: source.get_goods_quantity(good.item_id),
             }
         } else {
+            let acquired = if historic_keys.contains(key) {
+                item_owned_historic(
+                    source,
+                    &good.key,
+                    good.item_id,
+                    good.category,
+                    good.pickup_flag,
+                    good.historic_lot,
+                )
+            } else {
+                item_owned(source, good.item_id, good.category, good.pickup_flag)
+            };
             TrackKind::Unique {
-                acquired: item_owned(source, good.item_id, good.category, good.pickup_flag),
+                acquired,
             }
         };
         let equipped = if equipped_keys.contains(key) {
@@ -419,6 +432,7 @@ mod tests {
             &mock,
             &[],
             &HashSet::new(),
+            &HashSet::new(),
             BossPanelScope::CurrentRegion,
             BossPanelScope::CurrentRegion,
             ChallengeSnapshot::default(),
@@ -433,6 +447,7 @@ mod tests {
         let vm = build_view_model(
             &mock,
             &[],
+            &HashSet::new(),
             &HashSet::new(),
             BossPanelScope::AllRegions,
             BossPanelScope::AllRegions,

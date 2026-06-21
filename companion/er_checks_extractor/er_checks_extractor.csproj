@@ -36,6 +36,9 @@
     <EmbeddedResource Include="Defs\ItemLotParam.xml">
       <LogicalName>ItemLotParam.xml</LogicalName>
     </EmbeddedResource>
+    <EmbeddedResource Include="..\..\crates\er_game_state\tables\goods.toml">
+      <LogicalName>goods.toml</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
 
 </Project>

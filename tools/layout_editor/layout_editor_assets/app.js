@@ -181,6 +181,7 @@ function tileContentKey(tile, gm) {
     tile.icon,
     tile.key,
     tile.track_equipped,
+    tile.historic,
     tile.w,
     tile.h,
     gm.unit,
@@ -339,6 +340,7 @@ const els = {
   propMaxMode: $("#prop-max-mode"),
   propMaxValue: $("#prop-max-value"),
   propTrackEquipped: $("#prop-track-equipped"),
+  propHistoric: $("#prop-historic"),
   propIcon: $("#prop-icon"),
   fieldLabel: $("#field-label"),
   fieldMetric: $("#field-metric"),
@@ -346,6 +348,7 @@ const els = {
   fieldShowMax: $("#field-show-max"),
   fieldMetricMax: $("#field-metric-max"),
   fieldTrackEquipped: $("#field-track-equipped"),
+  fieldHistoric: $("#field-historic"),
   fieldIcon: $("#field-icon"),
   cfgColumns: $("#cfg-columns"),
   cfgRows: $("#cfg-rows"),
@@ -1431,6 +1434,7 @@ function renderProperties() {
     tile.kind !== "metric" || (!metricHasMax(tile.metric) && !tile.show_max)
   );
   els.fieldTrackEquipped.classList.toggle("hidden", tile.kind !== "item");
+  els.fieldHistoric.classList.toggle("hidden", tile.kind !== "item");
   els.fieldIcon.classList.toggle("hidden", tile.kind !== "metric");
 
   els.propLabel.value = tile.label || "";
@@ -1448,6 +1452,7 @@ function renderProperties() {
     : defaultMaxForMetric(tile.metric);
   els.propMaxValue.disabled = !maxManual;
   els.propTrackEquipped.checked = !!tile.track_equipped;
+  els.propHistoric.checked = !!tile.historic;
   els.propIcon.value = tile.icon || "";
 }
 
@@ -1498,7 +1503,12 @@ function createTile(kind, data, col, row) {
     };
   }
   if (kind === "item") {
-    return { ...base, key: data.key || "godrick_rune", track_equipped: !!data.track_equipped };
+    return {
+      ...base,
+      key: data.key || "godrick_rune",
+      track_equipped: !!data.track_equipped,
+      historic: !!data.historic,
+    };
   }
   return base;
 }
@@ -1557,6 +1567,7 @@ function applyPropChanges() {
   if (tile.kind === "item") {
     tile.key = els.propKey.value.trim() || tile.key;
     tile.track_equipped = els.propTrackEquipped.checked;
+    tile.historic = els.propHistoric.checked;
   }
   tile.col = Math.max(0, Number(els.propCol.value) || 0);
   tile.row = Math.max(0, Number(els.propRow.value) || 0);
@@ -1932,6 +1943,7 @@ function exportToml() {
       } else if (tile.kind === "item") {
         lines.push(`key = "${tile.key}"`);
         if (tile.track_equipped) lines.push("track_equipped = true");
+        if (tile.historic) lines.push("historic = true");
       }
       lines.push(`col = ${tile.col}`);
       lines.push(`row = ${tile.row}`);
@@ -2029,7 +2041,12 @@ function parseTileDef(t) {
     return { ...base, label: t.label || "" };
   }
   if (t.kind === "item") {
-    return { ...base, key: t.key || "", track_equipped: !!t.track_equipped };
+    return {
+      ...base,
+      key: t.key || "",
+      track_equipped: !!t.track_equipped,
+      historic: !!t.historic,
+    };
   }
   return base;
 }
@@ -2069,6 +2086,7 @@ function bindEvents() {
     els.propMaxMode,
     els.propMaxValue,
     els.propTrackEquipped,
+    els.propHistoric,
     els.propIcon,
   ]) {
     input.addEventListener("input", applyPropChanges);

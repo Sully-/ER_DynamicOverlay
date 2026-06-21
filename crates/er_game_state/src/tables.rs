@@ -4,6 +4,7 @@ use std::sync::LazyLock;
 use serde::Deserialize;
 
 use crate::boss_table::boss_table;
+use crate::lot_flags::{effective_good_flag, LotRef, LotTable};
 use crate::GameStateSource;
 
 #[derive(Debug, Clone)]
@@ -39,6 +40,8 @@ pub struct GoodEntry {
     pub category: ItemKind,
     /// Optional event flag used to detect ownership (falls back to inventory presence).
     pub pickup_flag: Option<u32>,
+    /// Optional vanilla lot metadata used by layout-driven historic tracking.
+    pub historic_lot: Option<LotRef>,
     /// Optional display cap for a counter (e.g. scadutree → "N/50").
     pub max: Option<u32>,
     /// Stackable good: show inventory quantity (`true`) instead of owned / not-owned.
@@ -53,6 +56,7 @@ struct ParsedGood {
     file: String,
     category: ItemKind,
     pickup_flag: Option<u32>,
+    historic_lot: Option<LotRef>,
     max: Option<u32>,
     countable: bool,
 }
@@ -79,6 +83,12 @@ struct GoodRow {
     #[serde(default)]
     category: ItemKind,
     pickup_flag: Option<u32>,
+    #[serde(default)]
+    historic_lot_table: Option<LotTable>,
+    #[serde(default)]
+    historic_lot_id: Option<u32>,
+    #[serde(default)]
+    historic_vanilla_flag: Option<u32>,
     max: Option<u32>,
     #[serde(default)]
     count: bool,
@@ -101,21 +111,35 @@ static GOODS: LazyLock<Vec<ParsedGood>> = LazyLock::new(|| {
     table
         .good
         .into_iter()
-        .map(|row| ParsedGood {
-            key: row.key.clone(),
-            item_id: row.item_id,
-            name: row.name,
-            file: row.file.unwrap_or_else(|| format!("{}.png", row.key)),
-            category: row.category,
-            pickup_flag: row.pickup_flag,
-            max: row.max,
-            countable: row.count,
+        .map(|row| {
+            let historic_lot = row.historic_lot();
+            ParsedGood {
+                key: row.key.clone(),
+                item_id: row.item_id,
+                name: row.name,
+                file: row.file.unwrap_or_else(|| format!("{}.png", row.key)),
+                category: row.category,
+                pickup_flag: row.pickup_flag,
+                historic_lot,
+                max: row.max,
+                countable: row.count,
+            }
         })
         .collect()
 });
 
 pub(crate) fn boss_entries() -> std::sync::Arc<crate::boss_table::BossTableData> {
     boss_table()
+}
+
+impl GoodRow {
+    fn historic_lot(&self) -> Option<LotRef> {
+        Some(LotRef {
+            table: self.historic_lot_table?,
+            lot_id: self.historic_lot_id?,
+            vanilla_flag: self.historic_vanilla_flag,
+        })
+    }
 }
 
 pub fn boss_entries_full() -> std::sync::Arc<crate::boss_table::BossTableData> {
@@ -157,6 +181,7 @@ fn good_entry(g: &ParsedGood) -> GoodEntry {
         file: g.file.clone(),
         category: g.category,
         pickup_flag: g.pickup_flag,
+        historic_lot: g.historic_lot,
         max: g.max,
         countable: g.countable,
     }
@@ -200,6 +225,26 @@ pub fn item_owned(
     }
 }
 
+/// Whether a good is historically owned when the active layout asks for historic tracking.
+pub fn item_owned_historic(
+    source: &dyn GameStateSource,
+    key: &str,
+    item_id: u32,
+    category: ItemKind,
+    pickup_flag: Option<u32>,
+    historic_lot: Option<LotRef>,
+) -> Option<bool> {
+    let current = item_owned(source, item_id, category, pickup_flag);
+    if current == Some(true) {
+        return current;
+    }
+
+    match effective_good_flag(key, historic_lot) {
+        Some(flag) => source.get_flag(flag).or(current),
+        None => current,
+    }
+}
+
 /// `(owned, total)` members of an aggregate group, or `None` while the data is incomplete.
 pub fn group_progress(source: &dyn GameStateSource, name: &str) -> Option<(u32, u32)> {
     let members = group_members(name);
@@ -222,6 +267,8 @@ pub fn group_progress(source: &dyn GameStateSource, name: &str) -> Option<(u32, 
 mod tests {
     use super::*;
     use crate::mock::MockGameState;
+    use crate::GameStateSource;
+    use er_overlay_common::{GameStateDiagnostics, GameTime};
 
     #[test]
     fn boss_table_non_empty() {
@@ -284,6 +331,86 @@ mod tests {
         assert_eq!(good_by_key("scadutree").unwrap().max, Some(50));
         assert!(good_by_key("kindling").unwrap().countable);
         assert!(good_by_key("smithing_stone_1").unwrap().countable);
+    }
+
+    #[test]
+    fn goods_table_parses_historic_lot() {
+        let raw = r#"
+[[good]]
+key = "fire_scorpion_charm"
+item_id = 1170
+category = "accessory"
+name = "Fire Scorpion Charm"
+historic_lot_table = "map"
+historic_lot_id = 123456
+historic_vanilla_flag = 40001234
+"#;
+        let table: GoodsTable = toml::from_str(raw).unwrap();
+        let lot = table.good[0].historic_lot().unwrap();
+        assert_eq!(lot.table, crate::LotTable::Map);
+        assert_eq!(lot.lot_id, 123456);
+        assert_eq!(lot.vanilla_flag, Some(40001234));
+    }
+
+    #[test]
+    fn historic_ownership_uses_lot_flag_when_inventory_is_empty() {
+        struct Source;
+
+        impl GameStateSource for Source {
+            fn get_igt(&self) -> Option<GameTime> {
+                None
+            }
+            fn get_death_count(&self) -> Option<u32> {
+                None
+            }
+            fn get_ng_cycle(&self) -> Option<u32> {
+                None
+            }
+            fn get_scadutree_blessing(&self) -> Option<u32> {
+                None
+            }
+            fn get_killed_boss_count(&self) -> Option<u32> {
+                None
+            }
+            fn get_goods_quantity(&self, _item_id: u32) -> Option<u32> {
+                None
+            }
+            fn has_item(&self, _item_id: u32, _category: ItemKind) -> Option<bool> {
+                Some(false)
+            }
+            fn is_item_equipped(&self, _item_id: u32, _category: ItemKind) -> Option<bool> {
+                None
+            }
+            fn get_flag(&self, flag_id: u32) -> Option<bool> {
+                Some(flag_id == 40001234)
+            }
+            fn get_current_subregion_id(&self) -> Option<u32> {
+                None
+            }
+            fn get_status(&self) -> GameStateDiagnostics {
+                GameStateDiagnostics::default()
+            }
+            fn bosses_total(&self) -> u32 {
+                0
+            }
+        }
+
+        crate::clear_lot_seed_flags();
+        assert_eq!(
+            item_owned_historic(
+                &Source,
+                "fire_scorpion_charm",
+                1170,
+                ItemKind::Accessory,
+                None,
+                Some(crate::LotRef {
+                    table: crate::LotTable::Map,
+                    lot_id: 123456,
+                    vanilla_flag: Some(40001234),
+                }),
+            ),
+            Some(true)
+        );
     }
 
     #[test]

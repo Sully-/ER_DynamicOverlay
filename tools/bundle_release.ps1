@@ -12,6 +12,7 @@ param(
 $ErrorActionPreference = "Stop"
 $root = Resolve-Path (Join-Path $PSScriptRoot "..")
 Set-Location $root
+$env:CARGO_TARGET_DIR = Join-Path $root "target"
 
 if (-not $SkipBuild) {
     Write-Host "Building release..."
@@ -33,7 +34,7 @@ $required = @(
 )
 foreach ($item in $required) {
     if (-not (Test-Path (Join-Path $releaseDir $item))) {
-        throw "Missing target/release/$item — run 'cargo build --release' first (or without -SkipBuild)."
+        throw "Missing target/release/$item - run 'cargo build --release' first (or without -SkipBuild)."
     }
 }
 

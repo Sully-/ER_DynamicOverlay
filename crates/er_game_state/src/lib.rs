@@ -1,6 +1,7 @@
 mod boss_table;
 mod checks_table;
 mod inventory;
+mod lot_flags;
 mod tables;
 
 #[cfg(feature = "game")]
@@ -25,12 +26,17 @@ pub use checks_table::{
     checks_seed_flags_loaded, checks_seed_regulation_hash, checks_total_count,
     clear_checks_seed_flags, effective_flag, load_checks_flags_from_path,
     load_checks_table_from_path, reload_checks_flags_if_modified, reload_checks_table_if_modified,
-    resolve_checks_table_path, CheckEntry, ChecksFlagsData, ChecksTableData,
+    resolve_checks_table_path, CheckEntry, ChecksTableData,
+};
+pub use lot_flags::{
+    clear_lot_seed_flags, effective_lot_flag, load_lot_flags_from_path, lot_seed_flags_loaded,
+    lot_seed_regulation_hash, parse_lot_flags, reload_lot_flags_if_modified, LotFlagsData, LotRef,
+    LotTable,
 };
 pub use tables::{
     boss_entries_full, bosses_in_region, good_by_key, group_members, group_names, group_progress,
-    group_size, item_owned, region_label_for_subregion, region_names, BossEntry, GoodEntry,
-    ItemKind,
+    group_size, item_owned, item_owned_historic, region_label_for_subregion, region_names,
+    BossEntry, GoodEntry, ItemKind,
 };
 
 /// Maximum Scadutree Blessing level (fragments spent at Sites of Grace in the DLC).

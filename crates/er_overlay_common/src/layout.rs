@@ -267,6 +267,9 @@ pub enum TileDef {
         /// When true, highlight the tile border while this item is equipped.
         #[serde(default)]
         track_equipped: bool,
+        /// When true, track historical acquisition via the good's vanilla item lot metadata.
+        #[serde(default)]
+        historic: bool,
     },
     /// Decorative text (header, separator…) — no game data.
     Label {
@@ -489,6 +492,38 @@ impl LayoutConfig {
             if let TileDef::Item {
                 good_key,
                 track_equipped: true,
+                ..
+            } = tile
+            {
+                push(good_key);
+            }
+        }
+    }
+
+    /// Good keys for `item` tiles that request historical acquisition tracking.
+    pub fn collect_historic_refs(&self) -> HashSet<String> {
+        let mut keys = HashSet::new();
+        let mut push = |key: &str| {
+            if !key.is_empty() {
+                keys.insert(key.to_string());
+            }
+        };
+
+        if self.sections.is_empty() {
+            Self::collect_historic_refs_from_tiles(&self.tiles, &mut push);
+        } else {
+            for section in &self.sections {
+                Self::collect_historic_refs_from_tiles(&section.tiles, &mut push);
+            }
+        }
+        keys
+    }
+
+    fn collect_historic_refs_from_tiles(tiles: &[TileDef], push: &mut impl FnMut(&str)) {
+        for tile in tiles {
+            if let TileDef::Item {
+                good_key,
+                historic: true,
                 ..
             } = tile
             {
@@ -731,6 +766,7 @@ mod tests {
                         row_span: 1,
                     },
                     track_equipped: false,
+                    historic: false,
                 },
             ],
             sections: vec![],
@@ -1065,6 +1101,38 @@ row = 0
             TileDef::Item { track_equipped, .. } => assert!(!*track_equipped),
             _ => panic!("expected item"),
         }
+    }
+
+    #[test]
+    fn historic_item_refs_parse_and_collect() {
+        let raw = r#"
+[[tile]]
+kind = "item"
+key = "fire_scorpion_charm"
+historic = true
+col = 0
+row = 0
+
+[[tile]]
+kind = "item"
+key = "godrick_rune"
+col = 1
+row = 0
+"#;
+        let layout: LayoutConfig = toml::from_str(raw).unwrap();
+        match &layout.tiles[0] {
+            TileDef::Item {
+                good_key,
+                historic,
+                ..
+            } => {
+                assert_eq!(good_key, "fire_scorpion_charm");
+                assert!(*historic);
+            }
+            _ => panic!("expected item"),
+        }
+        assert!(layout.collect_historic_refs().contains("fire_scorpion_charm"));
+        assert!(!layout.collect_historic_refs().contains("godrick_rune"));
     }
 
     #[test]

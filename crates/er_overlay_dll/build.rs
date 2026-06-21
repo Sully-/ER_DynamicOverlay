@@ -13,19 +13,33 @@ fn main() {
     let target_dir = env::var("CARGO_TARGET_DIR")
         .unwrap_or_else(|_| workspace_root.join("target").to_string_lossy().into_owned());
     let out_dir = PathBuf::from(&target_dir).join(&profile);
+    if let Err(e) = fs::create_dir_all(&out_dir) {
+        println!("cargo:warning=Could not create {}: {e}", out_dir.display());
+    }
 
     let config_src = workspace_root.join("er_overlay.toml");
     println!("cargo:rerun-if-changed={}", config_src.display());
     if config_src.is_file() {
         let dest = out_dir.join("er_overlay.toml");
-        let _ = fs::copy(&config_src, &dest);
+        if let Err(e) = fs::copy(&config_src, &dest) {
+            println!(
+                "cargo:warning=Could not copy {} to {}: {e}",
+                config_src.display(),
+                dest.display()
+            );
+        }
     }
 
     let layouts_src = workspace_root.join("layouts");
     println!("cargo:rerun-if-changed={}", layouts_src.display());
     if layouts_src.is_dir() {
         let layouts_dest = out_dir.join("layouts");
-        let _ = copy_dir_all(&layouts_src, &layouts_dest);
+        if let Err(e) = copy_dir_all(&layouts_src, &layouts_dest) {
+            println!(
+                "cargo:warning=Could not copy layouts/ to {}: {e}",
+                layouts_dest.display()
+            );
+        }
     }
 
     let boss_tables_src = workspace_root
@@ -74,7 +88,12 @@ fn main() {
             println!("cargo:rerun-if-changed={}", entry.path().display());
         }
         let icons_dest = out_dir.join("assets").join("icons");
-        let _ = copy_dir_all(&icons_src, &icons_dest);
+        if let Err(e) = copy_dir_all(&icons_src, &icons_dest) {
+            println!(
+                "cargo:warning=Could not copy assets/icons/ to {}: {e}",
+                icons_dest.display()
+            );
+        }
     }
 }
 

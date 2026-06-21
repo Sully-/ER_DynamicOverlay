@@ -214,6 +214,7 @@ mod tests {
             &mock,
             &[],
             &HashSet::new(),
+            &HashSet::new(),
             er_overlay_common::BossPanelScope::CurrentRegion,
             er_overlay_common::BossPanelScope::CurrentRegion,
             er_overlay_common::ChallengeSnapshot::default(),

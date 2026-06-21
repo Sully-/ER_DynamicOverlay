@@ -21,6 +21,7 @@ use serde::Deserialize;
 use tracing::{info, warn};
 
 use crate::boss_table::DEFAULT_LOCALE_ID;
+use crate::lot_flags::{self, LotRef, LotTable};
 
 const EMBEDDED_CHECKS_TOML: &str = include_str!("../tables/en/checks.toml");
 
@@ -292,131 +293,41 @@ pub fn reload_checks_table_if_modified(
     }
 }
 
-// --- Per-seed flag mapping (checks_flags.toml) -----------------------------------------
+// --- Per-seed flag mapping --------------------------------------------------------------
 
-/// Per-seed mapping `lot_id -> current event flag`, plus the regulation hash it came from.
-#[derive(Debug, Clone, Default)]
-pub struct ChecksFlagsData {
-    pub regulation_sha256: Option<String>,
-    pub flags: HashMap<u32, u32>,
-}
-
-/// `None` means no seed mapping is loaded (vanilla, or no `regulation_path` configured):
-/// dynamic checks then fall back to `vanilla_flag`.
-static CHECKS_FLAGS: LazyLock<RwLock<Option<Arc<ChecksFlagsData>>>> =
-    LazyLock::new(|| RwLock::new(None));
-
-#[derive(Debug, Deserialize)]
-struct ChecksFlagsFile {
-    #[serde(default)]
-    regulation_sha256: Option<String>,
-    #[serde(default)]
-    flags: HashMap<String, u32>,
-}
-
-pub fn checks_seed_flags() -> Option<Arc<ChecksFlagsData>> {
-    CHECKS_FLAGS.read().expect("checks flags poisoned").clone()
+#[allow(dead_code)]
+pub fn checks_seed_flags() -> Option<Arc<lot_flags::LotFlagsData>> {
+    lot_flags::lot_seed_flags()
 }
 
 pub fn checks_seed_flags_loaded() -> bool {
-    CHECKS_FLAGS
-        .read()
-        .expect("checks flags poisoned")
-        .is_some()
+    lot_flags::lot_seed_flags_loaded()
 }
 
 pub fn checks_seed_regulation_hash() -> Option<String> {
-    checks_seed_flags().and_then(|d| d.regulation_sha256.clone())
+    lot_flags::lot_seed_regulation_hash()
 }
 
-pub fn parse_checks_flags(raw: &str) -> Result<ChecksFlagsData, String> {
-    let file: ChecksFlagsFile = toml::from_str(raw).map_err(|e| e.to_string())?;
-    let mut flags = HashMap::with_capacity(file.flags.len());
-    for (k, v) in file.flags {
-        let lot: u32 = k
-            .parse()
-            .map_err(|_| format!("invalid lot_id key in checks_flags.toml: {k}"))?;
-        flags.insert(lot, v);
-    }
-    Ok(ChecksFlagsData {
-        regulation_sha256: file.regulation_sha256,
-        flags,
-    })
-}
-
-fn set_checks_flags(data: Option<ChecksFlagsData>) {
-    *CHECKS_FLAGS.write().expect("checks flags poisoned") = data.map(Arc::new);
+#[allow(dead_code)]
+pub fn parse_checks_flags(raw: &str) -> Result<lot_flags::LotFlagsData, String> {
+    lot_flags::parse_lot_flags(raw)
 }
 
 /// Drops any loaded seed mapping (e.g. `regulation_path` was unset): dynamic checks revert to
 /// their vanilla flags. Returns whether a mapping was actually cleared.
 pub fn clear_checks_seed_flags() -> bool {
-    let mut guard = CHECKS_FLAGS.write().expect("checks flags poisoned");
-    if guard.is_some() {
-        *guard = None;
-        true
-    } else {
-        false
-    }
+    lot_flags::clear_lot_seed_flags()
 }
 
 /// Loads `checks_flags.toml`. On parse failure, keeps the previous mapping.
 pub fn load_checks_flags_from_path(path: &Path) -> bool {
-    let raw = match fs::read_to_string(path) {
-        Ok(raw) => raw,
-        Err(e) => {
-            warn!("Failed to read checks_flags at {}: {e}", path.display());
-            return false;
-        }
-    };
-    match parse_checks_flags(&raw) {
-        Ok(data) => {
-            let count = data.flags.len();
-            set_checks_flags(Some(data));
-            info!(
-                "Loaded checks_flags from {} ({} dynamic flags)",
-                path.display(),
-                count
-            );
-            true
-        }
-        Err(e) => {
-            warn!(
-                "Failed to parse checks_flags at {}: {e} (keeping previous mapping)",
-                path.display()
-            );
-            false
-        }
-    }
+    lot_flags::load_lot_flags_from_path(path)
 }
 
 /// Reloads `checks_flags.toml` when its mtime changes. When the file is absent, clears any
 /// loaded mapping (so dynamic checks revert to vanilla flags). Returns whether state changed.
 pub fn reload_checks_flags_if_modified(path: &Path, last_mtime: &mut Option<SystemTime>) -> bool {
-    let mtime = fs::metadata(path).and_then(|m| m.modified()).ok();
-    match mtime {
-        Some(t) => {
-            let changed = last_mtime.as_ref() != Some(&t);
-            if !changed {
-                return false;
-            }
-            if load_checks_flags_from_path(path) {
-                *last_mtime = Some(t);
-                true
-            } else {
-                false
-            }
-        }
-        None => {
-            // File gone: drop the mapping once.
-            if last_mtime.is_some() || checks_seed_flags_loaded() {
-                set_checks_flags(None);
-                *last_mtime = None;
-                return true;
-            }
-            false
-        }
-    }
+    lot_flags::reload_lot_flags_if_modified(path, last_mtime)
 }
 
 /// The effective event flag to read for a check given the currently loaded seed mapping.
@@ -425,13 +336,12 @@ pub fn effective_flag(check: &CheckEntry) -> Option<u32> {
     if !check.dynamic {
         return check.flag;
     }
-    match checks_seed_flags() {
-        Some(data) => match check.lot_id {
-            // Lot present in the seed mapping -> current flag; absent -> untraceable this seed.
-            Some(lot) => data.flags.get(&lot).copied(),
-            None => check.vanilla_flag,
-        },
-        // No seed mapping loaded (vanilla / no regulation): use the vanilla lot flag.
+    match check.lot_id {
+        Some(lot_id) => lot_flags::effective_lot_flag(LotRef {
+            table: LotTable::Map,
+            lot_id,
+            vanilla_flag: check.vanilla_flag,
+        }),
         None => check.vanilla_flag,
     }
 }
@@ -493,24 +403,26 @@ flag = 1
         };
 
         // No seed mapping -> vanilla flag.
-        set_checks_flags(None);
+        lot_flags::set_lot_flags(None);
         assert_eq!(effective_flag(&check), Some(1034457100));
 
         // Seed mapping present with the lot -> seed flag.
-        let mut flags = HashMap::new();
-        flags.insert(1034450100u32, 65160u32);
-        set_checks_flags(Some(ChecksFlagsData {
+        let mut map = HashMap::new();
+        map.insert(1034450100u32, 65160u32);
+        lot_flags::set_lot_flags(Some(lot_flags::LotFlagsData {
             regulation_sha256: Some("abc".into()),
-            flags,
+            map,
+            enemy: HashMap::new(),
+            goods: HashMap::new(),
         }));
         assert_eq!(effective_flag(&check), Some(65160));
 
         // Seed mapping present but lot absent -> untraceable this seed.
-        set_checks_flags(Some(ChecksFlagsData::default()));
+        lot_flags::set_lot_flags(Some(lot_flags::LotFlagsData::default()));
         assert_eq!(effective_flag(&check), None);
 
         // Reset global state for other tests.
-        set_checks_flags(None);
+        lot_flags::set_lot_flags(None);
     }
 
     #[test]
@@ -533,6 +445,6 @@ flag = 1
         let raw = "regulation_sha256 = \"deadbeef\"\n[flags]\n1034450100 = 65160\n10000500 = 1\n";
         let data = parse_checks_flags(raw).unwrap();
         assert_eq!(data.regulation_sha256.as_deref(), Some("deadbeef"));
-        assert_eq!(data.flags.get(&1034450100), Some(&65160));
+        assert_eq!(data.map.get(&1034450100), Some(&65160));
     }
 }
