@@ -353,9 +353,7 @@ pub fn build_view_model(
             } else {
                 item_owned(source, good.item_id, good.category, good.pickup_flag)
             };
-            TrackKind::Unique {
-                acquired,
-            }
+            TrackKind::Unique { acquired }
         };
         let equipped = if equipped_keys.contains(key) {
             source.is_item_equipped(good.item_id, good.category)

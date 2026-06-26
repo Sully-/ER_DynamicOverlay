@@ -1122,16 +1122,16 @@ row = 0
         let layout: LayoutConfig = toml::from_str(raw).unwrap();
         match &layout.tiles[0] {
             TileDef::Item {
-                good_key,
-                historic,
-                ..
+                good_key, historic, ..
             } => {
                 assert_eq!(good_key, "fire_scorpion_charm");
                 assert!(*historic);
             }
             _ => panic!("expected item"),
         }
-        assert!(layout.collect_historic_refs().contains("fire_scorpion_charm"));
+        assert!(layout
+            .collect_historic_refs()
+            .contains("fire_scorpion_charm"));
         assert!(!layout.collect_historic_refs().contains("godrick_rune"));
     }
 

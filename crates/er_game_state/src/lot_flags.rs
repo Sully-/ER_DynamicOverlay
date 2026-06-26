@@ -31,8 +31,7 @@ pub struct LotFlagsData {
 
 /// `None` means no seed mapping is loaded (vanilla, or no `regulation_path` configured):
 /// dynamic lot refs then fall back to `vanilla_flag`.
-static LOT_FLAGS: LazyLock<RwLock<Option<Arc<LotFlagsData>>>> =
-    LazyLock::new(|| RwLock::new(None));
+static LOT_FLAGS: LazyLock<RwLock<Option<Arc<LotFlagsData>>>> = LazyLock::new(|| RwLock::new(None));
 
 #[derive(Debug, Deserialize)]
 struct LotFlagsFile {
@@ -247,7 +246,10 @@ fire_scorpion_charm = 700
             vanilla_flag: Some(200),
         };
         set_lot_flags(None);
-        assert_eq!(effective_good_flag("fire_scorpion_charm", Some(lot)), Some(200));
+        assert_eq!(
+            effective_good_flag("fire_scorpion_charm", Some(lot)),
+            Some(200)
+        );
 
         let mut goods = HashMap::new();
         goods.insert("fire_scorpion_charm".to_string(), 700);
@@ -257,7 +259,10 @@ fire_scorpion_charm = 700
             enemy: HashMap::new(),
             goods,
         }));
-        assert_eq!(effective_good_flag("fire_scorpion_charm", Some(lot)), Some(700));
+        assert_eq!(
+            effective_good_flag("fire_scorpion_charm", Some(lot)),
+            Some(700)
+        );
         assert_eq!(effective_good_flag("missing", Some(lot)), None);
         set_lot_flags(None);
     }

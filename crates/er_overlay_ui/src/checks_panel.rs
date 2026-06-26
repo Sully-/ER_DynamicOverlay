@@ -125,7 +125,8 @@ pub fn render_checks_panel(
                         let scroll_follow_up = state.consume_scroll_follow_up();
                         let scroll_current = scroll_to_current || scroll_follow_up;
                         for (i, section) in vm.checks_panel_sections.iter().enumerate() {
-                            let force_open = region_just_changed && current_index == Some(i);
+                            let force_open = config.checks_panel_expand_all_regions
+                                || (region_just_changed && current_index == Some(i));
                             if current_index == Some(i) && scroll_current {
                                 scroll_current_region_into_view(ui);
                             }

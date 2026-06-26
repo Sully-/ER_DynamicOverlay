@@ -66,6 +66,9 @@ pub struct OverlayConfig {
     /// Boss panel filter: `current-region` or `all-regions` (player location is always tracked).
     #[serde(default)]
     pub boss_panel_scope: BossPanelScope,
+    /// In `all-regions` mode, keep every boss region expanded instead of only following current.
+    #[serde(default)]
+    pub boss_panel_expand_all_regions: bool,
     /// Show the boss panel when the overlay starts.
     #[serde(default = "default_true")]
     pub boss_panel_visible: bool,
@@ -93,6 +96,9 @@ pub struct OverlayConfig {
     /// Checks panel filter: `current-region` or `all-regions` (player location is always tracked).
     #[serde(default)]
     pub checks_panel_scope: BossPanelScope,
+    /// In `all-regions` mode, keep every checks region expanded instead of only following current.
+    #[serde(default)]
+    pub checks_panel_expand_all_regions: bool,
     /// Show the checks panel when the overlay starts.
     #[serde(default)]
     pub checks_panel_visible: bool,
@@ -162,6 +168,7 @@ impl Default for OverlayConfig {
             boss_panel_hotkey: default_boss_panel_hotkey(),
             hide_all_hotkey: None,
             boss_panel_scope: BossPanelScope::default(),
+            boss_panel_expand_all_regions: false,
             boss_panel_visible: true,
             boss_panel_layout: None,
             default_layout_section: None,
@@ -170,6 +177,7 @@ impl Default for OverlayConfig {
             checks_extractor_path: None,
             checks_panel_hotkey: default_checks_panel_hotkey(),
             checks_panel_scope: BossPanelScope::default(),
+            checks_panel_expand_all_regions: false,
             checks_panel_visible: false,
             checks_panel_layout: None,
             overlay_visible: true,
