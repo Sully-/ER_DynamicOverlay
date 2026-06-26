@@ -45,6 +45,9 @@ pub const SCADUTREE_BLESSING_MAX: u32 = 20;
 #[cfg(feature = "game")]
 pub use reader::GameStateReader;
 
+#[cfg(feature = "game")]
+pub use screen_state::set_menu_cursor_visible;
+
 use er_overlay_common::{GameStateDiagnostics, GameTime};
 
 /// Trait for reading game state (live or mock). Item- and group-level meaning is layered

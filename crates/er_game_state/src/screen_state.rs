@@ -7,6 +7,7 @@ use fromsoftware_shared::FromStatic;
 /// `CSMenuManImp` menu-info block offset (game 1.12+ / our supported 2.6.2 builds).
 const MENU_INFO_OFFSET: usize = 0x720;
 const SCREEN_STATE_FIELD_OFFSET: usize = 0x10;
+const MOUSE_CURSOR_FLAGS_OFFSET: usize = 0xAC;
 
 /// Reads the frontend screen-state integer from `CSMenuManImp`.
 ///
@@ -17,6 +18,21 @@ pub fn read_screen_state() -> Option<i32> {
     let base = menu_man as *const CSMenuManImp as *const u8;
     // SAFETY: offset matches EROverlay `Hooking::screenState()` for 1.12+ builds.
     Some(unsafe { *(base.add(MENU_INFO_OFFSET + SCREEN_STATE_FIELD_OFFSET) as *const i32) })
+}
+
+/// Mirrors EROverlay's `Hooking::showMouseCursor`: toggle the game menu cursor bit.
+pub fn set_menu_cursor_visible(visible: bool) -> Option<()> {
+    let menu_man = unsafe { CSMenuManImp::instance().ok()? };
+    let base = menu_man as *const CSMenuManImp as *mut u8;
+    let flags = unsafe { base.add(MOUSE_CURSOR_FLAGS_OFFSET) };
+    unsafe {
+        if visible {
+            *flags |= 1;
+        } else {
+            *flags &= !1;
+        }
+    }
+    Some(())
 }
 
 /// Whether challenge counters should be polled this frame.

@@ -18,9 +18,8 @@ use er_overlay_ui::{
     build_view_model, empty_view_model, render_overlay, setup_overlay_fonts, BossPanelState,
     ChecksPanelState, HudDragState, IconAtlas,
 };
-use hudhook::ImguiRenderLoop;
-use hudhook::RenderContext;
-use imgui::{Context, Key};
+use hudhook::{ImguiRenderLoop, MessageFilter, RenderContext};
+use imgui::{Context, Key, WindowHoveredFlags};
 use tracing::{debug, warn};
 
 struct LayoutSectionState {
@@ -790,6 +789,7 @@ impl ImguiRenderLoop for OverlayApp {
         self.maybe_toggle_boss_panel(ui);
         self.maybe_toggle_checks_panel(ui);
         if !self.show_overlay {
+            let _ = er_game_state::set_menu_cursor_visible(false);
             return;
         }
         self.maybe_refresh_view_model();
@@ -816,5 +816,26 @@ impl ImguiRenderLoop for OverlayApp {
             show_checks_panel,
             &mut self.checks_panel,
         );
+        let imgui_hovered = ui.is_window_hovered_with_flags(
+            WindowHoveredFlags::ANY_WINDOW | WindowHoveredFlags::ALLOW_WHEN_BLOCKED_BY_ACTIVE_ITEM,
+        );
+        let interactive_visible = show_boss_panel || show_checks_panel || self.config.show_debug;
+        let _ = er_game_state::set_menu_cursor_visible(interactive_visible || imgui_hovered);
+    }
+
+    fn message_filter(&self, io: &imgui::Io) -> MessageFilter {
+        if !self.show_overlay {
+            let _ = er_game_state::set_menu_cursor_visible(false);
+            return MessageFilter::empty();
+        }
+
+        let mut filter = MessageFilter::empty();
+        if io.want_capture_mouse {
+            filter |= MessageFilter::InputMouse | MessageFilter::InputRaw;
+        }
+        if io.want_capture_keyboard || io.want_text_input {
+            filter |= MessageFilter::InputKeyboard | MessageFilter::InputRaw;
+        }
+        filter
     }
 }
