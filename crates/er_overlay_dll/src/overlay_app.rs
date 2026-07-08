@@ -48,6 +48,9 @@ pub struct OverlayApp {
     last_config_reload: Instant,
     reader: GameStateReader,
     font_bytes: Vec<u8>,
+    /// `(text_size, scale)` the font atlas is currently baked for. When it changes
+    /// (config reload), the atlas is re-rasterized and re-uploaded so text stays crisp.
+    applied_font_sig: Option<(f32, f32)>,
     icon_atlas: IconAtlas,
     /// `(use_item_icons, icon_keys)` the atlas was last loaded for. Recomputed on
     /// config/layout reload; a change flips `icons_dirty`.
@@ -146,6 +149,7 @@ impl OverlayApp {
             last_config_reload: Instant::now(),
             reader,
             font_bytes: Vec::new(),
+            applied_font_sig: None,
             icon_atlas: IconAtlas::new(),
             icon_signature,
             icons_dirty: true,
@@ -655,6 +659,33 @@ impl OverlayApp {
         }
     }
 
+    /// Re-rasterizes and re-uploads the font atlas when `text_size`/`scale` changed.
+    ///
+    /// hudhook only builds the font texture once (at renderer setup), so a live config
+    /// change would otherwise keep the old baked size. We rebuild the atlas here — in
+    /// `before_render`, the sanctioned place for texture uploads — and point the font
+    /// atlas at a freshly loaded texture so the new size renders crisp immediately.
+    fn rebuild_fonts_if_dirty(&mut self, ctx: &mut Context, render_ctx: &mut dyn RenderContext) {
+        let sig = (self.config.text_size, self.config.scale);
+        if self.applied_font_sig == Some(sig) {
+            return;
+        }
+        setup_overlay_fonts(ctx, &mut self.font_bytes, &self.config);
+        let fonts = ctx.fonts();
+        let texture = fonts.build_rgba32_texture();
+        match render_ctx.load_texture(texture.data, texture.width, texture.height) {
+            Ok(id) => {
+                fonts.tex_id = id;
+                self.applied_font_sig = Some(sig);
+                debug!(
+                    "Rebuilt font atlas (text_size={}, scale={})",
+                    self.config.text_size, self.config.scale
+                );
+            }
+            Err(e) => warn!("Font atlas rebuild failed: {e:?}"),
+        }
+    }
+
     /// Loads the icon atlas for the current `icon_signature`. Cheap to call every
     /// frame: it no-ops unless `icons_dirty` is set (initial load or signature
     /// change after a config/layout reload).
@@ -751,7 +782,8 @@ fn overlay_key_to_imgui(key: OverlayKey) -> Key {
 impl ImguiRenderLoop for OverlayApp {
     fn initialize(&mut self, ctx: &mut Context, render_ctx: &mut dyn RenderContext) {
         debug!("ImGui initialize");
-        setup_overlay_fonts(ctx, &mut self.font_bytes, self.config.text_size);
+        setup_overlay_fonts(ctx, &mut self.font_bytes, &self.config);
+        self.applied_font_sig = Some((self.config.text_size, self.config.scale));
         ctx.io_mut().config_windows_move_from_title_bar_only = false;
         self.load_icons_if_dirty(render_ctx);
         self.refresh_view_model();
@@ -776,9 +808,10 @@ impl ImguiRenderLoop for OverlayApp {
             imgui::ImColor32::from_rgba(245, 245, 250, 255).into();
     }
 
-    fn before_render(&mut self, _ctx: &mut Context, render_ctx: &mut dyn RenderContext) {
-        // Picks up icon-key changes produced by `maybe_reload_config` (runs in
-        // `render`). `RenderContext` is only available here, not in `render`.
+    fn before_render(&mut self, ctx: &mut Context, render_ctx: &mut dyn RenderContext) {
+        // Picks up text_size/scale and icon-key changes produced by `maybe_reload_config`
+        // (runs in `render`). `Context`/`RenderContext` are only available here, not in `render`.
+        self.rebuild_fonts_if_dirty(ctx, render_ctx);
         self.load_icons_if_dirty(render_ctx);
     }
 
