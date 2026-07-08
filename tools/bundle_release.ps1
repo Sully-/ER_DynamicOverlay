@@ -53,7 +53,10 @@ Copy-Item "$releaseDir/layouts" $out/ -Recurse
 Copy-Item "$releaseDir/tables"  $out/ -Recurse
 Copy-Item "$releaseDir/assets"  $out/ -Recurse
 Copy-Item "$releaseDir/companion" $out/ -Recurse
-Copy-Item README.md, LICENSE     $out/
+# User-facing README (usage only) — the full README.md stays in the repo.
+Copy-Item docs/release/README.md    $out/README.md
+Copy-Item docs/release/README.fr.md $out/README.fr.md
+Copy-Item LICENSE                   $out/
 
 Copy-Item tools/layout_editor/layout_editor.html $out/
 Copy-Item tools/layout_editor/layout_editor_assets $out/layout_editor_assets -Recurse

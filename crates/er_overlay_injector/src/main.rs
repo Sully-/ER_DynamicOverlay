@@ -1,5 +1,6 @@
 mod inject;
 mod process;
+mod update;
 
 use std::path::PathBuf;
 
@@ -9,6 +10,9 @@ use tracing::{error, info, warn};
 
 use crate::inject::inject_loadlibrary;
 use crate::process::{find_process_by_name, is_process_x64, list_loaded_modules, ProcessInfo};
+use crate::update::UpdateOutcome;
+
+const CURRENT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 const TARGET_PROCESS: &str = "eldenring.exe";
 const EAC_MODULE_HINTS: &[&str] = &[
@@ -34,6 +38,10 @@ struct Args {
     /// Validate only; do not inject
     #[arg(long)]
     dry_run: bool,
+
+    /// Skip the GitHub auto-update check (also set on the post-update relaunch)
+    #[arg(long)]
+    skip_update: bool,
 }
 
 fn main() -> Result<()> {
@@ -41,7 +49,21 @@ fn main() -> Result<()> {
         .context("Failed to initialize logging")?;
 
     let args = Args::parse();
-    info!("er_overlay_injector starting");
+    info!("er_overlay_injector v{CURRENT_VERSION} starting");
+
+    if !args.skip_update {
+        match update::check_and_maybe_update(CURRENT_VERSION) {
+            Ok(UpdateOutcome::Updated) => {
+                info!("Update applied; relaunching updated injector");
+                return relaunch_after_update(&args);
+            }
+            Ok(outcome) => info!("Update check: {outcome:?}"),
+            Err(e) => {
+                println!("Update check skipped (offline or unavailable); continuing.");
+                warn!("Update check failed (continuing without update): {e:#}");
+            }
+        }
+    }
 
     let proc = if let Some(pid) = args.pid {
         info!("Using PID {pid}");
@@ -96,6 +118,25 @@ fn main() -> Result<()> {
             Err(e)
         }
     }
+}
+
+/// Relaunch the freshly updated executable (with `--skip-update`) so injection
+/// runs the new code, then exit the current (old) process.
+fn relaunch_after_update(args: &Args) -> Result<()> {
+    let exe = std::env::current_exe().context("current_exe")?;
+    let mut cmd = std::process::Command::new(&exe);
+    cmd.arg("--skip-update");
+    if let Some(pid) = args.pid {
+        cmd.arg("--pid").arg(pid.to_string());
+    }
+    if let Some(dll) = &args.dll {
+        cmd.arg("--dll").arg(dll);
+    }
+    if args.dry_run {
+        cmd.arg("--dry-run");
+    }
+    cmd.spawn().context("relaunching updated injector")?;
+    Ok(())
 }
 
 fn resolve_dll_path(explicit: Option<PathBuf>) -> Result<PathBuf> {

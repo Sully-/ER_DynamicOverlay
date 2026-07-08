@@ -69,6 +69,21 @@ The **boss panel**, the **checks panel** and the **extended** layout section are
 
 If something goes wrong, check `logs/er_injector.log` and `logs/er_overlay.log` in the same folder.
 
+### Automatic updates
+
+When you run `er_overlay_injector.exe`, it checks GitHub for the latest release. If a newer version exists it asks in the console:
+
+```
+A new version of ER Overlay is available: v1.3.0 (installed: v1.2.0).
+Download and install it now? [Y/n]
+```
+
+Press Enter (or `y`) to update: it downloads the release, replaces the program files, then relaunches and injects the new version. Decline with `n` to keep your current version for this run.
+
+Your settings are **never overwritten**: `er_overlay.toml` and `layouts/dashboard.toml` are kept as-is. The release versions are saved next to them as `er_overlay.toml.new` / `dashboard.toml.new` for reference, and any newly added options are listed in the console so you can copy the ones you want.
+
+The check needs an internet connection but never blocks the overlay: if you are offline (or decline), injection proceeds normally. To skip the check entirely, run with `--skip-update`.
+
 ### 3. Customize your dashboard
 
 Everything shown is driven by a **layout file** — a grid of tiles. Edit it visually with the bundled **`layout_editor.html`** (no TOML to learn), then point `layout_file` at your file in `er_overlay.toml`. See [Layout editor](#layout-editor) for the workflow and [The dashboard](#the-dashboard-tiles-tracking-modes-and-metrics) for what each tile does.
@@ -88,6 +103,8 @@ For specific cases you can run the injector from a terminal with flags:
 .\er_overlay_injector.exe --dll ".\er_overlay.dll"
 # validate everything without injecting
 .\er_overlay_injector.exe --dry-run
+# skip the GitHub auto-update check
+.\er_overlay_injector.exe --skip-update
 ```
 
 ## Warnings

@@ -20,6 +20,20 @@ jobs:
         with:
           submodules: true
 
+      - name: Verify tag matches Cargo version
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}".TrimStart('v')
+          $cargo = Get-Content Cargo.toml -Raw
+          if ($cargo -notmatch '(?ms)\[workspace\.package\].*?\bversion\s*=\s*"([^"]+)"') {
+            throw "Could not read [workspace.package] version from Cargo.toml"
+          }
+          $ver = $Matches[1]
+          if ($ver -ne $tag) {
+            throw "Tag ($tag) does not match Cargo version ($ver). Bump [workspace.package].version before tagging (see tools/release.ps1)."
+          }
+          Write-Host "Version check OK: $ver"
+
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 

@@ -69,6 +69,21 @@ Le **panneau des boss**, le **panneau des checks** et la section de layout **ext
 
 Si quelque chose se passe mal, consultez `logs/er_injector.log` et `logs/er_overlay.log` dans le même dossier.
 
+### Mises à jour automatiques
+
+Au lancement de `er_overlay_injector.exe`, celui-ci vérifie la dernière release sur GitHub. Si une version plus récente existe, il demande dans la console :
+
+```
+A new version of ER Overlay is available: v1.3.0 (installed: v1.2.0).
+Download and install it now? [Y/n]
+```
+
+Appuyez sur Entrée (ou `y`) pour mettre à jour : il télécharge la release, remplace les fichiers du programme, puis se relance et injecte la nouvelle version. Répondez `n` pour garder votre version actuelle pour ce lancement.
+
+Vos réglages ne sont **jamais écrasés** : `er_overlay.toml` et `layouts/dashboard.toml` sont conservés tels quels. Les versions de la release sont déposées à côté sous `er_overlay.toml.new` / `dashboard.toml.new` comme référence, et les nouvelles options éventuelles sont listées dans la console pour que vous puissiez recopier celles qui vous intéressent.
+
+La vérification nécessite une connexion Internet mais ne bloque jamais l'overlay : hors ligne (ou en cas de refus), l'injection se poursuit normalement. Pour désactiver totalement la vérification, lancez avec `--skip-update`.
+
 ### 3. Personnalisez votre tableau de bord
 
 Tout ce qui est affiché est piloté par un **fichier de layout** — une grille de tuiles. Modifiez-le visuellement avec **`layout_editor.html`** fourni (pas de TOML à apprendre), puis pointez `layout_file` vers votre fichier dans `er_overlay.toml`. Voir [Éditeur de layout](#éditeur-de-layout) pour le workflow et [Le tableau de bord](#le-tableau-de-bord--tuiles-modes-de-suivi-et-métriques) pour le rôle de chaque tuile.
@@ -88,6 +103,8 @@ Pour des cas spécifiques, vous pouvez lancer l'injecteur depuis un terminal ave
 .\er_overlay_injector.exe --dll ".\er_overlay.dll"
 # tout valider sans injecter
 .\er_overlay_injector.exe --dry-run
+# ignorer la vérification de mise à jour GitHub
+.\er_overlay_injector.exe --skip-update
 ```
 
 ## Avertissements
