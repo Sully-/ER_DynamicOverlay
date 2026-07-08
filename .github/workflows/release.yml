@@ -51,7 +51,10 @@ jobs:
           Copy-Item target/release/tables  $out/ -Recurse
           Copy-Item target/release/assets  $out/ -Recurse
           Copy-Item target/release/companion $out/ -Recurse
-          Copy-Item README.md, LICENSE     $out/
+          # User-facing README (usage only) — the full README.md stays in the repo.
+          Copy-Item docs/release/README.md    $out/README.md
+          Copy-Item docs/release/README.fr.md $out/README.fr.md
+          Copy-Item LICENSE                   $out/
 
           # Layout editor — HTML at zip root, assets in layout_editor_assets/
           Copy-Item tools/layout_editor/layout_editor.html $out/

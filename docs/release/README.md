@@ -1,47 +1,30 @@
 # Elden Ring Overlay (offline, read-only)
 
-A Rust overlay injected into an **already-running** `eldenring.exe`, **read-only**. It shows a customizable dashboard — IGT, a **boss** counter, Great Runes, deaths, NG+, key items — plus **boss/loot checklists** with item-randomizer support.
-
-![Elden Ring Overlay](docs/overlay.png)
+A read-only overlay for an **already-running** `eldenring.exe`. It shows a customizable dashboard — IGT, a **boss** counter, Great Runes, deaths, NG+, key items — plus **boss/loot checklists** with item-randomizer support.
 
 > **Read-only, offline, no cheating.** No memory writes, no anti-cheat bypass. Single-player, offline use only.
 
-> **Note on development.** This project was developed largely with the assistance of an LLM (code generation, refactoring, documentation). The code is reviewed and tested, but keep this in mind when reviewing or reusing it.
+> **This file is the user guide** shipped with the release. Full documentation, source code and developer notes are on GitHub: **<https://github.com/Sully-/ER_DynamicOverlay>**.
 
-> 🇫🇷 Une version française de ce document est disponible : [README.fr.md](README.fr.md).
+> 🇫🇷 Version française : [README.fr.md](README.fr.md).
 
 ---
 
 ## Table of contents
 
-**User guide**
 - [Quick start](#quick-start)
 - [Warnings](#warnings)
-- [Installation](#installation)
 - [Configuration (`er_overlay.toml`)](#configuration-er_overlaytoml)
 - [The dashboard: tiles, tracking modes and metrics](#the-dashboard-tiles-tracking-modes-and-metrics)
 - [Checks panel (randomizer-aware)](#checks-panel-randomizer-aware)
 - [Challenge mode](#challenge-mode)
 - [Layout editor](#layout-editor)
 - [Troubleshooting](#troubleshooting)
-
-**Technical reference**
-- [Architecture](#architecture)
-- [Layout format (reference)](#layout-format-reference)
-- [Available metrics (reference)](#available-metrics-reference)
-- [Game data (tables)](#game-data-tables)
-- [Icons](#icons)
-- [Development](#development)
-- [References](#references)
 - [License](#license)
 
 ---
 
-# User guide
-
 ## Quick start
-
-**You don't need to compile anything.** Download a pre-built zip from [GitHub Releases](https://github.com/Sully-/ER_DynamicOverlay/releases) (`er-overlay-vX.X.X.zip`), extract it anywhere, and follow the four steps below.
 
 ### 1. Launch Elden Ring offline
 
@@ -50,11 +33,13 @@ The overlay **does not work with EasyAntiCheat enabled**. Start the game in offl
 - Launch `eldenring.exe` directly (not through the EAC launcher), with a `steam_appid.txt` containing `1245620` next to the exe, **or**
 - Use your usual offline / no-EAC method.
 
+Requirements: Windows **x64**, and an Elden Ring build supported by this release (currently **2.6.2.0 (WW)** and **2.6.2.1 (JP)** — see [Troubleshooting](#troubleshooting) if values show `---`).
+
 Keep the game running on the title screen or in a save — the injector attaches to an already-running process.
 
 ### 2. Run the overlay
 
-After extracting the zip you get a single folder. Keep everything together — **do not separate these files:**
+Keep every file from the extracted folder together — **do not separate them:**
 
 | File / folder | Role |
 |---------------|------|
@@ -92,46 +77,6 @@ Everything shown is driven by a **layout file** — a grid of tiles. Edit it vis
 
 Open `er_overlay.toml` in any text editor (hot-reloaded ~every 2 s). The most common options are `anchor` / `offset_x` / `offset_y` (position), `scale` / `text_size` / `icon_size` (size), and the panel toggles. See [Configuration](#configuration-er_overlaytoml) for the full reference.
 
-## Warnings
-
-- **Offline only** — no multiplayer / online support.
-- **Does not bypass EAC** — launch the game without EasyAntiCheat (e.g. run `eldenring.exe` directly with `steam_appid.txt`).
-- **Read-only** — no memory writes, this is not a trainer.
-- **Transparent, documented injection** (`LoadLibraryW` via `CreateRemoteThread`), no stealth.
-
-## Installation
-
-### From a GitHub release (recommended)
-
-See **[Quick start](#quick-start)** above. Requirements:
-
-- Windows **x64**
-- Elden Ring **offline**, a version supported by the release (currently **2.6.2.0 (WW)** and **2.6.2.1 (JP)** — see [Troubleshooting](#troubleshooting) if values show `---`)
-
-### Build from source
-
-For developers who want to compile locally:
-
-- Windows **x64**
-- An Elden Ring version supported by [fromsoftware-rs](https://github.com/vswarte/fromsoftware-rs) (`eldenring` 0.14, e.g. 2.6.x)
-- Rust **1.85+**
-
-```powershell
-cd Overlay
-cargo build --release
-```
-
-Artifacts land in `target/release/`: `er_overlay_injector.exe` (the injector) and `er_overlay.dll` (the overlay). The build also copies `er_overlay.toml`, `layouts/`, `tables/<lang>/bosses.toml`, `tables/<lang>/checks.toml` and `assets/icons/` next to the binaries. To produce a release-style zip locally (including the randomizer helper): `.\tools\bundle_release.ps1`.
-
-The randomizer helper (`companion/er_checks_extractor`) is a separate .NET project, published self-contained:
-
-```powershell
-git submodule update --init companion/SoulsFormatsNEXT
-dotnet publish companion/er_checks_extractor/er_checks_extractor.csproj -c Release
-```
-
-The release bundle publishes it to `companion/er_checks_extractor.exe` next to the DLL automatically (or point `checks_extractor_path` at a custom build).
-
 ### Advanced injector (command line)
 
 For specific cases you can run the injector from a terminal with flags:
@@ -144,6 +89,13 @@ For specific cases you can run the injector from a terminal with flags:
 # validate everything without injecting
 .\er_overlay_injector.exe --dry-run
 ```
+
+## Warnings
+
+- **Offline only** — no multiplayer / online support.
+- **Does not bypass EAC** — launch the game without EasyAntiCheat (e.g. run `eldenring.exe` directly with `steam_appid.txt`).
+- **Read-only** — no memory writes, this is not a trainer.
+- **Transparent, documented injection** (`LoadLibraryW` via `CreateRemoteThread`), no stealth.
 
 ## Configuration (`er_overlay.toml`)
 
@@ -189,21 +141,19 @@ Read next to the DLL and **hot-reloaded every 2 seconds** — you can edit it wh
 | `regulation_path` | path | — | Path to the `regulation.bin` the game **loads** (your randomizer / ModEngine mod). Enables per-seed resolution of randomized loot flags. Empty/omitted = vanilla flags. See [Checks panel](#checks-panel-randomizer-aware). |
 | `checks_extractor_path` | path | — | Override the helper exe location. Omit to auto-find `companion/er_checks_extractor.exe` (then `er_checks_extractor.exe`) next to the DLL. |
 
-\* The bundled `er_overlay.toml` ships `boss_panel_visible = false` and `checks_panel_scope = all-regions`.
+\* The shipped `er_overlay.toml` sets `boss_panel_visible = false` and `checks_panel_scope = all-regions`.
 
-### `[challenge]` block
-
-The optional challenge ruleset (PB / failed runs) is configured under `[challenge]`. See **[Challenge mode](#challenge-mode)** for the full block, semantics and layout tiles.
+The optional challenge ruleset is configured under `[challenge]` — see [Challenge mode](#challenge-mode).
 
 ## The dashboard: tiles, tracking modes and metrics
 
-Everything on screen is driven by the **layout file** (`layout_file`), not by the code. A layout is a **grid** of tiles; each tile occupies one or more cells. Edit it with the [Layout editor](#layout-editor) or by hand (see [Layout format](#layout-format-reference)).
+Everything on screen is driven by the **layout file** (`layout_file`). A layout is a **grid** of tiles; each tile occupies one or more cells. The easiest way to edit it is the visual [Layout editor](#layout-editor).
 
 ### Tile kinds
 
 | Kind | Shows |
 |------|-------|
-| `metric` | A counter or time: IGT, deaths, NG+, bosses killed, challenge **PB** / **TRIES**, group progress, item quantity. See [Available metrics](#available-metrics-reference). |
+| `metric` | A counter or time: IGT, deaths, NG+, bosses killed, challenge **PB** / **TRIES**, group progress, item quantity. See [Available metrics](#available-metrics). |
 | `item` | A single tracked item, with one or more **tracking modes** (below). |
 | `label` | Plain decorative text (heading, separator). |
 
@@ -213,16 +163,16 @@ An `item` tile can track up to three **independent** aspects of an item. You can
 
 | Mode | Enable with | What it does |
 |------|-------------|--------------|
-| **Owned** (default) | *(always on)* | Icon **in color** when the item is currently in your inventory (or its pickup flag is set), **greyed out** otherwise. Consumables (`count = true`) show their quantity instead. |
+| **Owned** (default) | *(always on)* | Icon **in color** when the item is currently in your inventory (or its pickup flag is set), **greyed out** otherwise. Consumables show their quantity instead. |
 | **Equipped** | `track_equipped = true` | Adds a **green border** while the item is **currently equipped** — talismans, Great Runes, quick-slot consumables, pouch. Ideal for seeing your active loadout at a glance. |
-| **Historic** | `historic = true` | Keeps the item marked as owned **even after you no longer hold it** (consumed, sold, discarded). Instead of only reading your current inventory, it also checks the item's **acquisition flag**, so "did I ever pick this up?" stays true. **Randomizer-aware:** it resolves the seed-specific flag from the item's lot metadata when `regulation_path` is set. |
+| **Historic** | `historic = true` | Keeps the item marked as owned **even after you no longer hold it** (consumed, sold, discarded). Instead of only reading your current inventory, it also checks the item's **acquisition flag**, so "did I ever pick this up?" stays true. **Randomizer-aware:** it resolves the seed-specific flag when `regulation_path` is set. |
 
 **Why they matter**
 
 - **Equipped** answers *"is this talisman/rune slotted right now?"* — great for build/loadout HUDs.
 - **Historic** answers *"have I obtained this at least once this run?"* — essential for one-time or consumable items (e.g. scarseals/soreseals, scorpion charms) that you might swap out, so the tile doesn't go dark the moment the item leaves your inventory.
 
-Example tile combining both:
+In the layout editor, both are simple checkboxes on an item tile. In TOML they look like this:
 
 ```toml
 [[section.tile]]
@@ -234,11 +184,27 @@ col = 0
 row = 0
 ```
 
+### Available metrics
+
+The `metric` field of a `metric` tile accepts:
+
+| Metric | Meaning |
+|--------|---------|
+| `igt` | In-game time (`HH:MM:SS`). |
+| `deaths` | Death count. |
+| `ng_cycle` | New Game cycle (`NG+N`). |
+| `bosses` | Bosses killed out of 207. |
+| `pb` | Challenge personal best (requires `[challenge] enabled = true`). |
+| `nbtries` | Challenge failed run count (aliases: `tries`, `challenge_pb`, `challenge_tries`). |
+| `scadutree_blessing` | Scadutree Blessing level spent at Sites of Grace (`N/20`). |
+| *group name* | `owned/total` progress of an aggregate group (e.g. `great_runes`). |
+| *item key* | Quantity (for a consumable) or `0/1` owned state for a unique item. |
+
+Any unknown key renders `---` (unavailable).
+
 ### Sections
 
-A layout can contain multiple **sections**; only one is visible at a time. Switch between them with `layout_section_hotkey` (`F8` by default) — handy for keeping a "minimalist" and a "full" view on the same key.
-
-The bundled `layouts/dashboard.toml` ships three sections: `minimalist`, `extended`, and `challenge` (with `pb` / `nbtries`). An invalid layout (overlapping tiles, grid overflow, empty section…) is **rejected on load** and reported in the log.
+A layout can contain multiple **sections**; only one is visible at a time. Switch between them with `layout_section_hotkey` (`F8` by default) — handy for keeping a "minimalist" and a "full" view on the same key. The bundled `layouts/dashboard.toml` ships three sections: `minimalist`, `extended`, and `challenge`.
 
 ## Checks panel (randomizer-aware)
 
@@ -296,12 +262,12 @@ You only do this once. When you **change seed**, just point `regulation_path` at
 **Good to know**
 
 - Bosses and chest loot use fixed flags, so they tick off the same with or without the randomizer. Only **ground loot** needs the seed step above.
-- If your seed puts an item with **no tracking flag** on a randomized spot, that line is greyed out and labelled **"Untraceable this seed"**. This is normal, not a bug — the game simply gives the overlay nothing to watch for that pickup.
+- If your seed puts an item with **no tracking flag** on a randomized spot, that line is greyed out and labelled **"Untraceable this seed"**. This is normal, not a bug.
 - To go back to vanilla tracking, empty or remove `regulation_path` and save.
 
 ## Challenge mode
 
-Track a **personal best** (most bosses killed on a run within your death budget) and how many times the run **failed**, without editing game saves. Inspired by the boss challenge mode of [EROverlay](https://github.com/soarqin/EROverlay). **Disabled by default.**
+Track a **personal best** (most bosses killed on a run within your death budget) and how many times the run **failed**, without editing game saves. **Disabled by default.**
 
 ### Configuration (`[challenge]`)
 
@@ -309,7 +275,7 @@ Track a **personal best** (most bosses killed on a run within your death budget)
 |--------|------|---------|-------------|
 | `enabled` | bool | `false` | When `false`, challenge metrics show `---` and no progress is tracked. |
 | `max_deaths` | u32 | `0` | Deaths allowed **per run** (inclusive). The run fails when run deaths exceed this value. `0` = deathless. |
-| `start_flag` | u32 | `101` | Event flag that marks the **start of a run** (flag `101` = left the Cave of Knowledge / Stranded Graveyard, same as EROverlay). |
+| `start_flag` | u32 | `101` | Event flag that marks the **start of a run** (flag `101` = left the Cave of Knowledge / Stranded Graveyard). |
 
 ```toml
 [challenge]
@@ -347,16 +313,12 @@ After a failed run, PB stays frozen until you start a **new game** (flag `101` c
 
 **Notes**
 
-- **Progress file:** `challenge_state.toml` (next to `er_overlay.dll`, created at runtime) stores personal best (`pb`), failed run count (`nbtries` / `tries`), and internal run state. Delete it to reset PB and tries.
-- Boss count uses the same 207-boss table as the main `bosses` metric (save-wide kill flags).
-- Challenge updates are paused during loading screens / when in-game time is not running (same idea as EROverlay), so respawn fades do not corrupt run state.
-- Compatible with `boss_panel_scope` and the rest of the HUD; challenge is independent of the boss checklist panel.
+- **Progress file:** `challenge_state.toml` (next to `er_overlay.dll`, created at runtime) stores personal best, failed run count, and internal run state. Delete it to reset PB and tries.
+- Challenge updates are paused during loading screens / when in-game time is not running, so respawn fades do not corrupt run state.
 
 ## Layout editor
 
-The release zip includes a **visual editor** — no TOML syntax to learn. It ships as **`layout_editor.html`** at the root (with `layout_editor_assets/`); when building from source the same files live under `tools/layout_editor/`.
-
-![Layout editor](docs/layout-editor.png)
+The zip includes a **visual editor** — no TOML syntax to learn — as **`layout_editor.html`** at the root (with `layout_editor_assets/`).
 
 1. Open **`layout_editor.html`** from the extracted folder in your browser (Chrome, Edge, Firefox…).
    - If import/export is blocked, serve the folder instead: open a terminal in the folder and run `python -m http.server`, then go to `http://localhost:8000/layout_editor.html`.
@@ -368,8 +330,6 @@ The release zip includes a **visual editor** — no TOML syntax to learn. It shi
 
 **Tip:** create multiple **sections** in one file (e.g. a compact view and a full view) and switch between them with `F8`.
 
-**Developers:** the item palette is generated from `goods.toml`; after edits run `python tools/goods/gen_catalog.py` (see [Goods toolkit](tools/goods/README.md)).
-
 ## Troubleshooting
 
 | Problem | Hint |
@@ -377,15 +337,15 @@ The release zip includes a **visual editor** — no TOML syntax to learn. It shi
 | Injector: "process not found" | Launch Elden Ring first. |
 | Injection fails | EAC is active → run the game offline; try running the injector as administrator. |
 | "LoadLibraryW returned NULL" | DLL missing / missing dependency / wrong architecture — check the DLL path. |
-| All values show `---` | Game version unsupported — check `logs/er_overlay.log` for `Unsupported game executable` or set `show_debug = true`. Supported builds: **2.6.2.0 (WW), 2.6.2.1 (JP)** (`eldenring` 0.14). |
-| Game crashes on inject | Check `logs/er_overlay.log`: last line before crash pinpoints the step (`Hudhook::apply`, `build_view_model`, etc.). Update the game if the log says unsupported executable. |
-| No icons (only dots) | PNGs missing from `assets/icons` — see [Icons](#icons). |
+| All values show `---` | Game version unsupported — check `logs/er_overlay.log` for `Unsupported game executable` or set `show_debug = true`. Supported builds: **2.6.2.0 (WW), 2.6.2.1 (JP)**. |
+| Game crashes on inject | Check `logs/er_overlay.log`: the last line before the crash pinpoints the step. Update the game if the log says unsupported executable. |
+| No icons (only dots) | PNGs missing from `assets/icons` — keep the folder next to `er_overlay.dll`. |
 | Overlay crash | Conflict with another DX12 hook (RTSS, etc.). |
 | Item tile never lights up | Wrong `key`, or the item leaves your inventory — add `historic = true` to keep it lit after acquisition (see [Item tracking modes](#item-tracking-modes)). |
 | Equipped highlight never shows | `track_equipped = true` only lights up while the item is actually equipped (talismans, runes, quick slots, pouch). |
 | Challenge metrics always `---` | Set `[challenge] enabled = true` in `er_overlay.toml`. |
 | PB / tries look wrong after testing | Delete `challenge_state.toml` next to the DLL and retry on a clean run. |
-| Randomized ground loot not tracked | Set `regulation_path` to the `regulation.bin` the game loads; check `logs/er_overlay.log` for the extractor result and that `checks_flags.toml` was written. |
+| Randomized ground loot not tracked | Set `regulation_path` to the `regulation.bin` the game loads; check `logs/er_overlay.log` and that `checks_flags.toml` was written. |
 | Checks header has no `[seed]` tag | No seed mapping active — `regulation_path` is unset/wrong, or `er_checks_extractor.exe` is missing next to the DLL. |
 
 ### Logs and diagnostics
@@ -394,188 +354,13 @@ All runtime output goes to **`logs/`** next to `er_overlay.dll`:
 
 | File | Contents |
 |------|----------|
-| `er_overlay.log` | DLL init, game version probe, Hudhook, pointer resolution, errors |
+| `er_overlay.log` | DLL init, game version probe, hook, pointer resolution, errors |
 | `er_injector.log` | Process lookup, EAC warning, injection result |
 
-Enable **`show_debug = true`** in `er_overlay.toml` for an in-game window (backend, game exe version, resolved pointers). For verbose logging, set env `RUST_LOG=debug` before launching the injector. Supported game builds are logged at startup (`Game executable supported` vs `Unsupported game executable`).
-
----
-
-# Technical reference
-
-## Architecture
-
-A Cargo workspace of 5 crates:
-
-| Crate | Role |
-|-------|------|
-| `er_overlay_common` | TOML config, layout format, hotkeys, logging, shared types. |
-| `er_game_state` | Game reads via **fromsoftware-rs** (`GameDataMan`, `CSEventFlagMan`, `WorldChrMan`) + data tables. `GameStateSource` trait (live impl + testable mock). |
-| `er_overlay_ui` | View model + ImGui rendering (tiles, icons, text). |
-| `er_overlay_dll` | Injected DLL, DX12 hook via [hudhook](https://github.com/veeenu/hudhook). |
-| `er_overlay_injector` | Documented `LoadLibraryW` injector. |
-
-Loop: `er_overlay_dll` polls `er_game_state` (throttled to ~250 ms), builds an `OverlayViewModel`, and `er_overlay_ui` renders it according to the active layout.
-
-## Layout format (reference)
-
-```toml
-[grid]
-columns = 8          # max placement width (validation)
-unit_size = 64       # side of one square cell, in px
-gap = 4              # spacing between cells
-border_radius = 6
-window_padding = 8
-
-[style]
-border_default  = [100, 100, 110, 200]  # RGBA
-border_complete = [60, 200, 90, 255]     # border when a metric is "complete" / an item is equipped
-tile_bg         = [12, 12, 18, 180]
-label_scale = 0.65   # label size relative to text
-value_scale = 1.15   # value size relative to text
-
-default_section = "minimalist"   # optional
-```
-
-Then either a flat list of tiles:
-
-```toml
-[[tile]]
-kind = "metric"
-metric = "igt"
-col = 0
-row = 0
-w = 2       # alias of col_span
-h = 1       # alias of row_span
-label = "IGT"
-```
-
-…or sections:
-
-```toml
-[[section]]
-name = "minimalist"
-
-[[section.tile]]
-kind = "label"
-col = 0
-row = 0
-w = 2
-h = 1
-label = "RUN"
-```
-
-**Fields per tile kind** (all: `col`, `row`, `w`/`col_span`, `h`/`row_span`, optional `id`):
-
-- `metric`: `metric` (metric id, see [Available metrics](#available-metrics-reference)), `label`, `show_max` (bool, shows `N/total`), `icon` (optional PNG key shown above the text).
-- `item`: `key` (a good key from `goods.toml`). Optional `track_equipped = true` (green border while equipped) and `historic = true` (stay owned after the item leaves the inventory). See [Item tracking modes](#item-tracking-modes) for behavior.
-- `label`: `label` (text).
-
-**Validation rules**: `columns > 0`, spans `> 0`, no overlapping tiles *within the same section*, `col + col_span ≤ columns`, unique and non-empty section names, non-empty sections. The file is re-validated on every reload (every 2 s).
-
-## Available metrics (reference)
-
-The `metric` field of a `metric` tile accepts:
-
-| Metric | Meaning |
-|--------|---------|
-| `igt` | In-game time (`HH:MM:SS`). |
-| `deaths` | Death count. |
-| `ng_cycle` | New Game cycle (`NG+N`). |
-| `bosses` | Bosses killed out of 207. |
-| `pb` | Challenge personal best (requires `[challenge] enabled = true`). |
-| `nbtries` | Challenge failed run count (aliases: `tries`, `challenge_pb`, `challenge_tries`). |
-| `scadutree_blessing` | Scadutree Blessing level spent at Sites of Grace (`N/20`). Distinct from the `scadutree` good key (fragment inventory count). |
-| *group name* | `owned/total` progress of an aggregate group from `goods.toml` (e.g. `great_runes`). |
-| *good key* | Quantity (consumable `count = true`) or `0/1` owned state for a unique item. |
-
-Any unknown key renders `---` (unavailable).
-
-## Game data (tables)
-
-### Bosses — `tables/<lang>/bosses.toml`
-
-One complete boss table per language (`tables/en/bosses.toml`, `tables/fr/bosses.toml`, …): 207 entries (165 base + 42 Shadow of the Erdtree), regions, display order, flags, icons. Copied next to the DLL at build time. **Hot-reloaded** when the file changes (same 2 s poll as `er_overlay.toml`); if the locale file is missing, falls back to `tables/en/bosses.toml` (embedded in the DLL). Set `boss_locale = "auto"` to match the in-game language, or override with `fr`. Regenerate a locale with `python tools/gen_boss_locale_toml.py fr` (from `en/bosses.toml` + ER_boss_checklist_R JSON).
-
-### Checks — `tables/<lang>/checks.toml`
-
-The checklist behind the [checks panel](#checks-panel-randomizer-aware). One `[[check]]` per entry; each declares whether it is `dynamic` (randomizer-sensitive ground loot) or not. Embedded in the DLL (`en`) and copied next to it at build time; hot-reloaded like the boss table.
-
-| Field | Required | Description |
-|-------|:--------:|-------------|
-| `region` | yes | Region the check belongs to (groups the panel). |
-| `name` | yes | Display name (boss or item). |
-| `place` | — | Location hint (shown as a tooltip). |
-| `dlc` | — | `true` to tag the entry `[DLC]`. |
-| `dynamic` | yes | `false` = fixed `flag`. `true` = randomizer-sensitive ground loot resolved per seed. |
-| `flag` | for static | Event flag checked when `dynamic = false`. |
-| `vanilla_flag` | for dynamic | Vanilla acquisition flag; used as fallback when no seed mapping is loaded. |
-| `lot_id` | for dynamic | Stable `ItemLotParam_map` row id used to look up the current flag in a randomizer regulation. |
-
-When `regulation_path` is set, the companion writes a `checks_flags.toml` (`lot_id → current flag` + regulation hash) that the overlay hot-reloads to resolve dynamic checks for the active seed.
-
-### Goods — `crates/er_game_state/tables/goods.toml`
-
-One `[[good]]` row per tracked item. Fields:
-
-| Field | Required | Description |
-|-------|:--------:|-------------|
-| `key` | yes | Unique id (and default PNG name `{key}.png`). |
-| `item_id` | yes | The item's `param_id` (`EquipParamGoods` or `EquipParamAccessory`). |
-| `name` | — | Display name. |
-| `category` | — | `goods` (default) or `accessory` (talismans). Avoids `param_id` collisions between categories. |
-| `count` | — | `true` = stackable consumable → shows the inventory quantity. |
-| `max` | — | Display cap for a counter (e.g. scadutree → `N/50`). |
-| `pickup_flag` | — | Ownership event flag (fallback when the item is no longer in inventory). |
-| `historic_lot_table` / `historic_lot_id` / `historic_vanilla_flag` | — | Vanilla item-lot metadata used by the `historic` tracking mode (see [Item tracking modes](#item-tracking-modes)). Lets a tile resolve an acquisition flag — seed-aware with the randomizer. |
-| `file` | — | Custom PNG name. |
-| `icon_id` | — | Used only by the icon-fetching scripts. |
-
-**Aggregate groups**: declared via a `[groups.<name>]` table listing `members` (good keys). The overlay then exposes a `<name>` metric = number of owned members / total. Example:
-
-```toml
-[groups.great_runes]
-members = ["godrick_rune", "radahn_rune", "morgott_rune", "rykard_rune", "mohg_rune", "malenia_rune"]
-```
-
-Talismans (category `accessory`) live in a delimited block (`# --- talismans ---` … `# --- end talismans ---`).
-
-**Adding a new good**: edit `goods.toml`, then run the generators (full checklist in **[`tools/goods/README.md`](tools/goods/README.md)**):
-
-```powershell
-python tools/goods/fetch_goods_icons.py --out assets/icons
-python tools/goods/gen_catalog.py
-cargo test -p er_game_state
-```
-
-## Icons
-
-Tiles can display real in-game icons (PNG) instead of colored dots.
-
-Place PNG files in `assets/icons/`, one per good, named after its `key` (e.g. `godrick_rune.png`) or the good's `file` field. Keep `use_item_icons = true` (default) in `er_overlay.toml`. Any missing icon falls back to a colored dot.
-
-PNGs are **gitignored** (`assets/icons/*.png`). When deploying, copy `assets/icons/` next to `er_overlay.dll`. Generate missing PNGs with `python tools/goods/fetch_goods_icons.py --out assets/icons` (see [`tools/goods/README.md`](tools/goods/README.md)).
-
-## Development
-
-```powershell
-cargo test --workspace      # tests
-cargo clippy --workspace    # lints
-cargo fmt --all             # formatting
-```
-
-CI (`.github/workflows/ci.yml`) runs `fmt --check`, `clippy -D warnings` and `test` on every push/PR. `er_game_state` exposes a `mock` feature (`MockGameState`) for testing the UI without the game.
-
-## References
-
-- [EROverlay](https://github.com/soarqin/EROverlay) — boss overlay; challenge mode semantics reference
-- [hudhook](https://github.com/veeenu/hudhook) — DX12 + ImGui hook
-- [fromsoftware-rs](https://github.com/vswarte/fromsoftware-rs) — game structure access
-- [SoulSplitter](https://github.com/FrankvdStam/SoulSplitter) — flags / IGT reference
-- [SmithBox](https://github.com/vawser/Smithbox) — icons / flags
+Enable **`show_debug = true`** in `er_overlay.toml` for an in-game diagnostics window. For verbose logging, set env `RUST_LOG=debug` before launching the injector.
 
 ## License
 
 **GNU Affero General Public License v3.0 (AGPL-3.0-only)** — see [`LICENSE`](LICENSE).
 
-This is a **strong copyleft** license. In short: anyone who distributes this software, a modified version, or a derivative work — **including merely making it available over a network** — must release the complete corresponding source code under the same AGPL-3.0 license. In other words: if you reuse this code, your project must stay open source.
+This is a **strong copyleft** license: anyone who distributes this software, a modified version, or a derivative work — **including merely making it available over a network** — must release the complete corresponding source code under the same AGPL-3.0 license.
