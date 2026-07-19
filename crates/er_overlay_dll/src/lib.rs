@@ -70,7 +70,10 @@ fn init_overlay(hmodule: HINSTANCE) {
     let config_path = er_overlay_common::default_config_path();
     let (config, config_error) = match er_overlay_common::load_or_create_config(&config_path) {
         Ok(cfg) => (cfg, None),
-        Err(e) => (er_overlay_common::OverlayConfig::default(), Some(format!("{e:?}"))),
+        Err(e) => (
+            er_overlay_common::OverlayConfig::default(),
+            Some(format!("{e:?}")),
+        ),
     };
 
     // Logging is opt-in via er_overlay.toml (`log_enabled`), with an env-var escape hatch.

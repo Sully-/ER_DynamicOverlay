@@ -65,12 +65,7 @@ pub fn check_and_maybe_update(current_version: &str) -> Result<UpdateOutcome> {
         .assets
         .iter()
         .find(|a| a.name.starts_with("er-overlay-") && a.name.ends_with(".zip"))
-        .ok_or_else(|| {
-            anyhow!(
-                "release {} has no er-overlay-*.zip asset",
-                release.tag_name
-            )
-        })?;
+        .ok_or_else(|| anyhow!("release {} has no er-overlay-*.zip asset", release.tag_name))?;
 
     println!();
     println!("A new version of ER Overlay is available: v{latest} (installed: v{current}).");

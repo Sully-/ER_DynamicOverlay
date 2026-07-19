@@ -173,10 +173,7 @@ impl OverlayApp {
         app.maybe_sync_checks();
         info!(
             "OverlayApp built: layout={}, overlay_visible={}, boss_panel={}, checks_panel={}",
-            app.layout
-                .as_ref()
-                .map(|_| "loaded")
-                .unwrap_or("none"),
+            app.layout.as_ref().map(|_| "loaded").unwrap_or("none"),
             app.show_overlay,
             app.show_boss_panel,
             app.show_checks_panel
@@ -886,7 +883,8 @@ impl ImguiRenderLoop for OverlayApp {
                 WindowHoveredFlags::ANY_WINDOW
                     | WindowHoveredFlags::ALLOW_WHEN_BLOCKED_BY_ACTIVE_ITEM,
             );
-            let interactive_visible = show_boss_panel || show_checks_panel || self.config.show_debug;
+            let interactive_visible =
+                show_boss_panel || show_checks_panel || self.config.show_debug;
             let _ = er_game_state::set_menu_cursor_visible(interactive_visible || imgui_hovered);
         }
     }
