@@ -20,7 +20,7 @@ use er_overlay_ui::{
 };
 use hudhook::{ImguiRenderLoop, MessageFilter, RenderContext};
 use imgui::{Context, Key, WindowHoveredFlags};
-use tracing::{debug, warn};
+use tracing::{debug, info, warn};
 
 struct LayoutSectionState {
     active_index: usize,
@@ -69,6 +69,8 @@ pub struct OverlayApp {
     /// Guards against spawning the extractor while a previous run is in flight.
     extractor_running: Arc<AtomicBool>,
     challenge: ChallengeTracker,
+    /// Set once the render loop draws its first frame, to log that milestone exactly once.
+    first_render_logged: bool,
 }
 
 impl OverlayApp {
@@ -164,10 +166,21 @@ impl OverlayApp {
             regulation_sig: None,
             extractor_running: Arc::new(AtomicBool::new(false)),
             challenge,
+            first_render_logged: false,
         };
         app.sync_section_state();
         app.maybe_reload_boss_table();
         app.maybe_sync_checks();
+        info!(
+            "OverlayApp built: layout={}, overlay_visible={}, boss_panel={}, checks_panel={}",
+            app.layout
+                .as_ref()
+                .map(|_| "loaded")
+                .unwrap_or("none"),
+            app.show_overlay,
+            app.show_boss_panel,
+            app.show_checks_panel
+        );
         app
     }
 
@@ -631,8 +644,15 @@ impl OverlayApp {
             Ok(cfg) => {
                 let locale_settings_changed = self.config.boss_locale != cfg.boss_locale;
                 let regulation_changed = self.config.regulation_path != cfg.regulation_path;
+                // When focus-keeping is turned off at runtime, release the game mouse-cursor
+                // bit once. Otherwise it stays stuck at the last "visible" value we forced and
+                // the game keeps the focus even though the feature is now disabled.
+                let focus_disabled = self.config.keep_overlay_focus && !cfg.keep_overlay_focus;
                 self.layout = Self::load_layout_from_config(&cfg);
                 self.config = cfg;
+                if focus_disabled {
+                    let _ = er_game_state::set_menu_cursor_visible(false);
+                }
                 self.challenge.sync_config(&self.config.challenge);
                 if locale_settings_changed {
                     self.boss_table_mtime = None;
@@ -781,7 +801,10 @@ fn overlay_key_to_imgui(key: OverlayKey) -> Key {
 
 impl ImguiRenderLoop for OverlayApp {
     fn initialize(&mut self, ctx: &mut Context, render_ctx: &mut dyn RenderContext) {
-        debug!("ImGui initialize");
+        // Key milestone: reaching this means hudhook's Present hook fired and ImGui is set up.
+        // If "Hudhook applied" is logged but this never is, the hook never triggered (wrong
+        // renderer, another overlay taking over Present, etc.).
+        info!("ImGui initialize: render hook active, setting up overlay");
         setup_overlay_fonts(ctx, &mut self.font_bytes, &self.config);
         self.applied_font_sig = Some((self.config.text_size, self.config.scale));
         ctx.io_mut().config_windows_move_from_title_bar_only = false;
@@ -816,13 +839,22 @@ impl ImguiRenderLoop for OverlayApp {
     }
 
     fn render(&mut self, ui: &mut imgui::Ui) {
+        if !self.first_render_logged {
+            self.first_render_logged = true;
+            info!(
+                "First overlay frame rendered (show_overlay={})",
+                self.show_overlay
+            );
+        }
         self.maybe_reload_config();
         self.maybe_toggle_overlay_visibility(ui);
         self.maybe_cycle_section(ui);
         self.maybe_toggle_boss_panel(ui);
         self.maybe_toggle_checks_panel(ui);
         if !self.show_overlay {
-            let _ = er_game_state::set_menu_cursor_visible(false);
+            if self.config.keep_overlay_focus {
+                let _ = er_game_state::set_menu_cursor_visible(false);
+            }
             return;
         }
         self.maybe_refresh_view_model();
@@ -849,14 +881,20 @@ impl ImguiRenderLoop for OverlayApp {
             show_checks_panel,
             &mut self.checks_panel,
         );
-        let imgui_hovered = ui.is_window_hovered_with_flags(
-            WindowHoveredFlags::ANY_WINDOW | WindowHoveredFlags::ALLOW_WHEN_BLOCKED_BY_ACTIVE_ITEM,
-        );
-        let interactive_visible = show_boss_panel || show_checks_panel || self.config.show_debug;
-        let _ = er_game_state::set_menu_cursor_visible(interactive_visible || imgui_hovered);
+        if self.config.keep_overlay_focus {
+            let imgui_hovered = ui.is_window_hovered_with_flags(
+                WindowHoveredFlags::ANY_WINDOW
+                    | WindowHoveredFlags::ALLOW_WHEN_BLOCKED_BY_ACTIVE_ITEM,
+            );
+            let interactive_visible = show_boss_panel || show_checks_panel || self.config.show_debug;
+            let _ = er_game_state::set_menu_cursor_visible(interactive_visible || imgui_hovered);
+        }
     }
 
     fn message_filter(&self, io: &imgui::Io) -> MessageFilter {
+        if !self.config.keep_overlay_focus {
+            return MessageFilter::empty();
+        }
         if !self.show_overlay {
             let _ = er_game_state::set_menu_cursor_visible(false);
             return MessageFilter::empty();

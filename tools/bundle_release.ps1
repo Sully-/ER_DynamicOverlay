@@ -58,8 +58,9 @@ Copy-Item docs/release/README.md    $out/README.md
 Copy-Item docs/release/README.fr.md $out/README.fr.md
 Copy-Item LICENSE                   $out/
 
-Copy-Item tools/layout_editor/layout_editor.html $out/
-Copy-Item tools/layout_editor/layout_editor_assets $out/layout_editor_assets -Recurse
+# Layout editor — single self-contained HTML (no standalone .js files, so
+# automated malware scanners don't run them through wscript.exe).
+& (Join-Path $PSScriptRoot "inline_layout_editor.ps1") -OutFile (Join-Path $out "layout_editor.html")
 
 Compress-Archive -Path "$out/*" -DestinationPath $zip -Force
 

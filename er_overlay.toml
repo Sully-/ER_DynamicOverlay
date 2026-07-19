@@ -3,6 +3,10 @@
 show_debug = false
 # Show the HUD when the overlay starts. Toggle at runtime with hide_all_hotkey.
 overlay_visible = true
+# Keep the focus on the overlay window: capture mouse/keyboard input while the overlay
+# is hovered/interactive and toggle the game mouse cursor accordingly.
+# Set to false to always let the game keep the focus (the overlay never grabs input).
+keep_overlay_focus = true
 
 # ── HUD placement ────────────────────────────────────────────────────
 # Anchor corner: top-left | top-right | bottom-left | bottom-right
@@ -70,6 +74,15 @@ checks_panel_visible = false
 # Path to the shipped extractor. Omit to auto-find companion/er_checks_extractor.exe
 # (then er_checks_extractor.exe) next to the DLL.
 # checks_extractor_path = "companion/er_checks_extractor.exe"
+
+# ── Diagnostics / logging ────────────────────────────────────────────
+# Write a log file to logs/er_overlay.log next to er_overlay.dll. Off by default.
+# Enable it to troubleshoot startup issues (e.g. the DLL loads via ModEngine2 but
+# the overlay never shows up). A companion logs/er_overlay_panic.log captures crashes.
+log_enabled = false
+# Verbosity: error | warn | info | debug | trace, or a full filter like
+# "info,er_overlay=debug". Omit for the default. RUST_LOG always overrides this.
+# log_level = "debug"
 
 # ── Challenge mode (EROverlay-compatible) ────────────────────────────
 # Metrics pb / nbtries in layouts/dashboard.toml.

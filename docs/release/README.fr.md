@@ -335,7 +335,7 @@ Après une run échouée, le PB reste figé jusqu'à ce que vous commenciez une 
 
 ## Éditeur de layout
 
-Le zip inclut un **éditeur visuel** — pas besoin d'apprendre la syntaxe TOML — sous forme de **`layout_editor.html`** à la racine (avec `layout_editor_assets/`).
+Le zip inclut un **éditeur visuel** — pas besoin d'apprendre la syntaxe TOML — sous forme d'un unique fichier autonome **`layout_editor.html`** à la racine.
 
 1. Ouvrez **`layout_editor.html`** depuis le dossier extrait dans votre navigateur (Chrome, Edge, Firefox…).
    - Si l'import/export est bloqué, servez plutôt le dossier : ouvrez un terminal dans le dossier et lancez `python -m http.server`, puis allez sur `http://localhost:8000/layout_editor.html`.

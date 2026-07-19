@@ -335,7 +335,7 @@ After a failed run, PB stays frozen until you start a **new game** (flag `101` c
 
 ## Layout editor
 
-The zip includes a **visual editor** — no TOML syntax to learn — as **`layout_editor.html`** at the root (with `layout_editor_assets/`).
+The zip includes a **visual editor** — no TOML syntax to learn — as a single self-contained **`layout_editor.html`** at the root.
 
 1. Open **`layout_editor.html`** from the extracted folder in your browser (Chrome, Edge, Firefox…).
    - If import/export is blocked, serve the folder instead: open a terminal in the folder and run `python -m http.server`, then go to `http://localhost:8000/layout_editor.html`.

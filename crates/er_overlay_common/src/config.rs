@@ -109,9 +109,23 @@ pub struct OverlayConfig {
     /// Show the overlay when the DLL starts (toggle at runtime with `hide_all_hotkey`).
     #[serde(default = "default_true")]
     pub overlay_visible: bool,
+    /// Keep the focus on the overlay: capture mouse/keyboard input while the overlay is
+    /// hovered/interactive and toggle the game mouse cursor accordingly. Disable to let the
+    /// game keep the focus at all times (input is never intercepted by the overlay).
+    #[serde(default = "default_true")]
+    pub keep_overlay_focus: bool,
     /// Challenge mode (PB / failed runs), aligned with EROverlay boss challenge.
     #[serde(default)]
     pub challenge: ChallengeConfig,
+    /// Write a diagnostic log file to `logs/er_overlay.log` next to the DLL. Off by default;
+    /// enable it to troubleshoot injection/startup issues (e.g. the overlay not showing up).
+    #[serde(default)]
+    pub log_enabled: bool,
+    /// Log verbosity filter. A level (`error`, `warn`, `info`, `debug`, `trace`) or a full
+    /// `tracing` filter (e.g. `"info,er_overlay=debug"`). Omit for the default filter.
+    /// The `RUST_LOG` environment variable, when set, always takes precedence.
+    #[serde(default)]
+    pub log_level: Option<String>,
 }
 
 fn default_true() -> bool {
@@ -181,7 +195,10 @@ impl Default for OverlayConfig {
             checks_panel_visible: false,
             checks_panel_layout: None,
             overlay_visible: true,
+            keep_overlay_focus: true,
             challenge: ChallengeConfig::default(),
+            log_enabled: false,
+            log_level: None,
         }
     }
 }

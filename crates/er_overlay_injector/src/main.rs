@@ -45,7 +45,7 @@ struct Args {
 }
 
 fn main() -> Result<()> {
-    let _guard = er_overlay_common::init_file_logging("injector", "er_injector.log")
+    let _guard = er_overlay_common::init_file_logging("injector", "er_injector.log", None)
         .context("Failed to initialize logging")?;
 
     let args = Args::parse();
