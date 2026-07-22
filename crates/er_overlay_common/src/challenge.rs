@@ -14,9 +14,15 @@ pub struct ChallengeConfig {
     /// When false, challenge metrics show `---` and no state is updated.
     #[serde(default)]
     pub enabled: bool,
-    /// Maximum deaths allowed per run (inclusive). Challenge fails when deaths exceed this.
-    #[serde(default)]
-    pub max_deaths: u32,
+    /// Metric (relative to run start) that bounds a run. Reaching `budget_max` ends the run.
+    /// Defaults to `deaths` (the classic EROverlay death budget).
+    #[serde(default = "default_budget_metric")]
+    pub budget_metric: String,
+    /// Threshold on `budget_metric` that bounds a run. For a `max` PB it is a cap (the run fails
+    /// when exceeded); for a `min` PB it is a goal (the run completes when reached).
+    /// Historical `max_deaths` key is accepted as an alias.
+    #[serde(default, alias = "max_deaths")]
+    pub budget_max: u32,
     /// Event flag id that marks the start of a challenge run.
     #[serde(default = "default_start_flag")]
     pub start_flag: u32,
@@ -26,11 +32,25 @@ fn default_start_flag() -> u32 {
     DEFAULT_CHALLENGE_START_FLAG
 }
 
+fn default_budget_metric() -> String {
+    "deaths".to_string()
+}
+
+/// Direction of the personal best: keep the highest (`Max`) or lowest (`Min`) observed value.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum PbDirection {
+    #[default]
+    Max,
+    Min,
+}
+
 impl Default for ChallengeConfig {
     fn default() -> Self {
         Self {
             enabled: false,
-            max_deaths: 0,
+            budget_metric: default_budget_metric(),
+            budget_max: 0,
             start_flag: DEFAULT_CHALLENGE_START_FLAG,
         }
     }
@@ -41,20 +61,41 @@ impl Default for ChallengeConfig {
 struct ChallengePersisted {
     #[serde(default)]
     pb: u32,
+    /// Whether `pb` holds a real observation (a `Min` PB is undefined until the first valid frame).
+    #[serde(default)]
+    has_pb: bool,
+    /// Metric key the PB is computed on (e.g. `bosses`, `deaths`). Empty = legacy state.
+    #[serde(default)]
+    pb_source: String,
+    /// Direction of the PB (`max` / `min`).
+    #[serde(default)]
+    pb_mode: PbDirection,
+    /// Budget metric the PB was recorded against (change detection → reset PB).
+    #[serde(default)]
+    budget_metric: String,
+    /// Budget threshold the PB was recorded against (change detection → reset PB).
+    #[serde(default)]
+    budget_max: u32,
     #[serde(default)]
     tries: u32,
-    #[serde(default)]
-    deaths_on_start: u32,
+    /// Budget metric reading captured when the current run started (baseline for relative values).
+    #[serde(default, alias = "deaths_on_start")]
+    budget_on_start: u32,
     #[serde(default)]
     run_failed: bool,
+    /// Whether the PB was already recorded for the current run (`min` mode records once per run).
+    #[serde(default)]
+    pb_recorded_this_run: bool,
 }
 
 /// Challenge metrics for the overlay UI (`pb`, `nbtries` layout tiles).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct ChallengeSnapshot {
     pub enabled: bool,
-    /// Personal best: highest total boss kill count recorded while within the death budget.
+    /// Personal best value for the configured metric, recorded while within the death budget.
     pub pb: u32,
+    /// Whether `pb` holds a real value (a `Min` PB is `---` until the first valid observation).
+    pub pb_available: bool,
     /// Number of failed challenge runs (`tries` in EROverlay).
     pub tries: u32,
 }
@@ -99,7 +140,7 @@ pub struct ChallengeTracker {
     state_path: PathBuf,
     persisted: ChallengePersisted,
     reached_start: bool,
-    last_player_deaths: Option<u32>,
+    last_budget: Option<u32>,
     dirty: bool,
 }
 
@@ -112,7 +153,7 @@ impl ChallengeTracker {
             persisted,
             // EROverlay defaults `reachedGraveyard = true` to avoid rebaselining on inject.
             reached_start: true,
-            last_player_deaths: None,
+            last_budget: None,
             dirty: false,
         }
     }
@@ -123,37 +164,69 @@ impl ChallengeTracker {
         }
     }
 
-    /// Poll live counters and the challenge start flag.
+    /// Configure the PB source metric / direction (from the layout `pb` tile) and the budget
+    /// metric / threshold (from `[challenge]`). Resets the PB when any of these change, since a
+    /// stored value is meaningless for a different metric, direction, or budget.
+    pub fn configure(
+        &mut self,
+        pb_source: &str,
+        pb_mode: PbDirection,
+        budget_metric: &str,
+        budget_max: u32,
+    ) {
+        let unchanged = self.persisted.pb_source == pb_source
+            && self.persisted.pb_mode == pb_mode
+            && self.persisted.budget_metric == budget_metric
+            && self.persisted.budget_max == budget_max;
+        if unchanged {
+            return;
+        }
+        let legacy = self.persisted.pb_source.is_empty() && self.persisted.budget_metric.is_empty();
+        self.persisted.pb_source = pb_source.to_string();
+        self.persisted.pb_mode = pb_mode;
+        self.persisted.budget_metric = budget_metric.to_string();
+        self.persisted.budget_max = budget_max;
+        if legacy {
+            // Upgrade from a state file without PB metadata: keep any existing value.
+            self.persisted.has_pb = matches!(pb_mode, PbDirection::Max) || self.persisted.pb > 0;
+        } else {
+            self.persisted.pb = 0;
+            self.persisted.has_pb = matches!(pb_mode, PbDirection::Max);
+            self.persisted.pb_recorded_this_run = false;
+        }
+        self.mark_dirty();
+    }
+
+    /// Poll the budget metric, the PB metric, and the challenge start flag.
+    /// `budget_value` / `pb_value` are the current readings of the configured metrics.
     pub fn update(
         &mut self,
-        deaths: Option<u32>,
-        bosses: Option<u32>,
+        budget_value: Option<u32>,
+        pb_value: Option<u32>,
         start_flag: Option<bool>,
     ) -> ChallengeSnapshot {
         if !self.config.enabled {
             return ChallengeSnapshot::default();
         }
 
-        let Some(deaths) = deaths else {
+        let Some(budget_value) = budget_value else {
             return self.snapshot();
         };
-        let bosses = bosses.unwrap_or(0);
         let mut dirty = false;
 
         if let Some(reached) = start_flag {
             if reached != self.reached_start {
                 self.reached_start = reached;
                 if reached {
-                    debug!(
-                        deaths_on_start = deaths,
-                        "Challenge run started (start flag set)"
-                    );
-                    self.persisted.deaths_on_start = deaths;
+                    debug!(budget_on_start = budget_value, "Challenge run started");
+                    self.persisted.budget_on_start = budget_value;
+                    self.persisted.pb_recorded_this_run = false;
                 } else {
                     debug!("Challenge run reset (start flag cleared)");
-                    self.persisted.deaths_on_start = 0;
-                    self.last_player_deaths = Some(0);
-                    if deaths == 0 {
+                    self.persisted.budget_on_start = 0;
+                    self.last_budget = Some(0);
+                    self.persisted.pb_recorded_this_run = false;
+                    if budget_value == 0 {
                         self.persisted.run_failed = false;
                     }
                 }
@@ -161,36 +234,55 @@ impl ChallengeTracker {
             }
         }
 
-        let run_deaths = self.run_deaths(deaths);
-        if run_deaths > self.config.max_deaths {
-            self.persisted.run_failed = true;
+        let budget = self.run_budget(budget_value);
+        let budget_max = self.config.budget_max;
+        let crossed = self.last_budget != Some(budget);
+        if crossed {
+            self.last_budget = Some(budget);
         }
 
-        if self.last_player_deaths != Some(deaths) {
-            self.last_player_deaths = Some(deaths);
-            if run_deaths == self.config.max_deaths.saturating_add(1) {
-                self.persisted.run_failed = true;
-                self.persisted.tries = self.persisted.tries.saturating_add(1);
-                debug!(
-                    tries = self.persisted.tries,
-                    run_deaths, "Challenge run failed (death limit exceeded)"
-                );
-                dirty = true;
+        match self.persisted.pb_mode {
+            // Cap semantics: keep the highest PB reached while the run stays within budget.
+            PbDirection::Max => {
+                if budget > budget_max {
+                    self.persisted.run_failed = true;
+                }
+                if crossed && budget == budget_max.saturating_add(1) {
+                    self.persisted.run_failed = true;
+                    self.persisted.tries = self.persisted.tries.saturating_add(1);
+                    debug!(tries = self.persisted.tries, budget, "Challenge run failed");
+                    dirty = true;
+                }
+                if self.reached_start && !self.persisted.run_failed && budget <= budget_max {
+                    if let Some(value) = pb_value {
+                        if !self.persisted.has_pb || value > self.persisted.pb {
+                            info!(old_pb = self.persisted.pb, new_pb = value, "PB updated");
+                            self.persisted.pb = value;
+                            self.persisted.has_pb = true;
+                            dirty = true;
+                        }
+                    }
+                }
             }
-        }
-
-        if self.reached_start
-            && !self.persisted.run_failed
-            && bosses > self.persisted.pb
-            && run_deaths <= self.config.max_deaths
-        {
-            info!(
-                old_pb = self.persisted.pb,
-                new_pb = bosses,
-                "Challenge personal best updated"
-            );
-            self.persisted.pb = bosses;
-            dirty = true;
+            // Goal semantics: record the PB once, when the budget metric reaches its target.
+            PbDirection::Min => {
+                if self.reached_start
+                    && !self.persisted.pb_recorded_this_run
+                    && budget_max > 0
+                    && budget >= budget_max
+                {
+                    if let Some(value) = pb_value {
+                        self.persisted.pb_recorded_this_run = true;
+                        self.persisted.tries = self.persisted.tries.saturating_add(1);
+                        if !self.persisted.has_pb || value < self.persisted.pb {
+                            info!(old_pb = self.persisted.pb, new_pb = value, "PB updated");
+                            self.persisted.pb = value;
+                            self.persisted.has_pb = true;
+                        }
+                        dirty = true;
+                    }
+                }
+            }
         }
 
         if dirty {
@@ -200,11 +292,12 @@ impl ChallengeTracker {
         self.snapshot()
     }
 
-    fn run_deaths(&self, player_deaths: u32) -> u32 {
+    /// Budget metric value relative to the current run's start.
+    fn run_budget(&self, budget_value: u32) -> u32 {
         if !self.reached_start {
             return 0;
         }
-        player_deaths.saturating_sub(self.persisted.deaths_on_start)
+        budget_value.saturating_sub(self.persisted.budget_on_start)
     }
 
     /// Current challenge metrics without applying live game reads.
@@ -212,6 +305,7 @@ impl ChallengeTracker {
         ChallengeSnapshot {
             enabled: self.config.enabled,
             pb: self.persisted.pb,
+            pb_available: self.persisted.has_pb,
             tries: self.persisted.tries,
         }
     }
@@ -249,13 +343,26 @@ mod tests {
         ChallengeTracker::new(
             ChallengeConfig {
                 enabled: true,
-                max_deaths,
+                budget_max: max_deaths,
                 ..ChallengeConfig::default()
             },
             temp_state_path(),
         )
     }
 
+    fn tracker_budget(budget_metric: &str, budget_max: u32) -> ChallengeTracker {
+        ChallengeTracker::new(
+            ChallengeConfig {
+                enabled: true,
+                budget_metric: budget_metric.to_string(),
+                budget_max,
+                ..ChallengeConfig::default()
+            },
+            temp_state_path(),
+        )
+    }
+
+    /// Classic max/deaths challenge frame: budget = deaths, PB metric = bosses.
     fn started(t: &mut ChallengeTracker, deaths: u32, bosses: u32) -> ChallengeSnapshot {
         t.update(Some(deaths), Some(bosses), Some(true))
     }
@@ -282,6 +389,51 @@ mod tests {
         started(&mut t, 0, 3);
         let snap = started(&mut t, 0, 5);
         assert_eq!(snap.pb, 5);
+        assert!(snap.pb_available);
+    }
+
+    /// Goal challenge frame: budget = bosses, PB metric = deaths (fewest deaths to N bosses).
+    fn goal(t: &mut ChallengeTracker, bosses: u32, deaths: u32) -> ChallengeSnapshot {
+        t.update(Some(bosses), Some(deaths), Some(true))
+    }
+
+    #[test]
+    fn pb_min_records_deaths_when_boss_goal_reached() {
+        let mut t = tracker_budget("bosses", 3);
+        t.configure("deaths", PbDirection::Min, "bosses", 3);
+        // Min PB is undefined until the goal is reached.
+        assert!(!goal(&mut t, 1, 4).pb_available);
+        // Bosses reaches 3 with 5 deaths → record 5.
+        let done = goal(&mut t, 3, 5);
+        assert_eq!(done.pb, 5);
+        assert!(done.pb_available);
+        assert_eq!(done.tries, 1);
+        // Deaths keep rising after the goal, but the PB stays frozen at the recorded value.
+        assert_eq!(goal(&mut t, 3, 9).pb, 5);
+    }
+
+    #[test]
+    fn pb_min_keeps_lowest_across_runs() {
+        let mut t = tracker_budget("bosses", 2);
+        t.configure("deaths", PbDirection::Min, "bosses", 2);
+        assert_eq!(goal(&mut t, 2, 8).pb, 8);
+        // New game: clear then set the start flag to rebaseline the run.
+        t.update(Some(0), Some(0), Some(false));
+        t.update(Some(0), Some(0), Some(true));
+        let better = t.update(Some(2), Some(3), Some(true));
+        assert_eq!(better.pb, 3);
+        assert_eq!(better.tries, 2);
+    }
+
+    #[test]
+    fn changing_pb_settings_resets_pb() {
+        let mut t = tracker(3);
+        t.configure("bosses", PbDirection::Max, "deaths", 3);
+        assert_eq!(started(&mut t, 0, 7).pb, 7);
+        t.configure("deaths", PbDirection::Min, "bosses", 3);
+        let snap = t.snapshot();
+        assert_eq!(snap.pb, 0);
+        assert!(!snap.pb_available);
     }
 
     #[test]
@@ -360,9 +512,15 @@ mod tests {
         let path = temp_state_path();
         let state = ChallengePersisted {
             pb: 42,
+            has_pb: true,
+            pb_source: "bosses".into(),
+            pb_mode: PbDirection::Max,
+            budget_metric: "deaths".into(),
+            budget_max: 3,
             tries: 7,
-            deaths_on_start: 10,
+            budget_on_start: 10,
             run_failed: true,
+            pb_recorded_this_run: false,
         };
         write_challenge_state(&path, &state).unwrap();
         let loaded = load_challenge_state(&path);

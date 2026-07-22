@@ -6,6 +6,8 @@ use anyhow::{bail, Context, Result};
 use serde::{Deserialize, Serialize};
 use tracing::warn;
 
+use crate::challenge::PbDirection;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GridConfig {
     #[serde(default = "default_columns")]
@@ -197,6 +199,10 @@ fn metric_max_is_auto(max: &MetricMax) -> bool {
     max.is_auto()
 }
 
+fn pb_direction_is_max(mode: &PbDirection) -> bool {
+    matches!(mode, PbDirection::Max)
+}
+
 impl Serialize for MetricMax {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -255,6 +261,13 @@ pub enum TileDef {
         /// PNG key in `assets/icons` (e.g. `kindling`). If absent, no icon.
         #[serde(default)]
         icon: Option<String>,
+        /// For the `pb` metric only: which metric the personal best is computed on
+        /// (e.g. `bosses`, `deaths`). `None` falls back to `bosses`.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pb_metric: Option<String>,
+        /// For the `pb` metric only: whether the PB keeps the highest or lowest value.
+        #[serde(default, skip_serializing_if = "pb_direction_is_max")]
+        pb_mode: PbDirection,
     },
     /// A tracked good or boss — unique key (`goods.toml` or `bosses.toml`).
     Item {
@@ -403,6 +416,39 @@ impl LayoutConfig {
         } else {
             self.sections.iter().map(|s| s.name.as_str()).collect()
         }
+    }
+
+    /// Source metric and direction for the challenge personal best, read from the first `pb`
+    /// metric tile in the layout. Defaults to `("bosses", Max)` when no PB tile configures it,
+    /// preserving the historical behaviour.
+    pub fn pb_source(&self) -> (String, PbDirection) {
+        let scan = |tiles: &[TileDef]| -> Option<(String, PbDirection)> {
+            for tile in tiles {
+                if let TileDef::Metric {
+                    metric,
+                    pb_metric,
+                    pb_mode,
+                    ..
+                } = tile
+                {
+                    if metric == "pb" {
+                        let source = pb_metric
+                            .clone()
+                            .filter(|s| !s.is_empty())
+                            .unwrap_or_else(|| "bosses".to_string());
+                        return Some((source, *pb_mode));
+                    }
+                }
+            }
+            None
+        };
+
+        let found = if self.sections.is_empty() {
+            scan(&self.tiles)
+        } else {
+            self.sections.iter().find_map(|s| scan(&s.tiles))
+        };
+        found.unwrap_or_else(|| ("bosses".to_string(), PbDirection::Max))
     }
 
     /// PNG keys referenced by layout tiles (`item` keys + metric `icon` fields).
@@ -755,6 +801,8 @@ mod tests {
                     show_max: false,
                     max: MetricMax::Auto,
                     icon: None,
+                    pb_metric: None,
+                    pb_mode: PbDirection::Max,
                 },
                 TileDef::Item {
                     id: Some("godrick_rune".into()),
@@ -811,6 +859,8 @@ label = "IGT"
             show_max: false,
             max: MetricMax::Auto,
             icon: None,
+            pb_metric: None,
+            pb_mode: PbDirection::Max,
         });
         assert!(layout.validate().is_err());
     }

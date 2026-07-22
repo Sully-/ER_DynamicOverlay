@@ -8,7 +8,7 @@ pub mod types;
 
 pub use challenge::{
     default_challenge_state_path, ChallengeConfig, ChallengeSnapshot, ChallengeTracker,
-    DEFAULT_CHALLENGE_START_FLAG,
+    PbDirection, DEFAULT_CHALLENGE_START_FLAG,
 };
 pub use config::{
     default_base_dir, default_config_path, load_or_create_config, resolve_configured_path,

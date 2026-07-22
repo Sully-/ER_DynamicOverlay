@@ -15,5 +15,6 @@ pub use checks_panel::ChecksPanelState;
 pub use fonts::setup_overlay_fonts;
 pub use hud_window::{HudBounds, HudDragState};
 pub use icon_atlas::IconAtlas;
+pub use metric_registry::resolve_metric_count;
 pub use render::render_overlay;
 pub use view_model::{build_view_model, empty_view_model, OverlayViewModel};

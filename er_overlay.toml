@@ -86,7 +86,18 @@ log_enabled = false
 
 # ── Challenge mode (EROverlay-compatible) ────────────────────────────
 # Metrics pb / nbtries in layouts/dashboard.toml.
+#
+# A run is bounded by `budget_metric` reaching `budget_max` (both relative to the run start).
+# WHICH metric the PB tracks and whether it keeps the highest/lowest value are set on the `pb`
+# tile in the layout file (pb_metric / pb_mode):
+#   - pb_mode = max → cap: keep the highest pb_metric reached while budget_metric stays <= budget_max
+#                     (e.g. budget_metric = deaths, budget_max = 0, pb = bosses → most bosses deathless).
+#   - pb_mode = min → goal: record pb_metric when budget_metric reaches budget_max, keep the lowest
+#                     across runs (e.g. budget_metric = bosses, budget_max = 165, pb = deaths →
+#                     fewest deaths to kill all bosses). A run resets on a new game (start_flag).
+# `max_deaths` is still accepted as an alias for `budget_max`.
 [challenge]
 enabled = false
-max_deaths = 0
+budget_metric = "deaths"
+budget_max = 0
 start_flag = 101

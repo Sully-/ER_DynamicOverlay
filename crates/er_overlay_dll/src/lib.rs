@@ -1,4 +1,5 @@
 mod overlay_app;
+mod poll_worker;
 
 use std::ffi::c_void;
 use std::fs::OpenOptions;

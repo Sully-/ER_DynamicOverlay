@@ -14,6 +14,11 @@ const METRICS = [
   { id: "nbtries", label: "TRIES", showMax: false },
 ];
 
+/** Numeric metrics a PB tile can be computed on (source for the challenge personal best). */
+const PB_SOURCE_METRICS = ["bosses", "deaths", "checks", "great_runes", "scadutree_blessing", "ng_cycle"];
+const PB_DEFAULT_SOURCE = "bosses";
+const PB_DEFAULT_MODE = "max";
+
 const DEFAULT_STYLE = {
   border_default: [100, 100, 110, 200],
   border_complete: [60, 200, 90, 255],
@@ -175,6 +180,8 @@ function tileContentKey(tile, gm) {
     tile.kind,
     tile.label,
     tile.metric,
+    tile.pb_metric,
+    tile.pb_mode,
     tile.show_max,
     tile.max_mode,
     tile.max,
@@ -331,6 +338,8 @@ const els = {
   propKind: $("#prop-kind"),
   propLabel: $("#prop-label"),
   propMetric: $("#prop-metric"),
+  propPbSource: $("#prop-pb-source"),
+  propPbMode: $("#prop-pb-mode"),
   propKey: $("#prop-key"),
   propCol: $("#prop-col"),
   propRow: $("#prop-row"),
@@ -344,6 +353,8 @@ const els = {
   propIcon: $("#prop-icon"),
   fieldLabel: $("#field-label"),
   fieldMetric: $("#field-metric"),
+  fieldPbSource: $("#field-pb-source"),
+  fieldPbMode: $("#field-pb-mode"),
   fieldKey: $("#field-key"),
   fieldShowMax: $("#field-show-max"),
   fieldMetricMax: $("#field-metric-max"),
@@ -972,6 +983,16 @@ function buildPalette() {
     opt.textContent = m.id;
     els.propMetric.appendChild(opt);
   }
+
+  if (els.propPbSource) {
+    els.propPbSource.innerHTML = "";
+    for (const id of PB_SOURCE_METRICS) {
+      const opt = document.createElement("option");
+      opt.value = id;
+      opt.textContent = id;
+      els.propPbSource.appendChild(opt);
+    }
+  }
 }
 
 function makePaletteEl(kind, title, data, subtitle = "") {
@@ -1424,9 +1445,12 @@ function renderProperties() {
     return;
   }
 
+  const isPb = tile.kind === "metric" && tile.metric === "pb";
   els.propKind.value = tile.kind;
   els.fieldLabel.classList.toggle("hidden", tile.kind === "item");
   els.fieldMetric.classList.toggle("hidden", tile.kind !== "metric");
+  els.fieldPbSource.classList.toggle("hidden", !isPb);
+  els.fieldPbMode.classList.toggle("hidden", !isPb);
   els.fieldKey.classList.toggle("hidden", tile.kind !== "item");
   els.fieldShowMax.classList.toggle("hidden", tile.kind !== "metric");
   els.fieldMetricMax.classList.toggle(
@@ -1439,6 +1463,8 @@ function renderProperties() {
 
   els.propLabel.value = tile.label || "";
   els.propMetric.value = tile.metric || "igt";
+  els.propPbSource.value = tile.pb_metric || PB_DEFAULT_SOURCE;
+  els.propPbMode.value = tile.pb_mode || PB_DEFAULT_MODE;
   els.propKey.value = tile.key || "";
   els.propCol.value = tile.col;
   els.propRow.value = tile.row;
@@ -1491,16 +1517,22 @@ function createTile(kind, data, col, row) {
   }
   if (kind === "metric") {
     const m = METRICS.find((x) => x.id === data.id) || data;
-    return {
+    const metricId = m.id || data.metric || "igt";
+    const tile = {
       ...base,
       w: 2,
-      metric: m.id || data.metric || "igt",
+      metric: metricId,
       label: m.label || data.label || "METRIC",
       show_max: m.showMax ?? data.showMax ?? false,
       max_mode: data.max_mode ?? (typeof data.max === "number" ? "manual" : "auto"),
       max: typeof data.max === "number" ? data.max : undefined,
       icon: m.icon || data.icon || undefined,
     };
+    if (metricId === "pb") {
+      tile.pb_metric = data.pb_metric || PB_DEFAULT_SOURCE;
+      tile.pb_mode = data.pb_mode === "min" ? "min" : PB_DEFAULT_MODE;
+    }
+    return tile;
   }
   if (kind === "item") {
     return {
@@ -1563,6 +1595,16 @@ function applyPropChanges() {
       "hidden",
       !metricHasMax(tile.metric) && !tile.show_max
     );
+    const isPb = tile.metric === "pb";
+    els.fieldPbSource.classList.toggle("hidden", !isPb);
+    els.fieldPbMode.classList.toggle("hidden", !isPb);
+    if (isPb) {
+      tile.pb_metric = els.propPbSource.value || PB_DEFAULT_SOURCE;
+      tile.pb_mode = els.propPbMode.value === "min" ? "min" : "max";
+    } else {
+      delete tile.pb_metric;
+      delete tile.pb_mode;
+    }
   }
   if (tile.kind === "item") {
     tile.key = els.propKey.value.trim() || tile.key;
@@ -1938,6 +1980,12 @@ function exportToml() {
           lines.push(`max = ${tile.max ?? tile.max_value ?? defaultMaxForMetric(tile.metric)}`);
         }
         if (tile.icon) lines.push(`icon = "${tile.icon}"`);
+        if (tile.metric === "pb") {
+          const pbMetric = tile.pb_metric || PB_DEFAULT_SOURCE;
+          const pbMode = tile.pb_mode === "min" ? "min" : "max";
+          lines.push(`pb_metric = "${pbMetric}"`);
+          lines.push(`pb_mode = "${pbMode}"`);
+        }
       } else if (tile.kind === "label") {
         if (tile.label) lines.push(`label = "${tile.label}"`);
       } else if (tile.kind === "item") {
@@ -2027,7 +2075,7 @@ function parseTileDef(t) {
   };
   if (t.kind === "metric") {
     const maxManual = typeof t.max === "number";
-    return {
+    const tile = {
       ...base,
       metric: t.metric,
       label: t.label ?? "",
@@ -2036,6 +2084,11 @@ function parseTileDef(t) {
       max: maxManual ? t.max : undefined,
       icon: t.icon || undefined,
     };
+    if (t.metric === "pb") {
+      tile.pb_metric = t.pb_metric || PB_DEFAULT_SOURCE;
+      tile.pb_mode = t.pb_mode === "min" ? "min" : PB_DEFAULT_MODE;
+    }
+    return tile;
   }
   if (t.kind === "label") {
     return { ...base, label: t.label || "" };
@@ -2077,6 +2130,8 @@ function bindEvents() {
   for (const input of [
     els.propLabel,
     els.propMetric,
+    els.propPbSource,
+    els.propPbMode,
     els.propKey,
     els.propCol,
     els.propRow,

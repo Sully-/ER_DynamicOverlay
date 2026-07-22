@@ -4,23 +4,24 @@ use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime};
 
 use er_game_state::{
-    bosses_total_count, clear_checks_seed_flags, reload_boss_table_if_modified,
-    reload_checks_flags_if_modified, reload_checks_table_if_modified, resolve_checks_table_path,
-    resolve_locale_id, GameStateReader, GameStateSource,
+    clear_checks_seed_flags, reload_boss_table_if_modified, reload_checks_flags_if_modified,
+    reload_checks_table_if_modified, resolve_checks_table_path, resolve_locale_id, GameStateReader,
 };
 use er_overlay_common::layout::LayoutStyle;
 use er_overlay_common::{
     default_base_dir, default_challenge_state_path, load_layout, parse_hotkey,
     resolve_configured_path, resolve_layout_path, ChallengeTracker, HotkeyBinding, LayoutConfig,
-    OverlayConfig, OverlayKey,
+    OverlayConfig, OverlayKey, PbDirection,
 };
 use er_overlay_ui::{
-    build_view_model, empty_view_model, render_overlay, setup_overlay_fonts, BossPanelState,
-    ChecksPanelState, HudDragState, IconAtlas,
+    empty_view_model, render_overlay, setup_overlay_fonts, BossPanelState, ChecksPanelState,
+    HudDragState, IconAtlas,
 };
 use hudhook::{ImguiRenderLoop, MessageFilter, RenderContext};
 use imgui::{Context, Key, WindowHoveredFlags};
 use tracing::{debug, info, warn};
+
+use crate::poll_worker::{PollInputs, PollWorker};
 
 struct LayoutSectionState {
     active_index: usize,
@@ -46,7 +47,6 @@ pub struct OverlayApp {
     show_checks_panel: bool,
     checks_panel: ChecksPanelState,
     last_config_reload: Instant,
-    reader: GameStateReader,
     font_bytes: Vec<u8>,
     /// `(text_size, scale)` the font atlas is currently baked for. When it changes
     /// (config reload), the atlas is re-rasterized and re-uploaded so text stays crisp.
@@ -58,7 +58,9 @@ pub struct OverlayApp {
     icons_dirty: bool,
     hud_drag: HudDragState,
     view_model: er_overlay_ui::OverlayViewModel,
-    last_state_poll: Instant,
+    /// Owns the game-state reader + challenge tracker on a dedicated thread and publishes freshly
+    /// built view models. Keeps all game-memory work off the render (Present) thread.
+    poll: PollWorker,
     boss_table_mtime: Option<SystemTime>,
     active_boss_locale: Option<String>,
     checks_table_mtime: Option<SystemTime>,
@@ -68,7 +70,6 @@ pub struct OverlayApp {
     regulation_sig: Option<(SystemTime, u64)>,
     /// Guards against spawning the extractor while a previous run is in flight.
     extractor_running: Arc<AtomicBool>,
-    challenge: ChallengeTracker,
     /// Set once the render loop draws its first frame, to log that milestone exactly once.
     first_render_logged: bool,
 }
@@ -127,6 +128,13 @@ impl OverlayApp {
             &mut active_checks_locale,
         );
         let view_model = empty_view_model(config.boss_panel_scope, config.checks_panel_scope);
+        // Hand the reader + challenge tracker to a background thread. From here on, all game-memory
+        // polling and the view-model build happen off the render thread.
+        let poll = PollWorker::spawn(
+            reader,
+            challenge,
+            Self::compute_poll_inputs(&config, layout.as_ref()),
+        );
         let mut app = Self {
             config,
             config_path,
@@ -149,7 +157,6 @@ impl OverlayApp {
             show_checks_panel,
             checks_panel,
             last_config_reload: Instant::now(),
-            reader,
             font_bytes: Vec::new(),
             applied_font_sig: None,
             icon_atlas: IconAtlas::new(),
@@ -157,7 +164,7 @@ impl OverlayApp {
             icons_dirty: true,
             hud_drag: HudDragState::default(),
             view_model,
-            last_state_poll: Instant::now(),
+            poll,
             boss_table_mtime,
             active_boss_locale,
             checks_table_mtime,
@@ -165,7 +172,6 @@ impl OverlayApp {
             checks_flags_mtime: None,
             regulation_sig: None,
             extractor_running: Arc::new(AtomicBool::new(false)),
-            challenge,
             first_render_logged: false,
         };
         app.sync_section_state();
@@ -190,54 +196,40 @@ impl OverlayApp {
         (config.use_item_icons, keys)
     }
 
-    fn refresh_view_model(&mut self) {
-        self.reader.poll();
-        self.view_model.bosses_total = bosses_total_count() as u32;
-        if !self.reader.is_ready() {
-            debug!("Skipping build_view_model: game state not ready yet");
-            return;
+    /// Config/layout-derived inputs the polling worker needs to build the view model.
+    fn compute_poll_inputs(config: &OverlayConfig, layout: Option<&LayoutConfig>) -> PollInputs {
+        let (pb_source, pb_mode) = layout
+            .map(|l| l.pb_source())
+            .unwrap_or_else(|| ("bosses".to_string(), PbDirection::Max));
+        PollInputs {
+            data_refs: layout.map(|l| l.collect_data_refs()).unwrap_or_default(),
+            equipped_refs: layout
+                .map(|l| l.collect_equipped_refs())
+                .unwrap_or_default(),
+            historic_refs: layout
+                .map(|l| l.collect_historic_refs())
+                .unwrap_or_default(),
+            boss_panel_scope: config.boss_panel_scope,
+            checks_panel_scope: config.checks_panel_scope,
+            challenge_config: config.challenge.clone(),
+            pb_source,
+            pb_mode,
+            start_flag: config.challenge.start_flag,
         }
-        let data_refs = self
-            .layout
-            .as_ref()
-            .map(|l| l.collect_data_refs())
-            .unwrap_or_default();
-        let equipped_refs = self
-            .layout
-            .as_ref()
-            .map(|l| l.collect_equipped_refs())
-            .unwrap_or_default();
-        let historic_refs = self
-            .layout
-            .as_ref()
-            .map(|l| l.collect_historic_refs())
-            .unwrap_or_default();
-        let challenge_snapshot = if self.reader.challenge_update_ready() {
-            self.challenge.update(
-                self.reader.get_death_count(),
-                self.reader.get_killed_boss_count(),
-                self.reader.get_flag(self.config.challenge.start_flag),
-            )
-        } else {
-            self.challenge.snapshot()
-        };
-        self.challenge.flush();
-        self.view_model = build_view_model(
-            &self.reader,
-            &data_refs,
-            &equipped_refs,
-            &historic_refs,
-            self.config.boss_panel_scope,
-            self.config.checks_panel_scope,
-            challenge_snapshot,
-        );
-        self.last_state_poll = Instant::now();
     }
 
-    fn maybe_refresh_view_model(&mut self) {
-        if self.last_state_poll.elapsed() >= Duration::from_millis(250) {
-            self.refresh_view_model();
-        }
+    /// Pushes the current config/layout inputs to the polling worker after a reload.
+    fn push_poll_inputs(&self) {
+        self.poll.set_inputs(Self::compute_poll_inputs(
+            &self.config,
+            self.layout.as_ref(),
+        ));
+    }
+
+    /// Applies the most recent view model published by the polling worker. Cheap: a channel drain
+    /// plus a move. Called every frame (even while hidden) so the channel never backs up.
+    fn drain_view_model(&mut self) {
+        self.poll.drain_into(&mut self.view_model);
     }
 
     fn load_layout_from_config(config: &OverlayConfig) -> Option<LayoutConfig> {
@@ -368,7 +360,6 @@ impl OverlayApp {
                 self.show_checks_panel = false;
                 self.section_state.active_index = self.compact_layout_section_index();
                 self.boss_panel.on_reopened();
-                self.refresh_view_model();
             }
             debug!("Boss panel toggled: {}", self.show_boss_panel);
         }
@@ -391,7 +382,6 @@ impl OverlayApp {
                 self.show_boss_panel = false;
                 self.section_state.active_index = self.compact_layout_section_index();
                 self.checks_panel.on_reopened();
-                self.refresh_view_model();
             }
             debug!("Checks panel toggled: {}", self.show_checks_panel);
         }
@@ -472,8 +462,9 @@ impl OverlayApp {
             &mut self.boss_table_mtime,
             &mut self.active_boss_locale,
         ) {
-            self.reader.invalidate_boss_cache();
-            self.refresh_view_model();
+            // Boss table changed: reset the worker's cached kill count. It republishes fresh
+            // panel data on its next tick (it reads the reloaded global table directly).
+            self.poll.invalidate_boss_cache();
         }
     }
 
@@ -482,7 +473,10 @@ impl OverlayApp {
     fn maybe_sync_checks(&mut self) {
         let base = default_base_dir();
         let locale_id = resolve_locale_id(self.config.boss_locale.as_deref());
-        let mut changed = reload_checks_table_if_modified(
+        // These reloads mutate the shared global check tables/flags. The polling worker reads those
+        // globals on every tick, so it republishes updated data on its own — no explicit refresh
+        // trigger is needed here.
+        let _ = reload_checks_table_if_modified(
             &base,
             &locale_id,
             None,
@@ -505,22 +499,15 @@ impl OverlayApp {
                 } else {
                     legacy_flags_path
                 };
-                if reload_checks_flags_if_modified(&flags_path, &mut self.checks_flags_mtime) {
-                    changed = true;
-                }
+                let _ = reload_checks_flags_if_modified(&flags_path, &mut self.checks_flags_mtime);
             }
             None => {
                 // No regulation configured: ensure dynamic checks use their vanilla flags.
                 self.regulation_sig = None;
                 if clear_checks_seed_flags() {
                     self.checks_flags_mtime = None;
-                    changed = true;
                 }
             }
-        }
-
-        if changed {
-            self.refresh_view_model();
         }
     }
 
@@ -650,7 +637,6 @@ impl OverlayApp {
                 if focus_disabled {
                     let _ = er_game_state::set_menu_cursor_visible(false);
                 }
-                self.challenge.sync_config(&self.config.challenge);
                 if locale_settings_changed {
                     self.boss_table_mtime = None;
                     self.active_boss_locale = None;
@@ -671,6 +657,9 @@ impl OverlayApp {
                     self.icon_signature = new_signature;
                     self.icons_dirty = true;
                 }
+                // Hand the refreshed config/layout (scopes, data refs, challenge settings) to the
+                // polling worker so its next build reflects the reload.
+                self.push_poll_inputs();
             }
             Err(e) => warn!("Config reload failed: {e:?}"),
         }
@@ -806,7 +795,6 @@ impl ImguiRenderLoop for OverlayApp {
         self.applied_font_sig = Some((self.config.text_size, self.config.scale));
         ctx.io_mut().config_windows_move_from_title_bar_only = false;
         self.load_icons_if_dirty(render_ctx);
-        self.refresh_view_model();
         let imgui_style = ctx.style_mut();
         imgui_style.window_rounding = 6.0;
         imgui_style.frame_rounding = 4.0;
@@ -848,13 +836,14 @@ impl ImguiRenderLoop for OverlayApp {
         self.maybe_cycle_section(ui);
         self.maybe_toggle_boss_panel(ui);
         self.maybe_toggle_checks_panel(ui);
+        // Drain unconditionally (even while hidden) so the worker's channel never backs up.
+        self.drain_view_model();
         if !self.show_overlay {
             if self.config.keep_overlay_focus {
                 let _ = er_game_state::set_menu_cursor_visible(false);
             }
             return;
         }
-        self.maybe_refresh_view_model();
         let vm = &self.view_model;
         let atlas = if self.config.use_item_icons && self.icon_atlas.is_loaded() {
             Some(&self.icon_atlas)

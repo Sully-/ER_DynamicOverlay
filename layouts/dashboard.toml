@@ -65,6 +65,10 @@ row = 0
 kind = "metric"
 metric = "pb"
 label = "PB"
+# PB metric + direction (see [challenge] in er_overlay.toml).
+# max = keep the highest value under budget; min = keep the lowest at run end.
+pb_metric = "bosses"
+pb_mode = "max"
 col = 7
 row = 0
 

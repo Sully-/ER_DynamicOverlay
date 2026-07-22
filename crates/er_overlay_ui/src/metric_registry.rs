@@ -41,7 +41,7 @@ pub fn resolve_metric(metric: &str, vm: &OverlayViewModel) -> MetricValue {
         "pb" | "challenge_pb" => {
             if vm.challenge.enabled {
                 MetricValue::Count {
-                    current: Some(vm.challenge.pb),
+                    current: vm.challenge.pb_available.then_some(vm.challenge.pb),
                     max: None,
                 }
             } else {
@@ -84,6 +84,16 @@ pub fn resolve_metric(metric: &str, vm: &OverlayViewModel) -> MetricValue {
 
 pub fn resolve_tracked_key<'a>(key: &str, vm: &'a OverlayViewModel) -> Option<&'a TrackedEntryRow> {
     vm.tracked(key)
+}
+
+/// Resolves a metric to a single numeric value for the challenge personal best. Returns `None`
+/// for metrics that have no current numeric reading (e.g. an unavailable time or count).
+pub fn resolve_metric_count(metric: &str, vm: &OverlayViewModel) -> Option<u32> {
+    match resolve_metric(metric, vm) {
+        MetricValue::Count { current, .. } => current,
+        MetricValue::NgCycle(n) => n,
+        MetricValue::Time(_) | MetricValue::Unavailable => None,
+    }
 }
 
 pub fn metric_is_complete(value: &MetricValue) -> bool {
