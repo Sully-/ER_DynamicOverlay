@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ER Overlay — Layout Editor</title>
-  <link rel="stylesheet" href="layout_editor_assets/style.css" />
+  <link rel="stylesheet" href="layout_editor_assets/style.css?v=8" />
 </head>
 <body>
   <header class="topbar">
@@ -12,6 +12,7 @@
       <span class="brand-icon">◈</span>
       <h1 data-i18n="brandTitle">Layout Editor</h1>
       <span class="brand-sub">Elden Ring Overlay</span>
+      <span id="render-build" class="brand-build" title="Tile render build">r7</span>
     </div>
     <div class="topbar-actions">
       <div class="lang-switch" role="group" data-i18n-aria="langSwitch" aria-label="Language">
@@ -88,26 +89,6 @@
         <div class="field hidden" id="field-key">
           <label data-i18n="key">Key</label>
           <input id="prop-key" class="input" type="text" />
-        </div>
-        <div class="field-row">
-          <div class="field">
-            <label data-i18n="col">Col</label>
-            <input id="prop-col" class="input input-num" type="number" min="0" />
-          </div>
-          <div class="field">
-            <label data-i18n="row">Row</label>
-            <input id="prop-row" class="input input-num" type="number" min="0" />
-          </div>
-        </div>
-        <div class="field-row">
-          <div class="field">
-            <label>w</label>
-            <input id="prop-w" class="input input-num" type="number" min="1" />
-          </div>
-          <div class="field">
-            <label>h</label>
-            <input id="prop-h" class="input input-num" type="number" min="1" />
-          </div>
         </div>
         <div class="field hidden" id="field-show-max">
           <label class="checkbox-label">
@@ -210,8 +191,8 @@
             <option value="extended">extended</option>
           </select>
         </div>
-        <h3 class="subhead" data-i18n="overlayPreview">Overlay preview</h3>
-        <p class="hint" data-i18n="overlayPreviewHint">Values from er_overlay.toml — affects text size on the canvas only.</p>
+        <h3 class="subhead" data-i18n="layoutTypography">Typography</h3>
+        <p class="hint" data-i18n="layoutTypographyHint">Saved in the layout [style]. If omitted when importing an old layout, values fall back to er_overlay.toml next to this page (else built-in defaults).</p>
         <div class="field-row">
           <div class="field">
             <label data-i18n="textSize">text_size</label>
@@ -226,9 +207,9 @@
     </aside>
   </div>
 
-  <script src="layout_editor_assets/catalog.js"></script>
-  <script src="layout_editor_assets/i18n.js"></script>
-  <script src="layout_editor_assets/color_picker.js"></script>
-  <script src="layout_editor_assets/app.js"></script>
+  <script src="layout_editor_assets/catalog.js?v=8"></script>
+  <script src="layout_editor_assets/i18n.js?v=8"></script>
+  <script src="layout_editor_assets/color_picker.js?v=8"></script>
+  <script src="layout_editor_assets/app.js?v=8"></script>
 </body>
 </html>

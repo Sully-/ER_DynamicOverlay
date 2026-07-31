@@ -39,12 +39,12 @@ function Read-Asset([string]$name) {
 
 # Inline the stylesheet: <link rel="stylesheet" href="layout_editor_assets/style.css" />
 $css = Get-Content -Raw -Encoding UTF8 (Join-Path $assetsDir "style.css")
-$linkPattern = '<link\s+rel="stylesheet"\s+href="layout_editor_assets/style\.css"\s*/?>'
+$linkPattern = '<link\s+rel="stylesheet"\s+href="layout_editor_assets/style\.css[^"]*"\s*/?>'
 if ($html -notmatch $linkPattern) { throw "Could not find the stylesheet <link> tag to inline." }
 $html = [regex]::Replace($html, $linkPattern, { "<style>`n$css`n</style>" })
 
 # Inline each script: <script src="layout_editor_assets/NAME.js"></script>
-$scriptPattern = '<script\s+src="layout_editor_assets/([^"]+\.js)"\s*></script>'
+$scriptPattern = '<script\s+src="layout_editor_assets/([^"?]+\.js)(?:\?[^"]*)?"\s*></script>'
 $html = [regex]::Replace($html, $scriptPattern, {
     param($m)
     $name = $m.Groups[1].Value

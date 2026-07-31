@@ -672,21 +672,26 @@ impl OverlayApp {
     /// `before_render`, the sanctioned place for texture uploads — and point the font
     /// atlas at a freshly loaded texture so the new size renders crisp immediately.
     fn rebuild_fonts_if_dirty(&mut self, ctx: &mut Context, render_ctx: &mut dyn RenderContext) {
-        let sig = (self.config.text_size, self.config.scale);
+        let default_style = LayoutStyle::default();
+        let style = self
+            .layout
+            .as_ref()
+            .map(|l| &l.style)
+            .unwrap_or(&default_style);
+        let text_size = style.effective_text_size(&self.config);
+        let scale = style.effective_scale(&self.config);
+        let sig = (text_size, scale);
         if self.applied_font_sig == Some(sig) {
             return;
         }
-        setup_overlay_fonts(ctx, &mut self.font_bytes, &self.config);
+        setup_overlay_fonts(ctx, &mut self.font_bytes, &self.config, style);
         let fonts = ctx.fonts();
         let texture = fonts.build_rgba32_texture();
         match render_ctx.load_texture(texture.data, texture.width, texture.height) {
             Ok(id) => {
                 fonts.tex_id = id;
                 self.applied_font_sig = Some(sig);
-                debug!(
-                    "Rebuilt font atlas (text_size={}, scale={})",
-                    self.config.text_size, self.config.scale
-                );
+                debug!("Rebuilt font atlas (text_size={text_size}, scale={scale})");
             }
             Err(e) => warn!("Font atlas rebuild failed: {e:?}"),
         }
@@ -791,20 +796,24 @@ impl ImguiRenderLoop for OverlayApp {
         // If "Hudhook applied" is logged but this never is, the hook never triggered (wrong
         // renderer, another overlay taking over Present, etc.).
         info!("ImGui initialize: render hook active, setting up overlay");
-        setup_overlay_fonts(ctx, &mut self.font_bytes, &self.config);
-        self.applied_font_sig = Some((self.config.text_size, self.config.scale));
-        ctx.io_mut().config_windows_move_from_title_bar_only = false;
-        self.load_icons_if_dirty(render_ctx);
-        let imgui_style = ctx.style_mut();
-        imgui_style.window_rounding = 6.0;
-        imgui_style.frame_rounding = 4.0;
         let default_layout_style = LayoutStyle::default();
         let layout_style = self
             .layout
             .as_ref()
             .map(|l| &l.style)
             .unwrap_or(&default_layout_style);
+        setup_overlay_fonts(ctx, &mut self.font_bytes, &self.config, layout_style);
+        let font_sig = (
+            layout_style.effective_text_size(&self.config),
+            layout_style.effective_scale(&self.config),
+        );
         let bg = layout_style.window_bg_rgba_f32();
+        self.applied_font_sig = Some(font_sig);
+        ctx.io_mut().config_windows_move_from_title_bar_only = false;
+        self.load_icons_if_dirty(render_ctx);
+        let imgui_style = ctx.style_mut();
+        imgui_style.window_rounding = 6.0;
+        imgui_style.frame_rounding = 4.0;
         imgui_style.colors[imgui::StyleColor::WindowBg as usize] = imgui::ImColor32::from_rgba(
             (bg[0] * 255.0) as u8,
             (bg[1] * 255.0) as u8,

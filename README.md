@@ -90,7 +90,7 @@ Everything shown is driven by a **layout file** — a grid of tiles. Edit it vis
 
 ### 4. Tweak appearance and behavior
 
-Open `er_overlay.toml` in any text editor (hot-reloaded ~every 2 s). The most common options are `anchor` / `offset_x` / `offset_y` (position), `scale` / `text_size` / `icon_size` (size), and the panel toggles. See [Configuration](#configuration-er_overlaytoml) for the full reference.
+Open `er_overlay.toml` in any text editor (hot-reloaded ~every 2 s). The most common options are `anchor` / `offset_x` / `offset_y` (position), `icon_size` (icon size), and the panel toggles. `scale` / `text_size` remain as fallbacks when the layout omits them. See [Configuration](#configuration-er_overlaytoml) for the full reference.
 
 ## Warnings
 
@@ -157,8 +157,8 @@ Read next to the DLL and **hot-reloaded every 2 seconds** — you can edit it wh
 | `default_layout_section` | string | — | Section shown at startup (overrides the layout's own `default_section`). |
 | `anchor` | enum | `top-right` | Anchor corner: `top-left`, `top-right`, `bottom-left`, `bottom-right`. |
 | `offset_x`, `offset_y` | px | `16`, `16` | Offset from the anchor corner. |
-| `scale` | 0–4 | `1.0` | Global overlay scale. |
-| `text_size` | px (≤72) | `18` | Base font size. |
+| `scale` | 0–4 | `1.0` | Fallback HUD scale when the layout omits `[style].scale`. |
+| `text_size` | px (≤72) | `18` | Fallback base font size when the layout omits `[style].text_size`. |
 | `icon_size` | px (≤128) | `24` | Reference icon size. |
 | `background_opacity` | 0–1 | `0.65` | Window background opacity. |
 | `gray_tint` | 0–1 | `0.40` | Tint of **unowned** items (lower = darker). |
@@ -431,6 +431,8 @@ window_padding = 8
 border_default  = [100, 100, 110, 200]  # RGBA
 border_complete = [60, 200, 90, 255]     # border when a metric is "complete" / an item is equipped
 tile_bg         = [12, 12, 18, 180]
+text_size = 18       # base font size (else er_overlay.toml)
+scale = 1.0          # HUD scale (else er_overlay.toml)
 label_scale = 0.65   # label size relative to text
 value_scale = 1.15   # value size relative to text
 

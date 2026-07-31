@@ -66,9 +66,10 @@ pub fn render_checks_panel(
     hud_anchor: Option<HudBounds>,
     border_radius: f32,
 ) {
-    let text_scale = overlay_font_scale(config);
+    let text_scale = overlay_font_scale(config, style);
+    let scale = style.effective_scale(config);
     let viewport = ui.io().display_size;
-    let geometry = checks_panel_geometry(config, state, hud_anchor, viewport);
+    let geometry = checks_panel_geometry(config, state, hud_anchor, viewport, scale);
 
     let mut window = ui
         .window("##er_checks_panel")
@@ -151,7 +152,7 @@ pub fn render_checks_panel(
                 });
         }
 
-        draw_window_border(ui, style, border_radius * config.scale, config.scale);
+        draw_window_border(ui, style, border_radius * scale, scale);
     });
 }
 
@@ -253,8 +254,9 @@ fn checks_panel_geometry(
     state: &ChecksPanelState,
     hud_anchor: Option<HudBounds>,
     viewport: [f32; 2],
+    scale: f32,
 ) -> ChecksPanelGeometry {
-    let default_geom = default_checks_panel_geometry(viewport, hud_anchor, config);
+    let default_geom = default_checks_panel_geometry(viewport, hud_anchor, scale);
 
     if let Some(pos) = state.pos {
         return ChecksPanelGeometry {
@@ -278,7 +280,7 @@ fn checks_panel_geometry(
             window_height: size[1].max(80.0),
         };
         if let Some(hud) = hud_anchor {
-            geom = adjust_below_hud(geom, hud, GAP_BELOW_HUD * config.scale);
+            geom = adjust_below_hud(geom, hud, GAP_BELOW_HUD * scale);
         }
         return geom;
     }
@@ -289,7 +291,7 @@ fn checks_panel_geometry(
 fn default_checks_panel_geometry(
     viewport: [f32; 2],
     hud_anchor: Option<HudBounds>,
-    config: &OverlayConfig,
+    scale: f32,
 ) -> ChecksPanelGeometry {
     let PanelRect { pos, size, pivot } = resolve_panel_rect(viewport, DEFAULT_PANEL_LAYOUT);
     let mut geom = ChecksPanelGeometry {
@@ -299,7 +301,7 @@ fn default_checks_panel_geometry(
         window_height: size[1].max(80.0),
     };
     if let Some(hud) = hud_anchor {
-        geom = adjust_below_hud(geom, hud, GAP_BELOW_HUD * config.scale);
+        geom = adjust_below_hud(geom, hud, GAP_BELOW_HUD * scale);
     }
     geom
 }

@@ -72,7 +72,6 @@ pub fn draw_tile_frame(
 }
 
 const OVERLAY_COUNTER_SCALE: f32 = 0.85;
-const COUNTER_FIT_TEMPLATE: &str = "99/99";
 
 fn tile_inset_pad(w: f32, h: f32) -> f32 {
     (w.min(h) * 0.1).max(4.0)
@@ -96,29 +95,23 @@ fn draw_label_overlay(
     style: &LayoutStyle,
     config: &OverlayConfig,
 ) {
-    let base_scale = overlay_font_scale(config);
+    let base_scale = overlay_font_scale(config, style);
     let label_scale = base_scale * style.label_scale;
     let pad = tile_inset_pad(size[0], size[1]);
-    let max_text_w = (size[0] - pad * 2.0).max(8.0);
-    let fitted = fit_font_scale(ui, label, max_text_w, label_scale);
-    ui.set_window_font_scale(fitted);
-    let text_w = ui.calc_text_size(label)[0].min(max_text_w);
+    // Follow `text_size` directly; the label may overflow the tile width if needed.
+    ui.set_window_font_scale(label_scale);
+    let text_w = ui.calc_text_size(label)[0];
     ui.set_cursor_screen_pos([pos[0] + (size[0] - text_w) * 0.5, pos[1] + pad]);
     ui.text_colored(rgba(170, 170, 180, 255), label);
     ui.set_window_font_scale(base_scale);
 }
 
-fn counter_font_scale_for_tile(
-    ui: &Ui,
-    size: [f32; 2],
-    style: &LayoutStyle,
-    config: &OverlayConfig,
-) -> f32 {
-    let base_scale = overlay_font_scale(config);
-    let count_scale = base_scale * style.value_scale * OVERLAY_COUNTER_SCALE;
-    let min_dim = size[0].min(size[1]);
-    let max_text_w = (min_dim * 0.45).max(8.0);
-    fit_font_scale(ui, COUNTER_FIT_TEMPLATE, max_text_w, count_scale)
+fn counter_font_scale_for_tile(config: &OverlayConfig, style: &LayoutStyle) -> f32 {
+    // Follow `text_size` directly (via the base scale) instead of shrinking to fit the
+    // tile. The counter may overflow / overlap the icon on small tiles — this is intended
+    // so that increasing `text_size` actually enlarges the text on icon tiles.
+    let base_scale = overlay_font_scale(config, style);
+    base_scale * style.value_scale * OVERLAY_COUNTER_SCALE
 }
 
 fn draw_counter_bottom_right(
@@ -129,13 +122,11 @@ fn draw_counter_bottom_right(
     style: &LayoutStyle,
     config: &OverlayConfig,
 ) {
-    let base_scale = overlay_font_scale(config);
+    let base_scale = overlay_font_scale(config, style);
     let pad = tile_inset_pad(size[0], size[1]);
-    let min_dim = size[0].min(size[1]);
-    let max_text_w = (min_dim * 0.45).max(8.0);
-    let fitted = counter_font_scale_for_tile(ui, size, style, config);
+    let fitted = counter_font_scale_for_tile(config, style);
     ui.set_window_font_scale(fitted);
-    let text_w = ui.calc_text_size(text)[0].min(max_text_w);
+    let text_w = ui.calc_text_size(text)[0];
     let line_h = line_height_at_scale(ui, fitted);
     ui.set_cursor_screen_pos([
         pos[0] + size[0] - text_w - pad,
@@ -199,7 +190,7 @@ pub fn draw_metric_tile(
         return;
     }
 
-    let base_scale = overlay_font_scale(config);
+    let base_scale = overlay_font_scale(config, style);
     let label_scale = base_scale * style.label_scale;
     let value_scale = base_scale * style.value_scale;
 
@@ -265,7 +256,7 @@ pub fn draw_label_tile(
         return;
     }
 
-    let base_scale = overlay_font_scale(config);
+    let base_scale = overlay_font_scale(config, style);
     let text_scale = base_scale * style.value_scale;
     let text_color = rgba(245, 245, 250, 255);
 

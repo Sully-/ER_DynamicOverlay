@@ -69,9 +69,10 @@ pub fn render_boss_panel(
     hud_anchor: Option<HudBounds>,
     border_radius: f32,
 ) {
-    let text_scale = overlay_font_scale(config);
+    let text_scale = overlay_font_scale(config, style);
+    let scale = style.effective_scale(config);
     let viewport = ui.io().display_size;
-    let geometry = boss_panel_geometry(config, state, hud_anchor, viewport);
+    let geometry = boss_panel_geometry(config, state, hud_anchor, viewport, scale);
 
     let mut window = ui
         .window("##er_boss_panel")
@@ -154,7 +155,7 @@ pub fn render_boss_panel(
                 });
         }
 
-        draw_window_border(ui, style, border_radius * config.scale, config.scale);
+        draw_window_border(ui, style, border_radius * scale, scale);
     });
 }
 
@@ -236,8 +237,9 @@ fn boss_panel_geometry(
     state: &BossPanelState,
     hud_anchor: Option<HudBounds>,
     viewport: [f32; 2],
+    scale: f32,
 ) -> BossPanelGeometry {
-    let default_geom = default_boss_panel_geometry(viewport, hud_anchor, config);
+    let default_geom = default_boss_panel_geometry(viewport, hud_anchor, scale);
 
     if let Some(pos) = state.pos {
         return BossPanelGeometry {
@@ -261,7 +263,7 @@ fn boss_panel_geometry(
             window_height: size[1].max(80.0),
         };
         if let Some(hud) = hud_anchor {
-            geom = adjust_boss_panel_below_hud(geom, hud, GAP_BELOW_HUD * config.scale);
+            geom = adjust_boss_panel_below_hud(geom, hud, GAP_BELOW_HUD * scale);
         }
         return geom;
     }
@@ -272,7 +274,7 @@ fn boss_panel_geometry(
 fn default_boss_panel_geometry(
     viewport: [f32; 2],
     hud_anchor: Option<HudBounds>,
-    config: &OverlayConfig,
+    scale: f32,
 ) -> BossPanelGeometry {
     let PanelRect { pos, size, pivot } = resolve_panel_rect(viewport, DEFAULT_PANEL_LAYOUT);
     let mut geom = BossPanelGeometry {
@@ -282,7 +284,7 @@ fn default_boss_panel_geometry(
         window_height: size[1].max(80.0),
     };
     if let Some(hud) = hud_anchor {
-        geom = adjust_boss_panel_below_hud(geom, hud, GAP_BELOW_HUD * config.scale);
+        geom = adjust_boss_panel_below_hud(geom, hud, GAP_BELOW_HUD * scale);
     }
     geom
 }

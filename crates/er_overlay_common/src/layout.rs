@@ -84,6 +84,12 @@ pub struct LayoutStyle {
     /// Draw the outer ImGui window border around the HUD and boss panel.
     #[serde(default = "default_window_border")]
     pub window_border: bool,
+    /// Base font size in px. When absent, falls back to `er_overlay.toml` `text_size`.
+    #[serde(default)]
+    pub text_size: Option<f32>,
+    /// HUD / typography scale. When absent, falls back to `er_overlay.toml` `scale`.
+    #[serde(default)]
+    pub scale: Option<f32>,
     #[serde(default = "default_label_scale")]
     pub label_scale: f32,
     #[serde(default = "default_value_scale")]
@@ -126,6 +132,8 @@ impl Default for LayoutStyle {
             tile_bg: default_tile_bg(),
             window_bg: default_window_bg(),
             window_border: default_window_border(),
+            text_size: None,
+            scale: None,
             label_scale: default_label_scale(),
             value_scale: default_value_scale(),
         }
@@ -133,6 +141,16 @@ impl Default for LayoutStyle {
 }
 
 impl LayoutStyle {
+    /// Layout `text_size`, or `er_overlay.toml` when the layout omits it.
+    pub fn effective_text_size(&self, config: &crate::OverlayConfig) -> f32 {
+        self.text_size.unwrap_or(config.text_size)
+    }
+
+    /// Layout `scale`, or `er_overlay.toml` when the layout omits it.
+    pub fn effective_scale(&self, config: &crate::OverlayConfig) -> f32 {
+        self.scale.unwrap_or(config.scale)
+    }
+
     /// ImGui `[r, g, b, a]` window background.
     pub fn window_bg_rgba_f32(&self) -> [f32; 4] {
         [
@@ -593,6 +611,16 @@ impl LayoutConfig {
         }
         if self.grid.window_padding < 0.0 {
             bail!("grid.window_padding must be >= 0");
+        }
+        if let Some(text_size) = self.style.text_size {
+            if text_size <= 0.0 || text_size > 72.0 {
+                bail!("style.text_size must be in (0, 72], got {text_size}");
+            }
+        }
+        if let Some(scale) = self.style.scale {
+            if scale <= 0.0 || scale > 4.0 {
+                bail!("style.scale must be in (0, 4], got {scale}");
+            }
         }
 
         if !self.sections.is_empty() && !self.tiles.is_empty() {
@@ -1227,5 +1255,32 @@ window_bg = [0, 0, 0, 0]
 "#;
         let layout: LayoutConfig = toml::from_str(raw).unwrap();
         assert!(!layout.style.has_window_background());
+    }
+
+    #[test]
+    fn text_size_and_scale_fall_back_to_overlay_config() {
+        let config = crate::OverlayConfig {
+            text_size: 22.0,
+            scale: 1.5,
+            ..crate::OverlayConfig::default()
+        };
+        let missing = LayoutStyle::default();
+        assert_eq!(missing.effective_text_size(&config), 22.0);
+        assert_eq!(missing.effective_scale(&config), 1.5);
+
+        let raw = r#"
+[style]
+text_size = 14
+scale = 0.8
+
+[[tile]]
+kind = "label"
+label = "x"
+col = 0
+row = 0
+"#;
+        let layout: LayoutConfig = toml::from_str(raw).unwrap();
+        assert_eq!(layout.style.effective_text_size(&config), 14.0);
+        assert_eq!(layout.style.effective_scale(&config), 0.8);
     }
 }

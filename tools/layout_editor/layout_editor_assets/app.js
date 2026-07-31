@@ -25,9 +25,15 @@ const DEFAULT_STYLE = {
   tile_bg: [12, 12, 18, 180],
   window_bg: [12, 12, 18, 166],
   window_border: true,
+  text_size: 18,
+  scale: 1,
   label_scale: 0.65,
   value_scale: 1.15,
 };
+
+/** Fallback from sibling `er_overlay.toml` when a layout omits text_size / scale. */
+let overlayFallback = { text_size: 18, scale: 1 };
+let layoutImported = false;
 
 /** Dev: tools/layout_editor/ → ../../assets/icons/; release zip root → assets/icons/ */
 const ICON_BASE = (() => {
@@ -53,16 +59,10 @@ const PREVIEW_METRICS = {
 
 const OVERLAY_COUNTER_SCALE = 0.85;
 const PREVIEW_ITEM_COUNT = "3";
-/** Reference counter width — keeps font size identical for "7/8", "12/20", "3", etc. */
-const COUNTER_FIT_TEMPLATE = "99/99";
-const TILE_RENDER_VERSION = 2;
+const TILE_RENDER_VERSION = 8;
 
-const OVERLAY_CONFIG_URL = (() => {
-  const pageDir = new URL(".", location.href);
-  const path = decodeURIComponent(pageDir.pathname).replace(/\\/g, "/").toLowerCase();
-  const rel = path.includes("/tools/layout_editor/") ? "../../er_overlay.toml" : "er_overlay.toml";
-  return new URL(rel, pageDir).href;
-})();
+/** Prefer `er_overlay.toml` next to the HTML (release / local-test root). */
+const OVERLAY_CONFIG_URL = new URL("er_overlay.toml", new URL(".", location.href)).href;
 
 const SECTION_NAMES = ["minimalist", "extended"];
 
@@ -109,8 +109,11 @@ function sectionGridOnImport(name, found, tiles) {
 function createDefaultState() {
   return {
     grid: { columns: 8, unit_size: 64, gap: 4, border_radius: 6, window_padding: 8 },
-    style: { ...DEFAULT_STYLE },
-    overlay: { text_size: 18, scale: 1 },
+    style: {
+      ...DEFAULT_STYLE,
+      text_size: overlayFallback.text_size,
+      scale: overlayFallback.scale,
+    },
     default_section: "minimalist",
     sections: SECTION_NAMES.map((name) => ({ name, tiles: [], ...defaultSectionGrid(name) })),
     activeSection: 0,
@@ -195,8 +198,8 @@ function tileContentKey(tile, gm) {
     gm.gap,
     gm.preview,
     state.grid.border_radius,
-    state.overlay.text_size,
-    state.overlay.scale,
+    state.style.text_size,
+    state.style.scale,
     state.style.label_scale,
     state.style.value_scale,
     TILE_RENDER_VERSION,
@@ -341,10 +344,6 @@ const els = {
   propPbSource: $("#prop-pb-source"),
   propPbMode: $("#prop-pb-mode"),
   propKey: $("#prop-key"),
-  propCol: $("#prop-col"),
-  propRow: $("#prop-row"),
-  propW: $("#prop-w"),
-  propH: $("#prop-h"),
   propShowMax: $("#prop-show-max"),
   propMaxMode: $("#prop-max-mode"),
   propMaxValue: $("#prop-max-value"),
@@ -474,12 +473,17 @@ function parseOverlayToml(text) {
 async function loadOverlayConfig() {
   try {
     const resp = await fetch(OVERLAY_CONFIG_URL);
-    if (!resp.ok) return;
+    if (!resp.ok) return; // keep hardcoded defaults
     const parsed = parseOverlayToml(await resp.text());
-    if (parsed.text_size != null) state.overlay.text_size = Number(parsed.text_size) || 18;
-    if (parsed.scale != null) state.overlay.scale = Number(parsed.scale) || 1;
+    if (parsed.text_size != null) overlayFallback.text_size = Number(parsed.text_size) || 18;
+    if (parsed.scale != null) overlayFallback.scale = Number(parsed.scale) || 1;
+    // Apply as editor defaults only before a layout file has been imported.
+    if (!layoutImported) {
+      state.style.text_size = overlayFallback.text_size;
+      state.style.scale = overlayFallback.scale;
+    }
   } catch {
-    /* file:// or missing config — keep defaults */
+    /* file:// CORS / missing sibling config — keep defaults */
   }
 }
 
@@ -497,6 +501,8 @@ function init() {
   catalog = Array.isArray(window.LAYOUT_CATALOG) ? window.LAYOUT_CATALOG : [];
   catalogByKey = new Map(catalog.map((e) => [e.key, e]));
   els.catalogCount.textContent = catalog.length;
+  const buildEl = document.getElementById("render-build");
+  if (buildEl) buildEl.textContent = `r${TILE_RENDER_VERSION}`;
 
   window.onLocaleChange = () => {
     rebuildLocalizedPalette();
@@ -631,12 +637,12 @@ function applyLivePreview() {
   for (const tile of canvas.querySelectorAll(".tile")) {
     tile.style.background = tileBg;
     if (tile.classList.contains("tile--complete")) {
-      tile.style.borderColor = borderComp;
+      tile.style.setProperty("--tile-stroke", borderComp);
     } else if (
       !tile.classList.contains("selected") &&
       !tile.classList.contains("overlap")
     ) {
-      tile.style.borderColor = borderDef;
+      tile.style.setProperty("--tile-stroke", borderDef);
     }
   }
 }
@@ -646,31 +652,59 @@ function applyThemeFromState() {
 }
 
 function overlayTextSize() {
-  return Math.max(12, Math.min(48, Number(state.overlay?.text_size) || 18));
+  return Math.max(12, Math.min(48, Number(state.style?.text_size) || overlayFallback.text_size || 18));
 }
 
 function overlayPreviewScale() {
-  return Math.max(0.25, Math.min(4, Number(state.overlay?.scale) || 1));
+  return Math.max(0.25, Math.min(4, Number(state.style?.scale) || overlayFallback.scale || 1));
 }
 
-let _textProbe = null;
+let _measureCtx = null;
+/** CSS font-size / ImGui FontSize so Segoe glyphs match stb ScaleForPixelHeight. */
+let _imguiToCssFont = null;
+
+function measureCtx() {
+  if (_measureCtx) return _measureCtx;
+  const c = document.createElement("canvas");
+  _measureCtx = c.getContext("2d");
+  return _measureCtx;
+}
+
+function segoeFont(px) {
+  return `${px}px "Segoe UI", system-ui, sans-serif`;
+}
+
+/**
+ * ImGui `size_pixels` forces (ascent−descent) = FontSize (stb ScaleForPixelHeight).
+ * CSS `font-size` sets the em square. Segoe's hhea span is ~1.33×em, so the same
+ * numeric size draws ~33% larger in the browser than in the overlay — fix by
+ * shrinking CSS font-size so glyph scale matches ImGui.
+ */
+function imguiToCssFontFactor() {
+  if (_imguiToCssFont != null) return _imguiToCssFont;
+  const ref = 100;
+  const ctx = measureCtx();
+  ctx.font = segoeFont(ref);
+  const m = ctx.measureText("Hg");
+  const typo =
+    (m.fontBoundingBoxAscent || 0) + (m.fontBoundingBoxDescent || 0);
+  // Segoe UI hhea: 2724/2048 ≈ 0.7518 when metrics are unavailable.
+  _imguiToCssFont = typo > 0 ? ref / typo : 2048 / 2724;
+  return _imguiToCssFont;
+}
 
 function measureTextWidth(text, fontScale) {
-  const key = `${text}\0${fontScale}\0${overlayTextSize()}`;
+  const key = `${text}\0${fontScale}\0${overlayTextSize()}\0${imguiToCssFontFactor()}`;
   if (textWidthCache.has(key)) return textWidthCache.get(key);
-  if (!_textProbe) {
-    _textProbe = document.createElement("span");
-    _textProbe.className = "tile-text-probe";
-    document.body.appendChild(_textProbe);
-  }
-  _textProbe.style.fontSize = `${overlayFontPx(fontScale)}px`;
-  _textProbe.textContent = text;
-  const width = _textProbe.getBoundingClientRect().width;
+  const px = overlayCssFontPx(fontScale);
+  const ctx = measureCtx();
+  ctx.font = segoeFont(px);
+  const width = ctx.measureText(text || "").width;
   textWidthCache.set(key, width);
   return width;
 }
 
-/** Window font scale — TTF is already at text_size px; only overlay scale applies. */
+/** Window font scale — atlas is at text_size*scale; ratio ≈ 1 in-game. */
 function overlayBaseFontScale() {
   return Math.max(0.5, overlayPreviewScale());
 }
@@ -678,15 +712,25 @@ function overlayBaseFontScale() {
 function overlayFontScales() {
   const base = overlayBaseFontScale();
   return {
-    label: base * state.style.label_scale,
-    value: base * state.style.value_scale,
+    label: base * Number(state.style.label_scale ?? 0.65),
+    value: base * Number(state.style.value_scale ?? 1.15),
   };
 }
 
+/** ImGui FontSize at the given window font scale (layout / line height). */
 function overlayFontPx(fontScale) {
   return overlayTextSize() * fontScale;
 }
 
+/** CSS font-size that matches ImGui glyph scale for Segoe UI. */
+function overlayCssFontPx(fontScale) {
+  return overlayFontPx(fontScale) * imguiToCssFontFactor();
+}
+
+/**
+ * Line height matching ImGui `line_height_at_scale` (= FontSize after bake).
+ * Keep this on the ImGui size — not CSS fontBoundingBox (taller than FontSize).
+ */
 function overlayLineHeight(fontScale) {
   return overlayFontPx(fontScale);
 }
@@ -705,15 +749,44 @@ function maxTextWidth(pxW) {
   return Math.max(8, pxW - padX * 2);
 }
 
-function appendTileText(body, text, top, fontScale, className, maxW) {
+/** Absolute text line — same cursor math as tile_render.rs (no ellipsis). */
+function appendTileText(body, text, top, fontScale, className, maxW, pxW) {
   const el = document.createElement("div");
   el.className = `tile-layer ${className}`;
+  const textW = measureTextWidth(text, fontScale);
+  const usedW = Math.min(textW, maxW);
+  const lineH = overlayLineHeight(fontScale);
+  el.style.left = `${(pxW - usedW) * 0.5}px`;
   el.style.top = `${top}px`;
-  el.style.fontSize = `${overlayFontPx(fontScale)}px`;
-  el.style.maxWidth = `${maxW}px`;
+  el.style.transform = "none";
+  el.style.width = "auto";
+  el.style.height = `${lineH}px`;
+  el.style.lineHeight = `${lineH}px`;
+  el.style.maxWidth = "none";
+  el.style.overflow = "visible";
+  el.style.textOverflow = "clip";
+  el.style.whiteSpace = "nowrap";
+  el.style.fontSize = `${overlayCssFontPx(fontScale)}px`;
   el.textContent = text;
   body.appendChild(el);
-  return overlayLineHeight(fontScale);
+  return lineH;
+}
+
+/** Match tile_render.rs draw_metric_tile / draw_label_tile vertical layout. */
+function layoutTextTileBody(body, pxW, pxH, lines) {
+  body.classList.remove("tile-body--text");
+  body.style.paddingTop = "";
+  body.style.paddingBottom = "";
+  let blockH = 0;
+  const heights = lines.map((line) => overlayLineHeight(line.fontScale));
+  for (let i = 0; i < lines.length; i++) {
+    blockH += i === lines.length - 1 && lines.length > 1 ? heights[i] * 1.1 : heights[i];
+  }
+  let y = (pxH - blockH) * 0.5;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    y += appendTileText(body, line.text, y, line.fontScale, line.className, line.maxW, pxW);
+  }
 }
 
 function tileInsetPad(pxW, pxH) {
@@ -738,25 +811,23 @@ function overlayCounterScale() {
   return overlayFontScales().value * OVERLAY_COUNTER_SCALE;
 }
 
-function counterFontScaleForTile(pxW, pxH) {
-  const minDim = Math.min(pxW, pxH);
-  const maxW = Math.max(8, minDim * 0.45);
-  return fitFontScale(COUNTER_FIT_TEMPLATE, maxW, overlayCounterScale());
+function counterFontScaleForTile() {
+  // Follow `text_size` directly; the counter may overflow / overlap the icon on small tiles.
+  return overlayCounterScale();
 }
 
 function appendTileCountBottomRight(body, text, pxW, pxH) {
-  const minDim = Math.min(pxW, pxH);
   const pad = tileInsetPad(pxW, pxH);
-  const maxW = Math.max(8, minDim * 0.45);
-  const fitted = counterFontScaleForTile(pxW, pxH);
+  const fitted = counterFontScaleForTile();
   const el = document.createElement("div");
   el.className = "tile-layer tile-value tile-count";
   el.style.left = "auto";
   el.style.top = "auto";
   el.style.right = `${pad}px`;
   el.style.bottom = `${pad}px`;
-  el.style.width = `${maxW}px`;
-  el.style.fontSize = `${overlayFontPx(fitted)}px`;
+  el.style.width = "auto";
+  el.style.whiteSpace = "nowrap";
+  el.style.fontSize = `${overlayCssFontPx(fitted)}px`;
   el.style.transform = "none";
   el.style.textAlign = "right";
   el.textContent = text;
@@ -765,14 +836,13 @@ function appendTileCountBottomRight(body, text, pxW, pxH) {
 
 function appendTileLabelOverlay(body, text, pxW, pxH, fontScale) {
   const pad = tileInsetPad(pxW, pxH);
-  const maxW = Math.max(8, pxW - pad * 2);
-  const fitted = fitFontScale(text, maxW, fontScale);
   const el = document.createElement("div");
   el.className = "tile-layer tile-label tile-label--overlay";
-  el.style.left = `${pad}px`;
+  el.style.left = "0";
   el.style.top = `${pad}px`;
-  el.style.width = `${maxW}px`;
-  el.style.fontSize = `${overlayFontPx(fitted)}px`;
+  el.style.width = `${pxW}px`;
+  el.style.whiteSpace = "nowrap";
+  el.style.fontSize = `${overlayCssFontPx(fontScale)}px`;
   el.style.transform = "none";
   el.style.textAlign = "center";
   el.textContent = text;
@@ -849,13 +919,13 @@ function fillPaletteThumb(thumb, kind, data) {
     }
     const lbl = document.createElement("span");
     lbl.className = "palette-thumb-text";
-    lbl.style.fontSize = `${overlayFontPx(scales.label)}px`;
+    lbl.style.fontSize = `${overlayCssFontPx(scales.label)}px`;
     lbl.textContent = (m.label || m.id).slice(0, 8);
     thumb.appendChild(lbl);
     const val = document.createElement("span");
     val.className = "palette-thumb-value";
     const fitted = fitFontScale(preview.text, maxW, scales.value);
-    val.style.fontSize = `${overlayFontPx(fitted)}px`;
+    val.style.fontSize = `${overlayCssFontPx(fitted)}px`;
     val.textContent = preview.text;
     thumb.appendChild(val);
     return;
@@ -864,7 +934,7 @@ function fillPaletteThumb(thumb, kind, data) {
     const val = document.createElement("span");
     val.className = "palette-thumb-value";
     const fitted = fitFontScale(data.label || t("defaultTitle"), maxW, scales.value);
-    val.style.fontSize = `${overlayFontPx(fitted)}px`;
+    val.style.fontSize = `${overlayCssFontPx(fitted)}px`;
     val.textContent = data.label || t("defaultTitle");
     thumb.appendChild(val);
     return;
@@ -900,15 +970,18 @@ function fillIconTileWithCounter(body, pxW, pxH, { iconKey, counterText, labelTe
 
 function fillTileBody(body, tile, pxW, pxH) {
   body.innerHTML = "";
+  body.classList.remove("tile-body--text");
+  body.style.paddingTop = "";
+  body.style.paddingBottom = "";
   const scales = overlayFontScales();
   const maxW = maxTextWidth(pxW);
 
   if (tile.kind === "label") {
     if (!tile.label) return;
-    const labelText = tile.label;
-    const fitted = fitFontScale(labelText, maxW, scales.value);
-    const textH = overlayLineHeight(fitted);
-    appendTileText(body, labelText, (pxH - textH) * 0.5, fitted, "tile-value tile-value--solo", maxW);
+    const fitted = fitFontScale(tile.label, maxW, scales.value);
+    layoutTextTileBody(body, pxW, pxH, [
+      { text: tile.label, fontScale: fitted, className: "tile-value tile-value--solo", maxW },
+    ]);
     return;
   }
 
@@ -927,18 +1000,23 @@ function fillTileBody(body, tile, pxW, pxH) {
     }
 
     const hasLabel = !!tile.label?.trim();
-    const labelText = tile.label || "";
-    const labelScale = scales.label;
     const valueScale = fitFontScale(preview.text, maxW, scales.value);
-    const labelH = overlayLineHeight(labelScale);
-    const valueH = overlayLineHeight(valueScale);
-    const blockH = hasLabel ? labelH + valueH * 1.1 : valueH;
-    let y = (pxH - blockH) * 0.5;
-
+    const lines = [];
     if (hasLabel) {
-      y += appendTileText(body, labelText, y, labelScale, "tile-label", maxW);
+      lines.push({
+        text: tile.label,
+        fontScale: scales.label,
+        className: "tile-label",
+        maxW,
+      });
     }
-    appendTileText(body, preview.text, y, valueScale, "tile-value", maxW);
+    lines.push({
+      text: preview.text,
+      fontScale: valueScale,
+      className: "tile-value",
+      maxW,
+    });
+    layoutTextTileBody(body, pxW, pxH, lines);
     return { complete: preview.complete };
   }
 
@@ -1347,8 +1425,9 @@ function renderTileEl(tile, gm, overlap) {
   body.className = "tile-body";
   const meta = fillTileBody(body, tile, w, h);
   if (meta?.complete) el.classList.add("tile--complete");
-  el.style.borderColor = rgbaCss(
-    meta?.complete ? state.style.border_complete : state.style.border_default
+  el.style.setProperty(
+    "--tile-stroke",
+    rgbaCss(meta?.complete ? state.style.border_complete : state.style.border_default)
   );
   el.appendChild(body);
 
@@ -1466,10 +1545,6 @@ function renderProperties() {
   els.propPbSource.value = tile.pb_metric || PB_DEFAULT_SOURCE;
   els.propPbMode.value = tile.pb_mode || PB_DEFAULT_MODE;
   els.propKey.value = tile.key || "";
-  els.propCol.value = tile.col;
-  els.propRow.value = tile.row;
-  els.propW.value = tile.w;
-  els.propH.value = tile.h;
   els.propShowMax.checked = !!tile.show_max;
   const maxManual = tile.max_mode === "manual" || typeof tile.max === "number";
   els.propMaxMode.value = maxManual ? "manual" : "auto";
@@ -1490,8 +1565,8 @@ function syncConfigInputs() {
   els.cfgGap.value = state.grid.gap;
   els.cfgPadding.value = state.grid.window_padding;
   els.cfgDefaultSection.value = state.default_section;
-  if (els.cfgTextSize) els.cfgTextSize.value = state.overlay.text_size;
-  if (els.cfgOverlayScale) els.cfgOverlayScale.value = state.overlay.scale;
+  if (els.cfgTextSize) els.cfgTextSize.value = state.style.text_size;
+  if (els.cfgOverlayScale) els.cfgOverlayScale.value = state.style.scale;
   syncStylePickers();
   if (els.cfgWindowBorder) {
     els.cfgWindowBorder.checked = state.style.window_border !== false;
@@ -1611,10 +1686,6 @@ function applyPropChanges() {
     tile.track_equipped = els.propTrackEquipped.checked;
     tile.historic = els.propHistoric.checked;
   }
-  tile.col = Math.max(0, Number(els.propCol.value) || 0);
-  tile.row = Math.max(0, Number(els.propRow.value) || 0);
-  tile.w = Math.max(1, Number(els.propW.value) || 1);
-  tile.h = Math.max(1, Number(els.propH.value) || 1);
 
   const afterKey = tileContentKey(tile, gm);
   const overlaps = findOverlaps(activeSection().tiles);
@@ -1956,6 +2027,8 @@ function exportToml() {
   lines.push(`tile_bg = ${rgba(state.style.tile_bg)}`);
   lines.push(`window_bg = ${rgba(state.style.window_bg || DEFAULT_STYLE.window_bg)}`);
   lines.push(`window_border = ${state.style.window_border !== false}`);
+  lines.push(`text_size = ${state.style.text_size}`);
+  lines.push(`scale = ${state.style.scale}`);
   lines.push(`label_scale = ${state.style.label_scale}`);
   lines.push(`value_scale = ${state.style.value_scale}`);
   lines.push("");
@@ -2032,6 +2105,14 @@ function importToml(text) {
       if (!newState.style[key]) newState.style[key] = [...DEFAULT_STYLE[key]];
     }
     if (newState.style.window_border == null) newState.style.window_border = DEFAULT_STYLE.window_border;
+    // Retrocompat: layout without text_size/scale → er_overlay.toml fallback.
+    if (raw.style.text_size == null) newState.style.text_size = overlayFallback.text_size;
+    else newState.style.text_size = Number(raw.style.text_size) || overlayFallback.text_size;
+    if (raw.style.scale == null) newState.style.scale = overlayFallback.scale;
+    else newState.style.scale = Number(raw.style.scale) || overlayFallback.scale;
+  } else {
+    newState.style.text_size = overlayFallback.text_size;
+    newState.style.scale = overlayFallback.scale;
   }
   if (raw.default_section) {
     newState.default_section = raw.default_section;
@@ -2057,6 +2138,7 @@ function importToml(text) {
   }
 
   state = newState;
+  layoutImported = true;
   state.grid.columns = globalGridColumns();
   clearSelection();
   resetGridDom();
@@ -2133,10 +2215,6 @@ function bindEvents() {
     els.propPbSource,
     els.propPbMode,
     els.propKey,
-    els.propCol,
-    els.propRow,
-    els.propW,
-    els.propH,
     els.propShowMax,
     els.propMaxMode,
     els.propMaxValue,
@@ -2177,14 +2255,14 @@ function bindEvents() {
   });
   if (els.cfgTextSize) {
     els.cfgTextSize.addEventListener("change", () => {
-      state.overlay.text_size = Math.max(12, Math.min(48, Number(els.cfgTextSize.value) || 18));
+      state.style.text_size = Math.max(12, Math.min(48, Number(els.cfgTextSize.value) || 18));
       applyThemeFromState();
       render();
     });
   }
   if (els.cfgOverlayScale) {
     els.cfgOverlayScale.addEventListener("change", () => {
-      state.overlay.scale = Math.max(0.25, Math.min(4, Number(els.cfgOverlayScale.value) || 1));
+      state.style.scale = Math.max(0.25, Math.min(4, Number(els.cfgOverlayScale.value) || 1));
       applyThemeFromState();
       render();
     });

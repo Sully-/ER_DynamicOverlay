@@ -71,10 +71,11 @@ fn minimalist_hud_bounds(
     layout: &LayoutConfig,
     drag: &HudDragState,
 ) -> HudBounds {
+    let scale = layout.style.effective_scale(config);
     let idx = layout.section_index("minimalist").unwrap_or(0);
     let tiles = layout.tiles_for_section(idx);
-    let size = layout.grid_pixel_size_for(tiles, config.scale);
-    let placement = hud_window_placement(ui, config, drag);
+    let size = layout.grid_pixel_size_for(tiles, scale);
+    let placement = hud_window_placement(ui, config, drag, scale);
     let pivot = placement.pivot.unwrap_or([0.0, 0.0]);
     let pos = top_left_from_placement(placement.pos, pivot, size);
     HudBounds { pos, size }
@@ -89,15 +90,16 @@ fn render_overlay_layout(
     active_section_index: usize,
     drag: &mut HudDragState,
 ) {
+    let scale = layout.style.effective_scale(config);
     let (_index, tiles) = layout.resolve_section_tiles(
         active_section_index,
         config.default_layout_section.as_deref(),
     );
-    let [width, height] = layout.grid_pixel_size_for(tiles, config.scale);
-    let pad = layout.grid.window_padding * config.scale;
-    let margin = LayoutConfig::tile_grid_margin(config.scale);
+    let [width, height] = layout.grid_pixel_size_for(tiles, scale);
+    let pad = layout.grid.window_padding * scale;
+    let margin = LayoutConfig::tile_grid_margin(scale);
     drag.sync_anchor(config);
-    let placement = hud_window_placement(ui, config, drag);
+    let placement = hud_window_placement(ui, config, drag, scale);
 
     let mut window = ui
         .window("##er_overlay_hud")
@@ -123,7 +125,7 @@ fn render_overlay_layout(
                     layout.style.window_bg_rgba_f32(),
                 )
             });
-            ui.set_window_font_scale(overlay_font_scale(config));
+            ui.set_window_font_scale(overlay_font_scale(config, &layout.style));
             let cursor = ui.cursor_screen_pos();
             let origin = [cursor[0] + margin, cursor[1] + margin];
             let inner_w = (width - pad * 2.0).max(1.0);
@@ -137,8 +139,8 @@ fn render_overlay_layout(
             draw_window_border(
                 ui,
                 &layout.style,
-                layout.grid.border_radius * config.scale,
-                config.scale,
+                layout.grid.border_radius * scale,
+                scale,
             );
         });
 }

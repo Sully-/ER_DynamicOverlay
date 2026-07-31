@@ -14,6 +14,8 @@ border_complete = [60, 200, 90, 255]
 tile_bg = [12, 12, 18, 180]
 window_bg = [12, 12, 18, 166]
 window_border = true
+text_size = 18
+scale = 1.0
 label_scale = 0.65
 value_scale = 1.15
 

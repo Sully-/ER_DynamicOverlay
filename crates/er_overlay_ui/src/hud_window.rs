@@ -91,6 +91,7 @@ pub fn hud_window_placement(
     ui: &Ui,
     config: &OverlayConfig,
     drag: &HudDragState,
+    scale: f32,
 ) -> HudWindowPlacement {
     if let Some(pos) = drag.pos {
         return HudWindowPlacement {
@@ -103,8 +104,8 @@ pub fn hud_window_placement(
     let display = ui.io().display_size;
     let w = display[0];
     let h = display[1];
-    let ox = config.offset_x * config.scale;
-    let oy = config.offset_y * config.scale;
+    let ox = config.offset_x * scale;
+    let oy = config.offset_y * scale;
     let (pos, pivot) = match config.anchor {
         Anchor::TopLeft => ([ox, oy], [0.0, 0.0]),
         Anchor::TopRight => ([w - ox, oy], [1.0, 0.0]),

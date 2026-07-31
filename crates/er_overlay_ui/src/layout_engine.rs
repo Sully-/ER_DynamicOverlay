@@ -20,7 +20,7 @@ pub fn render_layout_dashboard(
     atlas: Option<&IconAtlas>,
     window_origin: [f32; 2],
 ) {
-    let scale = config.scale;
+    let scale = layout.style.effective_scale(config);
     let radius = layout.grid.border_radius * scale;
 
     let mut sorted: Vec<&TileDef> = tiles.iter().collect();

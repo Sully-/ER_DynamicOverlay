@@ -90,7 +90,7 @@ Tout ce qui est affiché est piloté par un **fichier de layout** — une grille
 
 ### 4. Ajustez l'apparence et le comportement
 
-Ouvrez `er_overlay.toml` dans n'importe quel éditeur de texte (rechargé à chaud ~toutes les 2 s). Les options les plus courantes sont `anchor` / `offset_x` / `offset_y` (position), `scale` / `text_size` / `icon_size` (taille) et les bascules de panneaux. Voir [Configuration](#configuration-er_overlaytoml) pour la référence complète.
+Ouvrez `er_overlay.toml` dans n'importe quel éditeur de texte (rechargé à chaud ~toutes les 2 s). Les options les plus courantes sont `anchor` / `offset_x` / `offset_y` (position), `icon_size` (taille d'icône) et les bascules de panneaux. `scale` / `text_size` restent en fallback si le layout ne les définit pas. Voir [Configuration](#configuration-er_overlaytoml) pour la référence complète.
 
 ## Avertissements
 
@@ -157,8 +157,8 @@ Lu à côté de la DLL et **rechargé à chaud toutes les 2 secondes** — vous 
 | `default_layout_section` | string | — | Section affichée au démarrage (remplace le `default_section` du layout). |
 | `anchor` | enum | `top-right` | Coin d'ancrage : `top-left`, `top-right`, `bottom-left`, `bottom-right`. |
 | `offset_x`, `offset_y` | px | `16`, `16` | Décalage depuis le coin d'ancrage. |
-| `scale` | 0–4 | `1.0` | Échelle globale de l'overlay. |
-| `text_size` | px (≤72) | `18` | Taille de police de base. |
+| `scale` | 0–4 | `1.0` | Fallback d'échelle HUD si le layout n'en définit pas (`[style].scale`). |
+| `text_size` | px (≤72) | `18` | Fallback de taille de police si le layout n'en définit pas (`[style].text_size`). |
 | `icon_size` | px (≤128) | `24` | Taille d'icône de référence. |
 | `background_opacity` | 0–1 | `0.65` | Opacité du fond de fenêtre. |
 | `gray_tint` | 0–1 | `0.40` | Teinte des objets **non possédés** (plus bas = plus sombre). |
@@ -431,6 +431,8 @@ window_padding = 8
 border_default  = [100, 100, 110, 200]  # RGBA
 border_complete = [60, 200, 90, 255]     # bordure quand une métrique est "complete" / un objet est équipé
 tile_bg         = [12, 12, 18, 180]
+text_size = 18       # taille de police de base (sinon er_overlay.toml)
+scale = 1.0          # échelle HUD (sinon er_overlay.toml)
 label_scale = 0.65   # taille du label relative au texte
 value_scale = 1.15   # taille de la valeur relative au texte
 

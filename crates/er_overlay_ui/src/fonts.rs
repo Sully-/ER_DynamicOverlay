@@ -2,6 +2,7 @@ use std::sync::atomic::{AtomicU32, Ordering};
 
 use imgui::{Context, FontSource, Ui};
 
+use er_overlay_common::layout::LayoutStyle;
 use er_overlay_common::OverlayConfig;
 
 /// Bounds for the rasterized atlas size. The atlas is baked once at
@@ -30,8 +31,10 @@ fn atlas_font_px() -> Option<f32> {
 }
 
 /// On-screen base font size we want to render at (before per-tile sub-scales).
-fn desired_font_px(config: &OverlayConfig) -> f32 {
-    config.text_size * config.scale.max(0.5)
+///
+/// Prefers layout `[style].text_size` / `scale`, falling back to `er_overlay.toml`.
+fn desired_font_px(config: &OverlayConfig, style: &LayoutStyle) -> f32 {
+    style.effective_text_size(config) * style.effective_scale(config).max(0.5)
 }
 
 /// Window font-scale multiplier applied on top of the baked atlas.
@@ -41,8 +44,8 @@ fn desired_font_px(config: &OverlayConfig) -> f32 {
 /// (crisp) instead of upscaling a small bitmap. If `scale` changes at runtime — the
 /// atlas can't be rebuilt while injected — this ratio still resizes text correctly
 /// (only re-blurring if scaled beyond the baked size).
-pub fn overlay_font_scale(config: &OverlayConfig) -> f32 {
-    let desired = desired_font_px(config);
+pub fn overlay_font_scale(config: &OverlayConfig, style: &LayoutStyle) -> f32 {
+    let desired = desired_font_px(config, style);
     let atlas = atlas_font_px().unwrap_or_else(|| desired.clamp(MIN_ATLAS_PX, MAX_ATLAS_PX));
     desired / atlas
 }
@@ -71,7 +74,12 @@ pub fn centered_text_y(ui: &Ui, region_y: f32, region_h: f32, font_scale: f32) -
 /// configured scale rather than being upscaled from a small bitmap by the window font
 /// scale. hudhook bakes this into the GPU font texture once, so the scale in effect at
 /// startup is the one that renders sharpest.
-pub fn setup_overlay_fonts(ctx: &mut Context, storage: &mut Vec<u8>, config: &OverlayConfig) {
+pub fn setup_overlay_fonts(
+    ctx: &mut Context,
+    storage: &mut Vec<u8>,
+    config: &OverlayConfig,
+    style: &LayoutStyle,
+) {
     storage.clear();
 
     #[cfg(windows)]
@@ -84,7 +92,7 @@ pub fn setup_overlay_fonts(ctx: &mut Context, storage: &mut Vec<u8>, config: &Ov
     let fonts = ctx.fonts();
     fonts.clear();
 
-    let size = desired_font_px(config).clamp(MIN_ATLAS_PX, MAX_ATLAS_PX);
+    let size = desired_font_px(config, style).clamp(MIN_ATLAS_PX, MAX_ATLAS_PX);
     if storage.is_empty() {
         fonts.add_font(&[FontSource::DefaultFontData { config: None }]);
         // ImGui's built-in proggy font is a fixed 13px bitmap; record its true size so
@@ -98,6 +106,4 @@ pub fn setup_overlay_fonts(ctx: &mut Context, storage: &mut Vec<u8>, config: &Ov
         }]);
         record_atlas_font_px(size);
     }
-
-    fonts.build_rgba32_texture();
 }

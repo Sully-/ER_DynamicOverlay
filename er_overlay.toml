@@ -15,6 +15,7 @@ offset_x = 16.0
 offset_y = 16.0
 scale = 1.0
 text_size = 18.0
+# Fallback only when the active layout omits [style].scale / [style].text_size.
 icon_size = 24.0
 
 # ── Appearance ───────────────────────────────────────────────────────
