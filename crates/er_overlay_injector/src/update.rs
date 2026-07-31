@@ -162,7 +162,11 @@ fn releases_newer_than(releases: &[Release], current: &semver::Version) -> Vec<V
     newer
 }
 
-fn print_changelog(current: &semver::Version, latest: &semver::Version, newer: &[VersionedRelease]) {
+fn print_changelog(
+    current: &semver::Version,
+    latest: &semver::Version,
+    newer: &[VersionedRelease],
+) {
     println!();
     if newer.len() == 1 {
         println!("What's new in v{latest}:");
@@ -205,9 +209,7 @@ fn print_changelog(current: &semver::Version, latest: &semver::Version, newer: &
     if truncated {
         println!("  …");
     }
-    println!(
-        "  Full changelog: https://github.com/{REPO}/compare/v{current}...v{latest}"
-    );
+    println!("  Full changelog: https://github.com/{REPO}/compare/v{current}...v{latest}");
 }
 
 fn changelog_lines(body: &str) -> Vec<String> {

@@ -136,12 +136,7 @@ fn render_overlay_layout(
             if ui.is_window_hovered() && ui.is_mouse_dragging(MouseButton::Left) {
                 drag.capture_pos(ui);
             }
-            draw_window_border(
-                ui,
-                &layout.style,
-                layout.grid.border_radius * scale,
-                scale,
-            );
+            draw_window_border(ui, &layout.style, layout.grid.border_radius * scale, scale);
         });
 }
 
