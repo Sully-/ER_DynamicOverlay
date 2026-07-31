@@ -1,9 +1,10 @@
 //! Self-update: check the latest GitHub release, prompt, download and apply.
 //!
 //! The injector embeds its own version (`CARGO_PKG_VERSION`). On startup it asks
-//! GitHub for the latest release, and if a newer tag exists it offers to download
-//! the release zip, replace the installed files and relaunch. User config files
-//! are never overwritten: the release copy is dropped next to them as `<name>.new`
+//! GitHub for recent releases, and if a newer tag exists it prints the changelog
+//! for every release since the installed version, then offers to download the
+//! latest zip, replace the installed files and relaunch. User config files are
+//! never overwritten: the release copy is dropped next to them as `<name>.new`
 //! and any newly introduced keys are printed to the console.
 
 use std::fs;
@@ -20,6 +21,10 @@ const USER_AGENT: &str = concat!("er_overlay_injector/", env!("CARGO_PKG_VERSION
 const API_TIMEOUT: Duration = Duration::from_secs(10);
 const DOWNLOAD_TIMEOUT: Duration = Duration::from_secs(300);
 const JSON_LIMIT: u64 = 16 * 1024 * 1024;
+/// How many recent releases to fetch when building the changelog window.
+const RELEASES_PER_PAGE: u32 = 30;
+/// Soft cap on changelog lines printed to the console before truncation.
+const CHANGELOG_MAX_LINES: usize = 40;
 
 /// Config files owned by the user: never overwritten on update.
 const PRESERVED_CONFIGS: &[&str] = &["er_overlay.toml", "layouts/dashboard.toml"];
@@ -34,17 +39,28 @@ pub enum UpdateOutcome {
     Updated,
 }
 
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize)]
 struct Release {
     tag_name: String,
+    #[serde(default)]
+    body: String,
+    #[serde(default)]
+    draft: bool,
+    #[serde(default)]
+    prerelease: bool,
     #[serde(default)]
     assets: Vec<Asset>,
 }
 
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize)]
 struct Asset {
     name: String,
     browser_download_url: String,
+}
+
+struct VersionedRelease {
+    version: semver::Version,
+    release: Release,
 }
 
 /// Query GitHub, and if a newer release exists, prompt then download/apply it.
@@ -52,23 +68,32 @@ pub fn check_and_maybe_update(current_version: &str) -> Result<UpdateOutcome> {
     let current = parse_version(current_version)?;
 
     println!("Checking for updates (current version: v{current}) ...");
-    let release = fetch_latest_release().context("querying GitHub releases")?;
-    let latest = parse_version(&release.tag_name)?;
+    let releases = fetch_releases().context("querying GitHub releases")?;
+    let newer = releases_newer_than(&releases, &current);
 
-    if latest <= current {
+    let Some(latest) = newer.last() else {
         println!("ER Overlay is up to date (v{current}).");
         info!("Overlay is up to date (v{current})");
         return Ok(UpdateOutcome::UpToDate);
-    }
+    };
+    let latest_ver = latest.version.clone();
 
-    let asset = release
+    let asset = latest
+        .release
         .assets
         .iter()
         .find(|a| a.name.starts_with("er-overlay-") && a.name.ends_with(".zip"))
-        .ok_or_else(|| anyhow!("release {} has no er-overlay-*.zip asset", release.tag_name))?;
+        .ok_or_else(|| {
+            anyhow!(
+                "release {} has no er-overlay-*.zip asset",
+                latest.release.tag_name
+            )
+        })?;
 
     println!();
-    println!("A new version of ER Overlay is available: v{latest} (installed: v{current}).");
+    println!("A new version of ER Overlay is available: v{latest_ver} (installed: v{current}).");
+    print_changelog(&current, &latest_ver, &newer);
+    println!();
     if !prompt_yes_no("Download and install it now? [Y/n] ")? {
         println!("Skipping update; keeping v{current} for this run.");
         info!("Update declined by user");
@@ -88,7 +113,7 @@ pub fn check_and_maybe_update(current_version: &str) -> Result<UpdateOutcome> {
     apply_update(&extracted, &install_dir).context("applying update")?;
 
     let _ = fs::remove_dir_all(&tmp);
-    println!("Update to v{latest} complete.");
+    println!("Update to v{latest_ver} complete.");
     Ok(UpdateOutcome::Updated)
 }
 
@@ -97,8 +122,8 @@ fn parse_version(s: &str) -> Result<semver::Version> {
     semver::Version::parse(trimmed).with_context(|| format!("invalid version string: {s:?}"))
 }
 
-fn fetch_latest_release() -> Result<Release> {
-    let url = format!("https://api.github.com/repos/{REPO}/releases/latest");
+fn fetch_releases() -> Result<Vec<Release>> {
+    let url = format!("https://api.github.com/repos/{REPO}/releases?per_page={RELEASES_PER_PAGE}");
     let agent: ureq::Agent = ureq::Agent::config_builder()
         .timeout_global(Some(API_TIMEOUT))
         .build()
@@ -116,8 +141,100 @@ fn fetch_latest_release() -> Result<Release> {
         .limit(JSON_LIMIT)
         .read_to_string()?;
 
-    let release: Release = serde_json::from_str(&text).context("parsing release JSON")?;
-    Ok(release)
+    let releases: Vec<Release> = serde_json::from_str(&text).context("parsing release JSON")?;
+    Ok(releases)
+}
+
+/// Stable releases strictly newer than `current`, oldest → newest.
+fn releases_newer_than(releases: &[Release], current: &semver::Version) -> Vec<VersionedRelease> {
+    let mut newer: Vec<VersionedRelease> = releases
+        .iter()
+        .filter(|r| !r.draft && !r.prerelease)
+        .filter_map(|r| {
+            let version = parse_version(&r.tag_name).ok()?;
+            (version > *current).then(|| VersionedRelease {
+                version,
+                release: r.clone(),
+            })
+        })
+        .collect();
+    newer.sort_by(|a, b| a.version.cmp(&b.version));
+    newer
+}
+
+fn print_changelog(current: &semver::Version, latest: &semver::Version, newer: &[VersionedRelease]) {
+    println!();
+    if newer.len() == 1 {
+        println!("What's new in v{latest}:");
+    } else {
+        println!("What's new since v{current}:");
+    }
+
+    let mut lines_left = CHANGELOG_MAX_LINES;
+    let mut truncated = false;
+
+    for entry in newer {
+        if lines_left == 0 {
+            truncated = true;
+            break;
+        }
+
+        if newer.len() > 1 {
+            println!();
+            println!("--- v{} ---", entry.version);
+            lines_left = lines_left.saturating_sub(2);
+        }
+
+        let notes = changelog_lines(&entry.release.body);
+        if notes.is_empty() {
+            println!("  (no release notes)");
+            lines_left = lines_left.saturating_sub(1);
+            continue;
+        }
+
+        for line in notes {
+            if lines_left == 0 {
+                truncated = true;
+                break;
+            }
+            println!("  {line}");
+            lines_left -= 1;
+        }
+    }
+
+    if truncated {
+        println!("  …");
+    }
+    println!(
+        "  Full changelog: https://github.com/{REPO}/compare/v{current}...v{latest}"
+    );
+}
+
+fn changelog_lines(body: &str) -> Vec<String> {
+    body.lines()
+        .map(str::trim_end)
+        .filter(|line| !line.trim().is_empty())
+        // Drop noisy auto-generated footers / compare links GitHub often appends.
+        .filter(|line| !line.contains("Full Changelog"))
+        .map(|line| {
+            let trimmed = line.trim_start();
+            // Light markdown cleanup for console readability.
+            let cleaned = trimmed
+                .trim_start_matches('#')
+                .trim_start()
+                .trim_start_matches(['*', '-'])
+                .trim_start();
+            if cleaned.is_empty() {
+                trimmed.to_string()
+            } else if trimmed.starts_with('#') {
+                cleaned.to_string()
+            } else if trimmed.starts_with(['*', '-']) {
+                format!("- {cleaned}")
+            } else {
+                trimmed.to_string()
+            }
+        })
+        .collect()
 }
 
 fn download(url: &str, dir: &Path) -> Result<PathBuf> {
