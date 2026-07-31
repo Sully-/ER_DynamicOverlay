@@ -340,7 +340,7 @@ mod tests {
 
     #[test]
     fn default_panel_matches_boss_panel_layout_on_1080p() {
-        let geom = default_checks_panel_geometry([1920.0, 1080.0], None, &OverlayConfig::default());
+        let geom = default_checks_panel_geometry([1920.0, 1080.0], None, 1.0);
         assert_eq!(geom.pivot, [1.0, 0.0]);
         assert!((geom.pos[0] - 1915.0).abs() < 0.01);
         assert!((geom.width - 480.0).abs() < 0.01);
@@ -352,8 +352,7 @@ mod tests {
             pos: [1412.0, 16.0],
             size: [492.0, 84.0],
         };
-        let geom =
-            default_checks_panel_geometry([1920.0, 1080.0], Some(hud), &OverlayConfig::default());
+        let geom = default_checks_panel_geometry([1920.0, 1080.0], Some(hud), 1.0);
         assert!((panel_top_y(&geom) - 108.0).abs() < 0.01);
     }
 }
