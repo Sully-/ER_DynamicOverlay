@@ -101,4 +101,4 @@ log_enabled = false
 enabled = false
 budget_metric = "deaths"
 budget_max = 0
-start_flag = 101
+start_flag = 100
