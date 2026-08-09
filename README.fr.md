@@ -528,7 +528,6 @@ Une ligne `[[good]]` par objet suivi. Champs :
 | `category` | — | `goods` (défaut) ou `accessory` (talismans). Évite les collisions de `param_id` entre catégories. |
 | `count` | — | `true` = consommable empilable → affiche la quantité en inventaire. |
 | `max` | — | Limite d'affichage pour un compteur (par exemple scadutree → `N/50`). |
-| `pickup_flag` | — | Event flag de possession (fallback quand l'objet n'est plus dans l'inventaire). |
 | `historic_lot_table` / `historic_lot_id` / `historic_vanilla_flag` | — | Métadonnées de lot vanilla utilisées par le mode de suivi `historic` (voir [Modes de suivi d'un objet](#modes-de-suivi-dun-objet)). Permet à une tuile de résoudre un flag d'acquisition — sensible à la seed avec le randomizer. |
 | `file` | — | Nom PNG personnalisé. |
 | `icon_id` | — | Utilisé uniquement par les scripts de récupération d'icônes. |

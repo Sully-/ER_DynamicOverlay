@@ -34,14 +34,13 @@ def parse_rune_keys(text: str) -> set[str]:
 
 def palette_category(
     key: str,
-    pickup_flag: bool,
     countable: bool,
     rune_keys: set[str],
     key_item_keys: set[str],
 ) -> str:
     if key in key_item_keys:
         return "key_items"
-    if key in rune_keys or key == "great_rune_generic" or pickup_flag:
+    if key in rune_keys or key == "great_rune_generic":
         return "runes"
     if countable:
         return "consumables"
@@ -64,16 +63,13 @@ def parse_goods(path: Path) -> list[dict]:
         if key in seen:
             continue
         seen.add(key)
-        pickup_flag = re.search(r"^pickup_flag\s*=", block, re.M) is not None
         countable = re.search(r"^count\s*=\s*true", block, re.M) is not None
         items.append(
             {
                 "key": key,
                 "name": name_m.group(1) if name_m else key,
                 "iconKey": key,
-                "category": palette_category(
-                    key, pickup_flag, countable, rune_keys, key_item_keys
-                ),
+                "category": palette_category(key, countable, rune_keys, key_item_keys),
                 "countable": countable,
             }
         )

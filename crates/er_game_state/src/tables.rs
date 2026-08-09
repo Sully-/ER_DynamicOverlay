@@ -38,8 +38,6 @@ pub struct GoodEntry {
     pub file: String,
     /// Inventory category the item belongs to (goods vs accessory/talisman).
     pub category: ItemKind,
-    /// Optional event flag used to detect ownership (falls back to inventory presence).
-    pub pickup_flag: Option<u32>,
     /// Optional vanilla lot metadata used by layout-driven historic tracking.
     pub historic_lot: Option<LotRef>,
     /// Optional display cap for a counter (e.g. scadutree → "N/50").
@@ -55,7 +53,6 @@ struct ParsedGood {
     name: String,
     file: String,
     category: ItemKind,
-    pickup_flag: Option<u32>,
     historic_lot: Option<LotRef>,
     max: Option<u32>,
     countable: bool,
@@ -82,7 +79,6 @@ struct GoodRow {
     file: Option<String>,
     #[serde(default)]
     category: ItemKind,
-    pickup_flag: Option<u32>,
     #[serde(default)]
     historic_lot_table: Option<LotTable>,
     #[serde(default)]
@@ -119,7 +115,6 @@ static GOODS: LazyLock<Vec<ParsedGood>> = LazyLock::new(|| {
                 name: row.name,
                 file: row.file.unwrap_or_else(|| format!("{}.png", row.key)),
                 category: row.category,
-                pickup_flag: row.pickup_flag,
                 historic_lot,
                 max: row.max,
                 countable: row.count,
@@ -180,7 +175,6 @@ fn good_entry(g: &ParsedGood) -> GoodEntry {
         name: g.name.clone(),
         file: g.file.clone(),
         category: g.category,
-        pickup_flag: g.pickup_flag,
         historic_lot: g.historic_lot,
         max: g.max,
         countable: g.countable,
@@ -209,20 +203,13 @@ pub fn group_size(name: &str) -> u32 {
     group_members(name).len() as u32
 }
 
-/// Whether a good is owned: present in the inventory, or its pickup flag is set.
+/// Whether a good is currently present in the inventory.
 pub fn item_owned(
     source: &dyn GameStateSource,
     item_id: u32,
     category: ItemKind,
-    pickup_flag: Option<u32>,
 ) -> Option<bool> {
-    match source.has_item(item_id, category) {
-        Some(true) => Some(true),
-        has => match pickup_flag {
-            Some(flag) => source.get_flag(flag).or(has),
-            None => has,
-        },
-    }
+    source.has_item(item_id, category)
 }
 
 /// Whether a good is historically owned when the active layout asks for historic tracking.
@@ -231,10 +218,9 @@ pub fn item_owned_historic(
     key: &str,
     item_id: u32,
     category: ItemKind,
-    pickup_flag: Option<u32>,
     historic_lot: Option<LotRef>,
 ) -> Option<bool> {
-    let current = item_owned(source, item_id, category, pickup_flag);
+    let current = item_owned(source, item_id, category);
     if current == Some(true) {
         return current;
     }
@@ -254,7 +240,7 @@ pub fn group_progress(source: &dyn GameStateSource, name: &str) -> Option<(u32, 
     let total = members.len() as u32;
     let mut owned = 0u32;
     for m in &members {
-        match item_owned(source, m.item_id, m.category, m.pickup_flag) {
+        match item_owned(source, m.item_id, m.category) {
             Some(true) => owned += 1,
             Some(false) => {}
             None => return None,
@@ -296,8 +282,9 @@ mod tests {
         assert_eq!(group_size("great_runes"), 7);
         let runes = group_members("great_runes");
         assert_eq!(runes.len(), 7);
-        assert_eq!(runes[0].item_id, 191);
-        assert_eq!(runes[0].pickup_flag, Some(171));
+        // The Great Rune you actually carry is the key-item row (8148..8153), not
+        // the same-named 191..196 rows, which no item lot ever awards.
+        assert_eq!(runes[0].item_id, 8148);
         assert!(!runes[0].countable, "runes are owned-checks, not counters");
     }
 
@@ -402,7 +389,6 @@ historic_vanilla_flag = 40001234
                 "fire_scorpion_charm",
                 1170,
                 ItemKind::Accessory,
-                None,
                 Some(crate::LotRef {
                     table: crate::LotTable::Map,
                     lot_id: 123456,

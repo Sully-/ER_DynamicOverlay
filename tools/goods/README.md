@@ -5,7 +5,7 @@ No Rust changes are required for a standard good.
 
 ## Checklist
 
-- [ ] Look up `item_id`, `icon_id`, and (if needed) `pickup_flag`
+- [ ] Look up `item_id` and `icon_id`, and confirm the id against an item lot
 - [ ] Add a `[[good]]` row in `crates/er_game_state/tables/goods.toml`
 - [ ] Fetch or export `{key}.png` into `assets/icons/`
 - [ ] Regenerate the layout-editor palette (`catalog.js`)
@@ -21,7 +21,22 @@ No Rust changes are required for a standard good.
 |-------|--------|
 | `item_id` | Row ID in `EquipParamGoods` (consumables, keys, runes…) or `EquipParamAccessory` (talismans). Smithbox param tables or `Documentation/ER/Icon List - Goods.txt`. |
 | `icon_id` | Same tables (`iconId` field). Base-game goods are also in Smithbox `Documentation/ER/Icon List - Goods.txt` (column 3). |
-| `pickup_flag` | Event flag for permanent ownership when the item leaves the inventory (keys, quest items). Often found in [ER_boss_checklist_R](https://github.com/…) `bosses_dlc.json` / `item_ids.json`, or Smithbox flag lists. Omit for stackable consumables (`count = true`). |
+| `historic_lot_table` / `historic_lot_id` / `historic_vanilla_flag` | The item lot that awards the item, and the flag it sets. Needed only for items that can *leave* the inventory (given to an NPC, consumed), on tiles marked `historic = true`. |
+
+**Always confirm the `item_id` against an item lot.** Several items appear twice in
+`EquipParamGoods` under the same display name, and only one of the rows is ever awarded — the
+Great Runes are both `191..196` and `8148..8153`, but the game only ever hands you the latter.
+An id no lot awards silently reads as "never owned":
+
+```powershell
+companion\er_checks_extractor\bin\Release\net9.0\win-x64\er_checks_extractor.exe `
+  --probe-item "G:\Steam\steamapps\common\ELDEN RING\Game\regulation.bin" 8153 goods `
+  "G:\Steam\steamapps\common\ELDEN RING\Game"
+# → table=map lot_id=10201 slot=01 lot_category=1 getItemFlagId=176
+```
+
+`matches = 0` means the id is wrong. Probing a randomizer `regulation.bin` is a second check: a
+real item moves between seeds, a phantom row never does.
 
 **Verify DLC / Shadow of the Erdtree IDs** against your installed `regulation.bin`:
 
@@ -45,7 +60,6 @@ Minimal unique item (owned / not owned):
 key = "drawing_room_key"
 item_id = 8134
 name = "Drawing-Room Key"
-pickup_flag = 400072
 icon_id = 3062
 ```
 
@@ -90,7 +104,7 @@ icon_id = 18000
 | `category` | talismans | `"accessory"` for talismans; default `"goods"`. Avoids param id collisions. |
 | `count` | stackables | `true` → metric shows inventory quantity. |
 | `max` | optional | Display cap, e.g. scadutree `max = 50`. |
-| `pickup_flag` | unique items | Event flag when item is consumed / lost from inventory. |
+| `historic_lot_*` | items that leave the inventory | Lot + flag backing the `historic` tracking mode. |
 | `file` | optional | Override PNG filename. |
 
 **Aggregate groups** (e.g. `great_runes`): add the key to a `[groups.<name>]` `members` list — no Rust change.

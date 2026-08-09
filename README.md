@@ -528,7 +528,6 @@ One `[[good]]` row per tracked item. Fields:
 | `category` | — | `goods` (default) or `accessory` (talismans). Avoids `param_id` collisions between categories. |
 | `count` | — | `true` = stackable consumable → shows the inventory quantity. |
 | `max` | — | Display cap for a counter (e.g. scadutree → `N/50`). |
-| `pickup_flag` | — | Ownership event flag (fallback when the item is no longer in inventory). |
 | `historic_lot_table` / `historic_lot_id` / `historic_vanilla_flag` | — | Vanilla item-lot metadata used by the `historic` tracking mode (see [Item tracking modes](#item-tracking-modes)). Lets a tile resolve an acquisition flag — seed-aware with the randomizer. |
 | `file` | — | Custom PNG name. |
 | `icon_id` | — | Used only by the icon-fetching scripts. |

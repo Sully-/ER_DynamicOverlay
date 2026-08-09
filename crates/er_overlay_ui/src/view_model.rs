@@ -347,11 +347,10 @@ pub fn build_view_model(
                     &good.key,
                     good.item_id,
                     good.category,
-                    good.pickup_flag,
                     good.historic_lot,
                 )
             } else {
-                item_owned(source, good.item_id, good.category, good.pickup_flag)
+                item_owned(source, good.item_id, good.category)
             };
             TrackKind::Unique { acquired }
         };
