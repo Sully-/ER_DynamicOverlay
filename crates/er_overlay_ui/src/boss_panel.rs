@@ -160,23 +160,7 @@ pub fn render_boss_panel(
 }
 
 fn render_header(ui: &Ui, vm: &OverlayViewModel) {
-    match vm.boss_panel_scope {
-        BossPanelScope::CurrentRegion => {
-            if let Some(section) = vm.boss_panel_sections.first() {
-                ui.text(format!(
-                    "{} ({}/{})",
-                    section.region, section.killed, section.total
-                ));
-            }
-        }
-        BossPanelScope::AllRegions => {
-            let region = vm.current_region.clone().unwrap_or_else(|| "?".to_string());
-            ui.text(format!(
-                "Bosses {}/{} - region: {}",
-                vm.boss_panel_killed, vm.boss_panel_total, region
-            ));
-        }
-    }
+    ui.text(&vm.boss_panel_title);
 }
 
 fn scroll_current_region_into_view(ui: &Ui) {
@@ -192,8 +176,8 @@ fn render_region_tree(
     // Stable ImGui id after `###`: otherwise the node id changes with the killed/total counters,
     // and ImGui collapses the node every time a boss flips to killed.
     let label = format!(
-        "{} ({}/{})###boss_region_{}_{}",
-        section.region, section.killed, section.total, open_generation, section.region
+        "{}###boss_region_{}_{}",
+        section.header, open_generation, section.region
     );
     let mut node = ui.tree_node_config(&label);
     if force_open {
@@ -209,17 +193,12 @@ fn render_region_tree(
 fn render_boss_row(ui: &Ui, boss: &crate::view_model::BossPanelRow) {
     let killed = boss.killed.unwrap_or(false);
     let mut checked = killed;
-    let label = if boss.dlc {
-        format!("{} [DLC]", boss.name)
-    } else {
-        boss.name.clone()
-    };
     let _token = if killed {
         Some(ui.push_style_color(StyleColor::Text, KILLED_COLOR))
     } else {
         None
     };
-    ui.checkbox(label, &mut checked);
+    ui.checkbox(&boss.label, &mut checked);
 
     if ui.is_item_hovered() {
         ui.tooltip(|| {

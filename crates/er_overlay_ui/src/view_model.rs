@@ -34,6 +34,8 @@ pub struct BossPanelRow {
     pub place: Option<String>,
     pub killed: Option<bool>,
     pub dlc: bool,
+    /// Preformatted ImGui checkbox label (`Name` or `Name [DLC]`).
+    pub label: String,
 }
 
 #[derive(Debug, Clone)]
@@ -43,6 +45,8 @@ pub struct BossPanelSection {
     pub bosses: Vec<BossPanelRow>,
     pub killed: u32,
     pub total: u32,
+    /// Preformatted header (`Region (k/t)`).
+    pub header: String,
 }
 
 #[derive(Debug, Clone)]
@@ -53,6 +57,8 @@ pub struct CheckPanelRow {
     /// `false` for a dynamic check that is untraceable this seed (its lot holds a flagless item).
     pub traceable: bool,
     pub dlc: bool,
+    /// Preformatted ImGui label (`Name` or `Name [DLC]`).
+    pub label: String,
 }
 
 #[derive(Debug, Clone)]
@@ -64,6 +70,24 @@ pub struct CheckPanelSection {
     pub done: u32,
     /// Traceable checks (denominator; untraceable rows are listed but excluded).
     pub total: u32,
+    /// Preformatted header (`Region (d/t)`).
+    pub header: String,
+}
+
+/// Controls which expensive panel sections the worker rebuilds each tick.
+#[derive(Debug, Clone, Copy)]
+pub struct ViewModelBuildOptions {
+    pub build_boss_panel: bool,
+    pub build_checks_panel: bool,
+}
+
+impl Default for ViewModelBuildOptions {
+    fn default() -> Self {
+        Self {
+            build_boss_panel: true,
+            build_checks_panel: true,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -83,6 +107,8 @@ pub struct OverlayViewModel {
     pub boss_panel_sections: Vec<BossPanelSection>,
     pub boss_panel_killed: u32,
     pub boss_panel_total: u32,
+    /// Preformatted boss panel title line.
+    pub boss_panel_title: String,
     pub checks_panel_scope: BossPanelScope,
     pub checks_panel_sections: Vec<CheckPanelSection>,
     pub checks_panel_done: u32,
@@ -90,6 +116,8 @@ pub struct OverlayViewModel {
     pub checks_done: u32,
     pub checks_total: u32,
     pub checks_current_region: Option<String>,
+    /// Preformatted checks panel title line.
+    pub checks_panel_title: String,
     /// Whether a per-seed flag mapping is loaded (regulation parsed). Surfaced in the panel.
     pub checks_seed_active: bool,
     pub challenge: ChallengeSnapshot,
@@ -105,6 +133,18 @@ impl OverlayViewModel {
     }
 }
 
+fn dlc_label(name: &str, dlc: bool) -> String {
+    if dlc {
+        format!("{name} [DLC]")
+    } else {
+        name.to_string()
+    }
+}
+
+fn region_header(region: &str, done: u32, total: u32) -> String {
+    format!("{region} ({done}/{total})")
+}
+
 fn boss_rows_for_region(
     source: &dyn GameStateSource,
     region: &str,
@@ -117,6 +157,7 @@ fn boss_rows_for_region(
             killed += 1;
         }
         rows.push(BossPanelRow {
+            label: dlc_label(&boss.name, boss.dlc),
             name: boss.name.clone(),
             place: boss.place.clone(),
             killed: is_killed,
@@ -137,6 +178,7 @@ fn build_boss_panel_sections(
             if let Some(region) = current_region {
                 let (bosses, killed, total) = boss_rows_for_region(source, region);
                 let section = BossPanelSection {
+                    header: region_header(region, killed, total),
                     region: region.to_string(),
                     is_current: true,
                     bosses,
@@ -169,6 +211,7 @@ fn build_all_region_sections(
         killed_total += killed;
         boss_total += total;
         sections.push(BossPanelSection {
+            header: region_header(&region, killed, total),
             region: region.clone(),
             is_current: matches!(current_region, Some(r) if r == region),
             bosses,
@@ -196,6 +239,7 @@ fn check_rows_for_region(
             done += 1;
         }
         rows.push(CheckPanelRow {
+            label: dlc_label(&check.name, check.dlc),
             name: check.name.clone(),
             place: check.place.clone(),
             done: done_state,
@@ -242,6 +286,7 @@ fn build_checks_panel_sections(
             if let Some(region) = current_region {
                 let (rows, done, total) = check_rows_for_region(source, region);
                 let section = CheckPanelSection {
+                    header: region_header(region, done, total),
                     region: region.to_string(),
                     is_current: true,
                     rows,
@@ -273,6 +318,7 @@ fn build_all_check_sections(
         done_total += done;
         checks_total += total;
         sections.push(CheckPanelSection {
+            header: region_header(&region, done, total),
             region: region.clone(),
             is_current: matches!(current_region, Some(r) if r == region),
             rows,
@@ -282,6 +328,46 @@ fn build_all_check_sections(
     }
 
     (sections, done_total, checks_total)
+}
+
+fn format_boss_panel_title(
+    scope: BossPanelScope,
+    sections: &[BossPanelSection],
+    killed: u32,
+    total: u32,
+    current_region: Option<&str>,
+) -> String {
+    match scope {
+        BossPanelScope::CurrentRegion => sections
+            .first()
+            .map(|s| s.header.clone())
+            .unwrap_or_else(|| "Bosses".to_string()),
+        BossPanelScope::AllRegions => format!(
+            "Bosses {killed}/{total} - region: {}",
+            current_region.unwrap_or("?")
+        ),
+    }
+}
+
+fn format_checks_panel_title(
+    scope: BossPanelScope,
+    sections: &[CheckPanelSection],
+    done: u32,
+    total: u32,
+    current_region: Option<&str>,
+    seed_active: bool,
+) -> String {
+    let seed = if seed_active { " [seed]" } else { "" };
+    match scope {
+        BossPanelScope::CurrentRegion => sections
+            .first()
+            .map(|s| format!("{}{seed}", s.header))
+            .unwrap_or_else(|| format!("Checks{seed}")),
+        BossPanelScope::AllRegions => format!(
+            "Checks {done}/{total} - region: {}{seed}",
+            current_region.unwrap_or("?")
+        ),
+    }
 }
 
 pub fn empty_view_model(
@@ -306,6 +392,7 @@ pub fn empty_view_model(
         boss_panel_sections: Vec::new(),
         boss_panel_killed: 0,
         boss_panel_total: bosses_total,
+        boss_panel_title: "Bosses".to_string(),
         checks_panel_scope,
         checks_panel_sections: Vec::new(),
         checks_panel_done: 0,
@@ -313,6 +400,7 @@ pub fn empty_view_model(
         checks_done: 0,
         checks_total,
         checks_current_region: None,
+        checks_panel_title: "Checks".to_string(),
         checks_seed_active: false,
         challenge: ChallengeSnapshot::default(),
     }
@@ -330,6 +418,30 @@ pub fn build_view_model(
     boss_panel_scope: BossPanelScope,
     checks_panel_scope: BossPanelScope,
     challenge: ChallengeSnapshot,
+) -> OverlayViewModel {
+    build_view_model_with(
+        source,
+        referenced_keys,
+        equipped_keys,
+        historic_keys,
+        boss_panel_scope,
+        checks_panel_scope,
+        challenge,
+        ViewModelBuildOptions::default(),
+    )
+}
+
+/// Like [`build_view_model`], but can skip building closed panel section lists.
+#[allow(clippy::too_many_arguments)]
+pub fn build_view_model_with(
+    source: &dyn GameStateSource,
+    referenced_keys: &[String],
+    equipped_keys: &HashSet<String>,
+    historic_keys: &HashSet<String>,
+    boss_panel_scope: BossPanelScope,
+    checks_panel_scope: BossPanelScope,
+    challenge: ChallengeSnapshot,
+    options: ViewModelBuildOptions,
 ) -> OverlayViewModel {
     let mut tracked_by_key = HashMap::new();
     for key in referenced_keys {
@@ -381,13 +493,50 @@ pub fn build_view_model(
     let current_subregion_id = source.get_current_subregion_id();
     let current_region = current_subregion_id.and_then(region_label_for_subregion);
 
-    let (boss_panel_sections, boss_panel_killed, boss_panel_total) =
-        build_boss_panel_sections(source, boss_panel_scope, current_region.as_deref());
+    let (boss_panel_sections, boss_panel_killed, boss_panel_total) = if options.build_boss_panel {
+        build_boss_panel_sections(source, boss_panel_scope, current_region.as_deref())
+    } else {
+        (Vec::new(), 0, source.bosses_total())
+    };
+    let boss_panel_title = format_boss_panel_title(
+        boss_panel_scope,
+        &boss_panel_sections,
+        boss_panel_killed,
+        boss_panel_total,
+        current_region.as_deref(),
+    );
 
     let checks_current_region = current_subregion_id.and_then(checks_region_label_for_subregion);
-    let (checks_panel_sections, checks_panel_done, checks_panel_total) =
-        build_checks_panel_sections(source, checks_panel_scope, checks_current_region.as_deref());
-    let (checks_done, checks_total) = build_all_checks_progress(source);
+    let need_checks_metric = referenced_keys.iter().any(|k| k == "checks");
+    let (checks_panel_sections, checks_panel_done, checks_panel_total) = if options
+        .build_checks_panel
+    {
+        build_checks_panel_sections(source, checks_panel_scope, checks_current_region.as_deref())
+    } else {
+        (Vec::new(), 0, 0)
+    };
+
+    let (checks_done, checks_total) = if options.build_checks_panel {
+        match checks_panel_scope {
+            // All-regions panel already walked every check — reuse those totals.
+            BossPanelScope::AllRegions => (checks_panel_done, checks_panel_total),
+            BossPanelScope::CurrentRegion => build_all_checks_progress(source),
+        }
+    } else if need_checks_metric {
+        build_all_checks_progress(source)
+    } else {
+        (0, checks_total_count() as u32)
+    };
+
+    let checks_seed_active = checks_seed_flags_loaded();
+    let checks_panel_title = format_checks_panel_title(
+        checks_panel_scope,
+        &checks_panel_sections,
+        checks_panel_done,
+        checks_panel_total,
+        checks_current_region.as_deref(),
+        checks_seed_active,
+    );
 
     OverlayViewModel {
         igt: source.get_igt(),
@@ -405,6 +554,7 @@ pub fn build_view_model(
         boss_panel_sections,
         boss_panel_killed,
         boss_panel_total,
+        boss_panel_title,
         checks_panel_scope,
         checks_panel_sections,
         checks_panel_done,
@@ -412,7 +562,8 @@ pub fn build_view_model(
         checks_done,
         checks_total,
         checks_current_region,
-        checks_seed_active: checks_seed_flags_loaded(),
+        checks_panel_title,
+        checks_seed_active,
         challenge,
     }
 }

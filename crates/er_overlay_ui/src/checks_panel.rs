@@ -157,27 +157,7 @@ pub fn render_checks_panel(
 }
 
 fn render_header(ui: &Ui, vm: &OverlayViewModel) {
-    let seed = if vm.checks_seed_active { " [seed]" } else { "" };
-    match vm.checks_panel_scope {
-        BossPanelScope::CurrentRegion => {
-            if let Some(section) = vm.checks_panel_sections.first() {
-                ui.text(format!(
-                    "{} ({}/{}){seed}",
-                    section.region, section.done, section.total
-                ));
-            }
-        }
-        BossPanelScope::AllRegions => {
-            let region = vm
-                .checks_current_region
-                .clone()
-                .unwrap_or_else(|| "?".to_string());
-            ui.text(format!(
-                "Checks {}/{} - region: {region}{seed}",
-                vm.checks_panel_done, vm.checks_panel_total
-            ));
-        }
-    }
+    ui.text(&vm.checks_panel_title);
 }
 
 fn scroll_current_region_into_view(ui: &Ui) {
@@ -193,8 +173,8 @@ fn render_region_tree(
     // The text after `###` is a stable ImGui id: without it the node id would change as
     // done/total move, making ImGui treat it as a new (collapsed) node every time a check flips.
     let label = format!(
-        "{} ({}/{})###checks_region_{}_{}",
-        section.region, section.done, section.total, open_generation, section.region
+        "{}###checks_region_{}_{}",
+        section.header, open_generation, section.region
     );
     let mut node = ui.tree_node_config(&label);
     if force_open {
@@ -208,16 +188,10 @@ fn render_region_tree(
 }
 
 fn render_check_row(ui: &Ui, row: &CheckPanelRow) {
-    let label = if row.dlc {
-        format!("{} [DLC]", row.name)
-    } else {
-        row.name.clone()
-    };
-
     if !row.traceable {
         // Dynamic check whose lot holds a flagless item this seed: listed but not trackable.
         let _token = ui.push_style_color(StyleColor::Text, UNTRACEABLE_COLOR);
-        ui.text(format!("- {label}"));
+        ui.text(format!("- {}", row.label));
         if ui.is_item_hovered() {
             ui.tooltip(|| {
                 if let Some(ref place) = row.place {
@@ -236,7 +210,7 @@ fn render_check_row(ui: &Ui, row: &CheckPanelRow) {
     } else {
         None
     };
-    ui.checkbox(label, &mut checked);
+    ui.checkbox(&row.label, &mut checked);
 
     if ui.is_item_hovered() {
         ui.tooltip(|| {

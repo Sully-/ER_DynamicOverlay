@@ -106,14 +106,14 @@ Open `er_overlay.toml` in any text editor (hot-reloaded ~every 2 s). The most co
 See **[Quick start](#quick-start)** above. Requirements:
 
 - Windows **x64**
-- Elden Ring **offline**, a version supported by the release (currently **2.6.2.0 (WW)** and **2.6.2.1 (JP)** — see [Troubleshooting](#troubleshooting) if values show `---`)
+- Elden Ring **offline**, a version supported by the release (currently **2.7.0.0 (WW)** and **2.7.0.1 (JP)** — see [Troubleshooting](#troubleshooting) if values show `---`)
 
 ### Build from source
 
 For developers who want to compile locally:
 
 - Windows **x64**
-- An Elden Ring version supported by [fromsoftware-rs](https://github.com/vswarte/fromsoftware-rs) (`eldenring` 0.14, e.g. 2.6.x)
+- An Elden Ring version supported by [fromsoftware-rs](https://github.com/vswarte/fromsoftware-rs) (pinned to a git revision in `Cargo.toml`, e.g. 2.7.x)
 - Rust **1.85+**
 
 ```powershell
@@ -377,7 +377,7 @@ The release zip includes a **visual editor** — no TOML syntax to learn. It shi
 | Injector: "process not found" | Launch Elden Ring first. |
 | Injection fails | EAC is active → run the game offline; try running the injector as administrator. |
 | "LoadLibraryW returned NULL" | DLL missing / missing dependency / wrong architecture — check the DLL path. |
-| All values show `---` | Game version unsupported — check `logs/er_overlay.log` for `Unsupported game executable` or set `show_debug = true`. Supported builds: **2.6.2.0 (WW), 2.6.2.1 (JP)** (`eldenring` 0.14). |
+| All values show `---` | Game version unsupported — check `logs/er_overlay.log` for `Unsupported game executable` or set `show_debug = true`. Supported builds: **2.7.0.0 (WW), 2.7.0.1 (JP)** (`eldenring` 0.14). |
 | Game crashes on inject | Check `logs/er_overlay.log`: last line before crash pinpoints the step (`Hudhook::apply`, `build_view_model`, etc.). Update the game if the log says unsupported executable. |
 | No icons (only dots) | PNGs missing from `assets/icons` — see [Icons](#icons). |
 | Overlay crash | Conflict with another DX12 hook (RTSS, etc.). |

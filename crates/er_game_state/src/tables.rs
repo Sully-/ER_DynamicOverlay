@@ -204,11 +204,7 @@ pub fn group_size(name: &str) -> u32 {
 }
 
 /// Whether a good is currently present in the inventory.
-pub fn item_owned(
-    source: &dyn GameStateSource,
-    item_id: u32,
-    category: ItemKind,
-) -> Option<bool> {
+pub fn item_owned(source: &dyn GameStateSource, item_id: u32, category: ItemKind) -> Option<bool> {
     source.has_item(item_id, category)
 }
 
@@ -382,6 +378,7 @@ historic_vanilla_flag = 40001234
             }
         }
 
+        let _guard = crate::lot_flags::lock_for_test();
         crate::clear_lot_seed_flags();
         assert_eq!(
             item_owned_historic(

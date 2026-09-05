@@ -33,7 +33,7 @@ L'overlay **ne fonctionne pas avec EasyAntiCheat activé**. Lancez le jeu en mod
 - Lancez directement `eldenring.exe` (pas via le launcher EAC), avec un fichier `steam_appid.txt` contenant `1245620` à côté de l'exe, **ou**
 - Utilisez votre méthode habituelle hors ligne / sans EAC.
 
-Prérequis : Windows **x64**, et un build d'Elden Ring pris en charge par cette release (actuellement **2.6.2.0 (WW)** et **2.6.2.1 (JP)** — voir [Dépannage](#dépannage) si les valeurs affichent `---`).
+Prérequis : Windows **x64**, et un build d'Elden Ring pris en charge par cette release (actuellement **2.7.0.0 (WW)** et **2.7.0.1 (JP)** — voir [Dépannage](#dépannage) si les valeurs affichent `---`).
 
 Gardez le jeu lancé sur l'écran titre ou dans une sauvegarde : l'injecteur s'attache à un processus déjà en cours.
 
@@ -354,7 +354,7 @@ Le zip inclut un **éditeur visuel** — pas besoin d'apprendre la syntaxe TOML 
 | Injecteur : "process not found" | Lancez Elden Ring d'abord. |
 | L'injection échoue | EAC est actif → lancez le jeu hors ligne ; essayez de lancer l'injecteur en administrateur. |
 | "LoadLibraryW returned NULL" | DLL manquante / dépendance manquante / mauvaise architecture — vérifiez le chemin de la DLL. |
-| Toutes les valeurs affichent `---` | Version du jeu non prise en charge — consultez `logs/er_overlay.log` pour `Unsupported game executable` ou définissez `show_debug = true`. Builds pris en charge : **2.6.2.0 (WW), 2.6.2.1 (JP)**. |
+| Toutes les valeurs affichent `---` | Version du jeu non prise en charge — consultez `logs/er_overlay.log` pour `Unsupported game executable` ou définissez `show_debug = true`. Builds pris en charge : **2.7.0.0 (WW), 2.7.0.1 (JP)**. |
 | Le jeu crash à l'injection | Consultez `logs/er_overlay.log` : la dernière ligne avant le crash indique l'étape. Mettez le jeu à jour si le log indique un exécutable non pris en charge. |
 | Pas d'icônes (seulement des points) | PNG manquants dans `assets/icons` — gardez le dossier à côté de `er_overlay.dll`. |
 | Crash de l'overlay | Conflit avec un autre hook DX12 (RTSS, etc.). |

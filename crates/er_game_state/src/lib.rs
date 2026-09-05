@@ -11,6 +11,9 @@ mod field_area;
 mod game_language;
 
 #[cfg(feature = "game")]
+mod game_version;
+
+#[cfg(feature = "game")]
 mod reader;
 
 #[cfg(feature = "game")]
@@ -41,6 +44,12 @@ pub use tables::{
 
 /// Maximum Scadutree Blessing level (fragments spent at Sites of Grace in the DLC).
 pub const SCADUTREE_BLESSING_MAX: u32 = 20;
+
+#[cfg(feature = "game")]
+pub use game_version::{
+    log_startup_context, probe_game_exe, GameExeProbe, SupportedGameVersion,
+    SUPPORTED_GAME_VERSIONS,
+};
 
 #[cfg(feature = "game")]
 pub use reader::GameStateReader;

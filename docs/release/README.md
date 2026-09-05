@@ -33,7 +33,7 @@ The overlay **does not work with EasyAntiCheat enabled**. Start the game in offl
 - Launch `eldenring.exe` directly (not through the EAC launcher), with a `steam_appid.txt` containing `1245620` next to the exe, **or**
 - Use your usual offline / no-EAC method.
 
-Requirements: Windows **x64**, and an Elden Ring build supported by this release (currently **2.6.2.0 (WW)** and **2.6.2.1 (JP)** — see [Troubleshooting](#troubleshooting) if values show `---`).
+Requirements: Windows **x64**, and an Elden Ring build supported by this release (currently **2.7.0.0 (WW)** and **2.7.0.1 (JP)** — see [Troubleshooting](#troubleshooting) if values show `---`).
 
 Keep the game running on the title screen or in a save — the injector attaches to an already-running process.
 
@@ -354,7 +354,7 @@ The zip includes a **visual editor** — no TOML syntax to learn — as a single
 | Injector: "process not found" | Launch Elden Ring first. |
 | Injection fails | EAC is active → run the game offline; try running the injector as administrator. |
 | "LoadLibraryW returned NULL" | DLL missing / missing dependency / wrong architecture — check the DLL path. |
-| All values show `---` | Game version unsupported — check `logs/er_overlay.log` for `Unsupported game executable` or set `show_debug = true`. Supported builds: **2.6.2.0 (WW), 2.6.2.1 (JP)**. |
+| All values show `---` | Game version unsupported — check `logs/er_overlay.log` for `Unsupported game executable` or set `show_debug = true`. Supported builds: **2.7.0.0 (WW), 2.7.0.1 (JP)**. |
 | Game crashes on inject | Check `logs/er_overlay.log`: the last line before the crash pinpoints the step. Update the game if the log says unsupported executable. |
 | No icons (only dots) | PNGs missing from `assets/icons` — keep the folder next to `er_overlay.dll`. |
 | Overlay crash | Conflict with another DX12 hook (RTSS, etc.). |

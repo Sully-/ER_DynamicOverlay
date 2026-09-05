@@ -111,6 +111,8 @@ fn init_overlay(hmodule: HINSTANCE) {
         None => info!("Config loaded from {}", config_path.display()),
     }
 
+    er_game_state::log_startup_context(env!("CARGO_PKG_VERSION"));
+
     info!("Building OverlayApp");
     let app = OverlayApp::new(config, config_path);
 

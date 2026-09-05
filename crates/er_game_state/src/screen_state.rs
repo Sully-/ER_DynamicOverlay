@@ -4,7 +4,7 @@
 use eldenring::cs::CSMenuManImp;
 use fromsoftware_shared::FromStatic;
 
-/// `CSMenuManImp` menu-info block offset (game 1.12+ / our supported 2.6.2 builds).
+/// `CSMenuManImp` menu-info block offset (game 1.12+, still valid on 2.7.0.x).
 const MENU_INFO_OFFSET: usize = 0x720;
 const SCREEN_STATE_FIELD_OFFSET: usize = 0x10;
 const MOUSE_CURSOR_FLAGS_OFFSET: usize = 0xAC;

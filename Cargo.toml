@@ -44,8 +44,12 @@ pelite = "0.10"
 once_cell = "1"
 clap = { version = "4", features = ["derive"] }
 image = { version = "0.25", default-features = false, features = ["png"] }
-eldenring = "0.14"
-fromsoftware-shared = "0.14"
+# Pinned to git: crates.io 0.14.0 only knows game version 2.6.2.0/2.6.2.1 and
+# panics with "Unsupported game version" on 2.7.0.0. Upstream main carries the
+# 2.7.0.0/2.7.0.1 RVAs but has not been published yet. Both crates must come
+# from the same source or their traits resolve to two incompatible copies.
+eldenring = { git = "https://github.com/vswarte/fromsoftware-rs", rev = "e0948c8d64594b79785e9490877baacea5605a9d" }
+fromsoftware-shared = { git = "https://github.com/vswarte/fromsoftware-rs", rev = "e0948c8d64594b79785e9490877baacea5605a9d" }
 
 er_overlay_common = { path = "crates/er_overlay_common" }
 er_game_state = { path = "crates/er_game_state", default-features = false }

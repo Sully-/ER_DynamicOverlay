@@ -21,7 +21,9 @@ use er_game_state::{GameStateReader, GameStateSource};
 use er_overlay_common::{
     BossPanelScope, ChallengeConfig, ChallengeSnapshot, ChallengeTracker, PbDirection,
 };
-use er_overlay_ui::{build_view_model, resolve_metric_count, OverlayViewModel};
+use er_overlay_ui::{
+    build_view_model_with, resolve_metric_count, OverlayViewModel, ViewModelBuildOptions,
+};
 
 /// How often the worker polls the game and republishes the view model.
 ///
@@ -43,6 +45,10 @@ pub struct PollInputs {
     pub pb_source: String,
     pub pb_mode: PbDirection,
     pub start_flag: u32,
+    /// When false, skip building the (potentially huge) boss panel section list.
+    pub boss_panel_visible: bool,
+    /// When false, skip building the checks panel section list (and global progress unless needed).
+    pub checks_panel_visible: bool,
 }
 
 enum Command {
@@ -161,7 +167,7 @@ fn build(
 ) -> OverlayViewModel {
     // Build first (with a placeholder challenge snapshot) so the PB metric can be resolved from
     // live game data before the challenge tracker consumes it.
-    let mut vm = build_view_model(
+    let mut vm = build_view_model_with(
         reader,
         &inputs.data_refs,
         &inputs.equipped_refs,
@@ -169,6 +175,10 @@ fn build(
         inputs.boss_panel_scope,
         inputs.checks_panel_scope,
         ChallengeSnapshot::default(),
+        ViewModelBuildOptions {
+            build_boss_panel: inputs.boss_panel_visible,
+            build_checks_panel: inputs.checks_panel_visible,
+        },
     );
 
     let snapshot = if inputs.challenge_config.enabled && reader.challenge_update_ready() {

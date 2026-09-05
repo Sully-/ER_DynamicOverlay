@@ -106,14 +106,14 @@ Ouvrez `er_overlay.toml` dans n'importe quel éditeur de texte (rechargé à cha
 Voir le **[Démarrage rapide](#démarrage-rapide)** ci-dessus. Prérequis :
 
 - Windows **x64**
-- Elden Ring **hors ligne**, une version prise en charge par la release (actuellement **2.6.2.0 (WW)** et **2.6.2.1 (JP)** — voir [Dépannage](#dépannage) si les valeurs affichent `---`)
+- Elden Ring **hors ligne**, une version prise en charge par la release (actuellement **2.7.0.0 (WW)** et **2.7.0.1 (JP)** — voir [Dépannage](#dépannage) si les valeurs affichent `---`)
 
 ### Compiler depuis les sources
 
 Pour les développeurs qui veulent compiler localement :
 
 - Windows **x64**
-- Une version d'Elden Ring prise en charge par [fromsoftware-rs](https://github.com/vswarte/fromsoftware-rs) (`eldenring` 0.14, par exemple 2.6.x)
+- Une version d'Elden Ring prise en charge par [fromsoftware-rs](https://github.com/vswarte/fromsoftware-rs) (épinglé sur une révision git dans `Cargo.toml`, par exemple 2.7.x)
 - Rust **1.85+**
 
 ```powershell
@@ -377,7 +377,7 @@ Le zip de release inclut un **éditeur visuel** : pas besoin d'apprendre la synt
 | Injecteur : "process not found" | Lancez Elden Ring d'abord. |
 | L'injection échoue | EAC est actif → lancez le jeu hors ligne ; essayez de lancer l'injecteur en administrateur. |
 | "LoadLibraryW returned NULL" | DLL manquante / dépendance manquante / mauvaise architecture — vérifiez le chemin de la DLL. |
-| Toutes les valeurs affichent `---` | Version du jeu non prise en charge — consultez `logs/er_overlay.log` pour `Unsupported game executable` ou définissez `show_debug = true`. Builds pris en charge : **2.6.2.0 (WW), 2.6.2.1 (JP)** (`eldenring` 0.14). |
+| Toutes les valeurs affichent `---` | Version du jeu non prise en charge — consultez `logs/er_overlay.log` pour `Unsupported game executable` ou définissez `show_debug = true`. Builds pris en charge : **2.7.0.0 (WW), 2.7.0.1 (JP)** (`eldenring` 0.14). |
 | Le jeu crash à l'injection | Consultez `logs/er_overlay.log` : la dernière ligne avant le crash indique l'étape (`Hudhook::apply`, `build_view_model`, etc.). Mettez le jeu à jour si le log indique un exécutable non pris en charge. |
 | Pas d'icônes (seulement des points) | PNG manquants dans `assets/icons` — voir [Icônes](#icônes). |
 | Crash de l'overlay | Conflit avec un autre hook DX12 (RTSS, etc.). |

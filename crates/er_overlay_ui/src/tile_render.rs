@@ -311,28 +311,31 @@ pub fn draw_item_tile(
     let ix = pos[0] + (size[0] - icon_size) * 0.5;
     let iy = pos[1] + (size[1] - icon_size) * 0.5;
 
-    let mut display_row = row.clone();
-    if let Some(key) = icon_override {
-        display_row.icon_key = key.to_string();
-    }
-
-    draw_status_icon_at(
-        ui,
-        [ix, iy],
-        &display_row,
-        icon_size,
-        config.gray_tint,
-        *atlas,
-        config,
-    );
+    draw_status_icon_at(ui, [ix, iy], row, icon_override, icon_size, *atlas, config);
 
     if let TrackKind::Countable { count } = row.kind {
+        // Format into a stack buffer to avoid a heap String every Present.
+        let mut buf = [0u8; 16];
         let count_text = match count {
-            Some(n) => n.to_string(),
-            None => "---".to_string(),
+            Some(n) => format_u32_into(n, &mut buf),
+            None => "---",
         };
-        draw_counter_bottom_right(ui, *pos, *size, &count_text, style, config);
+        draw_counter_bottom_right(ui, *pos, *size, count_text, style, config);
     }
+}
+
+fn format_u32_into(mut n: u32, buf: &mut [u8; 16]) -> &str {
+    if n == 0 {
+        buf[0] = b'0';
+        return std::str::from_utf8(&buf[..1]).unwrap_or("0");
+    }
+    let mut i = buf.len();
+    while n > 0 && i > 0 {
+        i -= 1;
+        buf[i] = b'0' + (n % 10) as u8;
+        n /= 10;
+    }
+    std::str::from_utf8(&buf[i..]).unwrap_or("0")
 }
 
 pub fn metric_value_for_tile(value: &MetricValue, show_max: bool) -> String {

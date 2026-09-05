@@ -55,17 +55,18 @@ pub fn draw_status_icon_at(
     ui: &Ui,
     pos: [f32; 2],
     row: &TrackedEntryRow,
+    icon_key_override: Option<&str>,
     size: f32,
-    gray: f32,
     atlas: Option<&IconAtlas>,
     config: &OverlayConfig,
 ) {
     let (acquired, unknown) = track_status(&row.kind);
-    let color = status_icon_color(acquired, unknown, gray);
+    let color = status_icon_color(acquired, unknown, config.gray_tint);
+    let icon_key = icon_key_override.unwrap_or(row.icon_key.as_str());
 
     if config.use_item_icons {
         if let Some(atlas) = atlas {
-            if atlas.draw_key_at(ui, &row.icon_key, pos, size, color) {
+            if atlas.draw_key_at(ui, icon_key, pos, size, color) {
                 return;
             }
         }

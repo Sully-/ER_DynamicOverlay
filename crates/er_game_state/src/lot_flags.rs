@@ -89,6 +89,18 @@ pub(crate) fn set_lot_flags(data: Option<LotFlagsData>) {
     *LOT_FLAGS.write().expect("lot flags poisoned") = data.map(Arc::new);
 }
 
+/// Serializes the tests that mutate [`LOT_FLAGS`]. Cargo runs tests as parallel
+/// threads in a single process, so tests in different modules that both drive
+/// this store clobber each other's mapping mid-assertion.
+///
+/// Recovers from poisoning so one failing test reports alone instead of taking
+/// every other holder of the lock down with it.
+#[cfg(test)]
+pub(crate) fn lock_for_test() -> std::sync::MutexGuard<'static, ()> {
+    static TEST_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+    TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner())
+}
+
 /// Drops any loaded seed mapping. Returns whether a mapping was actually cleared.
 pub fn clear_lot_seed_flags() -> bool {
     let mut guard = LOT_FLAGS.write().expect("lot flags poisoned");
@@ -215,6 +227,7 @@ fire_scorpion_charm = 700
 
     #[test]
     fn effective_lot_flag_prefers_seed_then_vanilla() {
+        let _guard = lock_for_test();
         let lot = LotRef {
             table: LotTable::Map,
             lot_id: 100,
@@ -240,6 +253,7 @@ fire_scorpion_charm = 700
 
     #[test]
     fn effective_good_flag_prefers_seed_item_mapping_then_vanilla_lot() {
+        let _guard = lock_for_test();
         let lot = LotRef {
             table: LotTable::Map,
             lot_id: 100,

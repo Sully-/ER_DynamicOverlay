@@ -23,14 +23,8 @@ pub fn render_layout_dashboard(
     let scale = layout.style.effective_scale(config);
     let radius = layout.grid.border_radius * scale;
 
-    let mut sorted: Vec<&TileDef> = tiles.iter().collect();
-    sorted.sort_by_key(|t| match t {
-        TileDef::Metric { position, .. }
-        | TileDef::Item { position, .. }
-        | TileDef::Label { position, .. } => (position.row, position.col),
-    });
-
-    for tile in sorted {
+    // Tiles are sorted by (row, col) once at layout load — no per-frame alloc/sort.
+    for tile in tiles {
         match tile {
             TileDef::Metric {
                 metric,

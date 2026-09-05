@@ -336,6 +336,19 @@ pub struct LayoutConfig {
 }
 
 impl LayoutConfig {
+    /// Sorts every section's tiles by `(row, col)` for stable draw order.
+    pub fn sort_tiles_by_position(&mut self) {
+        let key = |t: &TileDef| match t {
+            TileDef::Metric { position, .. }
+            | TileDef::Item { position, .. }
+            | TileDef::Label { position, .. } => (position.row, position.col),
+        };
+        self.tiles.sort_by_key(key);
+        for section in &mut self.sections {
+            section.tiles.sort_by_key(key);
+        }
+    }
+
     pub fn section_count(&self) -> usize {
         if self.sections.is_empty() {
             if self.tiles.is_empty() {
@@ -782,9 +795,12 @@ impl LayoutConfig {
 pub fn load_layout(path: &Path) -> Result<LayoutConfig> {
     let raw = fs::read_to_string(path)
         .with_context(|| format!("Failed to read layout at {}", path.display()))?;
-    let config: LayoutConfig = toml::from_str(&raw)
+    let mut config: LayoutConfig = toml::from_str(&raw)
         .with_context(|| format!("Failed to parse layout at {}", path.display()))?;
     config.validate()?;
+    // Sort once at load so the render path can walk tiles in draw order without
+    // allocating/sorting a Vec every Present.
+    config.sort_tiles_by_position();
     Ok(config)
 }
 

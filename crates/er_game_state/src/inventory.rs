@@ -1,6 +1,6 @@
 #[cfg(feature = "game")]
 pub mod game {
-    use std::collections::HashSet;
+    use std::collections::{HashMap, HashSet};
 
     use eldenring::cs::{
         EquipInventoryData, EquipInventoryDataListEntry, ItemCategory, ItemId, WorldChrMan,
@@ -67,6 +67,9 @@ pub mod game {
             .non_empty()
     }
 
+    /// Single-item quantity lookup (full inventory scan). Prefer
+    /// [`owned_and_goods_quantities`] on the hot poll path.
+    #[allow(dead_code)]
     pub fn quantity_of(category: ItemCategory, param_id: u32) -> Option<u32> {
         let wcm = unsafe { WorldChrMan::instance().ok()? };
         let player = wcm.main_player.as_ref()?;
@@ -81,21 +84,31 @@ pub mod game {
         Some(qty)
     }
 
-    /// Single inventory walk — use for per-frame talisman / accessory checks.
+    /// Single inventory walk — owned item ids plus goods quantities by param id.
     ///
-    /// Stores the full [`ItemId`] value (category + param id) so lookups can be
-    /// scoped to a category and avoid collisions between, say, a goods param id
-    /// and an unrelated accessory/key-item sharing the same numeric param id.
-    pub fn owned_item_ids() -> Option<HashSet<u32>> {
+    /// Prefer this over separate [`owned_item_ids`] + [`quantity_of`] calls so countable
+    /// goods do not force a second full inventory scan every poll tick.
+    pub fn owned_and_goods_quantities() -> Option<(HashSet<u32>, HashMap<u32, u32>)> {
         let wcm = unsafe { WorldChrMan::instance().ok()? };
         let player = wcm.main_player.as_ref()?;
         let pgd = unsafe { player.player_game_data.as_ref() };
         let inv = &pgd.equipment.equip_inventory_data;
-        Some(
-            all_inventory_entries(inv)
-                .map(|e| e.item_id.into_inner())
-                .collect(),
-        )
+        let mut owned = HashSet::new();
+        let mut goods_qty = HashMap::new();
+        for e in all_inventory_entries(inv) {
+            owned.insert(e.item_id.into_inner());
+            if e.item_id.category() == ItemCategory::Goods {
+                goods_qty.insert(e.item_id.param_id(), e.quantity);
+            }
+        }
+        Some((owned, goods_qty))
+    }
+
+    /// Owned-item set only. Prefer [`owned_and_goods_quantities`] when quantities
+    /// are also needed (avoids a second walk).
+    #[allow(dead_code)]
+    pub fn owned_item_ids() -> Option<HashSet<u32>> {
+        owned_and_goods_quantities().map(|(owned, _)| owned)
     }
 
     /// Whether `param_id` of the given `kind` is present in `owned`

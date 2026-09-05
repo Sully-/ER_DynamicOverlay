@@ -391,6 +391,7 @@ flag = 1
 
     #[test]
     fn dynamic_check_resolution_prefers_seed_then_vanilla() {
+        let _guard = lot_flags::lock_for_test();
         let check = CheckEntry {
             name: "X".into(),
             place: None,

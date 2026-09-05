@@ -7,6 +7,7 @@ use imgui::{Condition, MouseButton, Ui};
 use crate::boss_panel::{render_boss_panel, BossPanelState};
 use crate::checks_panel::{render_checks_panel, ChecksPanelState};
 use crate::fonts::overlay_font_scale;
+use crate::frame_timing::FrameTimingSnapshot;
 use crate::hud_window::{
     debug_window_flags, draw_window_border, hud_window_flags, hud_window_placement,
     push_window_outer_clip, suppress_imgui_window_border, top_left_from_placement, HudBounds,
@@ -29,6 +30,7 @@ pub fn render_overlay(
     boss_panel: &mut BossPanelState,
     show_checks_panel: bool,
     checks_panel: &mut ChecksPanelState,
+    frame_timing: Option<&FrameTimingSnapshot>,
 ) {
     let hud_anchor = layout.as_ref().map(|layout| {
         drag.sync_anchor(config);
@@ -60,7 +62,7 @@ pub fn render_overlay(
     }
 
     if config.show_debug {
-        render_debug_window(ui, vm, drag);
+        render_debug_window(ui, vm, drag, frame_timing);
     }
 }
 
@@ -140,7 +142,12 @@ fn render_overlay_layout(
         });
 }
 
-fn render_debug_window(ui: &Ui, vm: &OverlayViewModel, drag: &HudDragState) {
+fn render_debug_window(
+    ui: &Ui,
+    vm: &OverlayViewModel,
+    drag: &HudDragState,
+    frame_timing: Option<&FrameTimingSnapshot>,
+) {
     let pos = drag
         .pos
         .map(|[x, y]| [x, y + 120.0])
@@ -151,11 +158,11 @@ fn render_debug_window(ui: &Ui, vm: &OverlayViewModel, drag: &HudDragState) {
         .position(pos, Condition::FirstUseEver)
         .build(|| {
             ui.text("Debug");
-            render_debug(ui, vm);
+            render_debug(ui, vm, frame_timing);
         });
 }
 
-fn render_debug(ui: &Ui, vm: &OverlayViewModel) {
+fn render_debug(ui: &Ui, vm: &OverlayViewModel, frame_timing: Option<&FrameTimingSnapshot>) {
     let d = &vm.diagnostics;
 
     ui.text(format!("Backend: {:?}", d.backend));
@@ -193,6 +200,24 @@ fn render_debug(ui: &Ui, vm: &OverlayViewModel) {
     ));
     if let Some(hash) = checks_seed_regulation_hash() {
         ui.text(format!("  regulation: {}…", &hash[..hash.len().min(12)]));
+    }
+    if let Some(t) = frame_timing {
+        ui.separator();
+        ui.text("Frame timing (overlay Present)");
+        ui.text(format!(
+            "  last: {:.2} ms (reload {:.2} / drain {:.2} / draw {:.2} / cursor {:.2})",
+            t.total_us as f64 / 1000.0,
+            t.reload_us as f64 / 1000.0,
+            t.drain_us as f64 / 1000.0,
+            t.draw_us as f64 / 1000.0,
+            t.cursor_us as f64 / 1000.0,
+        ));
+        ui.text(format!(
+            "  1s window: avg {:.2} ms / max {:.2} ms ({} samples)",
+            t.avg_total_us as f64 / 1000.0,
+            t.max_total_us as f64 / 1000.0,
+            t.samples,
+        ));
     }
 }
 

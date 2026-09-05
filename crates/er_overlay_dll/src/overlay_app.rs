@@ -15,7 +15,7 @@ use er_overlay_common::{
 };
 use er_overlay_ui::{
     empty_view_model, render_overlay, setup_overlay_fonts, BossPanelState, ChecksPanelState,
-    HudDragState, IconAtlas,
+    FrameTimingAccum, HudDragState, IconAtlas,
 };
 use hudhook::{ImguiRenderLoop, MessageFilter, RenderContext};
 use imgui::{Context, Key, WindowHoveredFlags};
@@ -47,6 +47,14 @@ pub struct OverlayApp {
     show_checks_panel: bool,
     checks_panel: ChecksPanelState,
     last_config_reload: Instant,
+    /// Last observed mtime of `er_overlay.toml` — skip parse when unchanged.
+    config_mtime: Option<SystemTime>,
+    /// Last observed mtime of the active layout TOML — skip parse when unchanged.
+    layout_mtime: Option<SystemTime>,
+    /// Last value written via `set_menu_cursor_visible` (avoid redundant game-memory writes).
+    last_cursor_visible: Option<bool>,
+    /// Sliding-window Present-thread phase timings (shown in the debug window).
+    frame_timing: FrameTimingAccum,
     font_bytes: Vec<u8>,
     /// `(text_size, scale)` the font atlas is currently baked for. When it changes
     /// (config reload), the atlas is re-rasterized and re-uploaded so text stays crisp.
@@ -128,13 +136,14 @@ impl OverlayApp {
             &mut active_checks_locale,
         );
         let view_model = empty_view_model(config.boss_panel_scope, config.checks_panel_scope);
+        let config_mtime = file_mtime(&config_path);
+        let layout_mtime = {
+            let base_dir = er_overlay_common::default_base_dir();
+            resolve_layout_path(&base_dir, config.layout_file.as_deref())
+                .and_then(|p| file_mtime(&p))
+        };
         // Hand the reader + challenge tracker to a background thread. From here on, all game-memory
         // polling and the view-model build happen off the render thread.
-        let poll = PollWorker::spawn(
-            reader,
-            challenge,
-            Self::compute_poll_inputs(&config, layout.as_ref()),
-        );
         let mut app = Self {
             config,
             config_path,
@@ -157,6 +166,10 @@ impl OverlayApp {
             show_checks_panel,
             checks_panel,
             last_config_reload: Instant::now(),
+            config_mtime,
+            layout_mtime,
+            last_cursor_visible: None,
+            frame_timing: FrameTimingAccum::default(),
             font_bytes: Vec::new(),
             applied_font_sig: None,
             icon_atlas: IconAtlas::new(),
@@ -164,7 +177,24 @@ impl OverlayApp {
             icons_dirty: true,
             hud_drag: HudDragState::default(),
             view_model,
-            poll,
+            poll: PollWorker::spawn(
+                reader,
+                challenge,
+                // Placeholder — replaced after sync_section_state via push_poll_inputs.
+                PollInputs {
+                    data_refs: Vec::new(),
+                    equipped_refs: Default::default(),
+                    historic_refs: Default::default(),
+                    boss_panel_scope: er_overlay_common::BossPanelScope::CurrentRegion,
+                    checks_panel_scope: er_overlay_common::BossPanelScope::CurrentRegion,
+                    challenge_config: Default::default(),
+                    pb_source: "bosses".into(),
+                    pb_mode: PbDirection::Max,
+                    start_flag: 0,
+                    boss_panel_visible: false,
+                    checks_panel_visible: false,
+                },
+            ),
             boss_table_mtime,
             active_boss_locale,
             checks_table_mtime,
@@ -177,6 +207,7 @@ impl OverlayApp {
         app.sync_section_state();
         app.maybe_reload_boss_table();
         app.maybe_sync_checks();
+        app.push_poll_inputs();
         info!(
             "OverlayApp built: layout={}, overlay_visible={}, boss_panel={}, checks_panel={}",
             app.layout.as_ref().map(|_| "loaded").unwrap_or("none"),
@@ -197,10 +228,12 @@ impl OverlayApp {
     }
 
     /// Config/layout-derived inputs the polling worker needs to build the view model.
-    fn compute_poll_inputs(config: &OverlayConfig, layout: Option<&LayoutConfig>) -> PollInputs {
+    fn compute_poll_inputs(&self) -> PollInputs {
+        let layout = self.layout.as_ref();
         let (pb_source, pb_mode) = layout
             .map(|l| l.pb_source())
             .unwrap_or_else(|| ("bosses".to_string(), PbDirection::Max));
+        let section_allows = self.section_allows_boss_panel(self.section_state.active_index);
         PollInputs {
             data_refs: layout.map(|l| l.collect_data_refs()).unwrap_or_default(),
             equipped_refs: layout
@@ -209,21 +242,30 @@ impl OverlayApp {
             historic_refs: layout
                 .map(|l| l.collect_historic_refs())
                 .unwrap_or_default(),
-            boss_panel_scope: config.boss_panel_scope,
-            checks_panel_scope: config.checks_panel_scope,
-            challenge_config: config.challenge.clone(),
+            boss_panel_scope: self.config.boss_panel_scope,
+            checks_panel_scope: self.config.checks_panel_scope,
+            challenge_config: self.config.challenge.clone(),
             pb_source,
             pb_mode,
-            start_flag: config.challenge.start_flag,
+            start_flag: self.config.challenge.start_flag,
+            boss_panel_visible: self.show_overlay && self.show_boss_panel && section_allows,
+            checks_panel_visible: self.show_overlay && self.show_checks_panel && section_allows,
         }
     }
 
     /// Pushes the current config/layout inputs to the polling worker after a reload.
     fn push_poll_inputs(&self) {
-        self.poll.set_inputs(Self::compute_poll_inputs(
-            &self.config,
-            self.layout.as_ref(),
-        ));
+        self.poll.set_inputs(self.compute_poll_inputs());
+    }
+
+    /// Writes the game menu-cursor bit only when the desired value changed.
+    fn set_menu_cursor_if_changed(&mut self, visible: bool) {
+        if self.last_cursor_visible == Some(visible) {
+            return;
+        }
+        if er_game_state::set_menu_cursor_visible(visible).is_some() {
+            self.last_cursor_visible = Some(visible);
+        }
     }
 
     /// Applies the most recent view model published by the polling worker. Cheap: a channel drain
@@ -624,45 +666,83 @@ impl OverlayApp {
             return;
         }
         self.last_config_reload = Instant::now();
-        match er_overlay_common::load_or_create_config(&self.config_path) {
-            Ok(cfg) => {
-                let locale_settings_changed = self.config.boss_locale != cfg.boss_locale;
-                let regulation_changed = self.config.regulation_path != cfg.regulation_path;
-                // When focus-keeping is turned off at runtime, release the game mouse-cursor
-                // bit once. Otherwise it stays stuck at the last "visible" value we forced and
-                // the game keeps the focus even though the feature is now disabled.
-                let focus_disabled = self.config.keep_overlay_focus && !cfg.keep_overlay_focus;
-                self.layout = Self::load_layout_from_config(&cfg);
-                self.config = cfg;
-                if focus_disabled {
-                    let _ = er_game_state::set_menu_cursor_visible(false);
-                }
-                if locale_settings_changed {
-                    self.boss_table_mtime = None;
-                    self.active_boss_locale = None;
-                    self.checks_table_mtime = None;
-                    self.active_checks_locale = None;
-                }
-                if regulation_changed {
-                    self.regulation_sig = None;
-                }
-                self.maybe_reload_boss_table();
-                self.maybe_sync_checks();
-                self.sync_hotkey();
-                self.sync_section_state();
-                // Reload icons only when the referenced keys (or the toggle)
-                // actually changed — avoids reloading textures every reload tick.
-                let new_signature = Self::icon_signature_for(&self.config, self.layout.as_ref());
-                if new_signature != self.icon_signature {
-                    self.icon_signature = new_signature;
-                    self.icons_dirty = true;
-                }
-                // Hand the refreshed config/layout (scopes, data refs, challenge settings) to the
-                // polling worker so its next build reflects the reload.
-                self.push_poll_inputs();
-            }
-            Err(e) => warn!("Config reload failed: {e:?}"),
+
+        let config_mtime_now = file_mtime(&self.config_path);
+        let config_changed = config_mtime_now != self.config_mtime;
+
+        let base_dir = er_overlay_common::default_base_dir();
+        // Resolve layout path from the *current* config first; if config changed we re-resolve
+        // after reload. Checking mtime here still covers the common "edit layout only" case.
+        let layout_path = resolve_layout_path(&base_dir, self.config.layout_file.as_deref());
+        let layout_mtime_now = layout_path.as_ref().and_then(|p| file_mtime(p));
+        let layout_changed = layout_mtime_now != self.layout_mtime;
+
+        if !config_changed && !layout_changed {
+            // Cheap path: only mtime-gated table/extractor sync — no TOML parse on Present.
+            self.maybe_reload_boss_table();
+            self.maybe_sync_checks();
+            return;
         }
+
+        let cfg = if config_changed {
+            match er_overlay_common::load_or_create_config(&self.config_path) {
+                Ok(cfg) => {
+                    self.config_mtime = config_mtime_now;
+                    cfg
+                }
+                Err(e) => {
+                    warn!("Config reload failed: {e:?}");
+                    return;
+                }
+            }
+        } else {
+            self.config.clone()
+        };
+
+        let locale_settings_changed = self.config.boss_locale != cfg.boss_locale;
+        let regulation_changed = self.config.regulation_path != cfg.regulation_path;
+        // When focus-keeping is turned off at runtime, release the game mouse-cursor
+        // bit once. Otherwise it stays stuck at the last "visible" value we forced and
+        // the game keeps the focus even though the feature is now disabled.
+        let focus_disabled = self.config.keep_overlay_focus && !cfg.keep_overlay_focus;
+
+        let layout_path_after = resolve_layout_path(&base_dir, cfg.layout_file.as_deref());
+        let layout_mtime_after = layout_path_after.as_ref().and_then(|p| file_mtime(p));
+        let need_layout_reload = self.layout.is_none()
+            || layout_mtime_after != self.layout_mtime
+            || self.config.layout_file != cfg.layout_file;
+
+        if need_layout_reload {
+            self.layout = Self::load_layout_from_config(&cfg);
+            self.layout_mtime = layout_mtime_after;
+        }
+        self.config = cfg;
+        if focus_disabled {
+            self.set_menu_cursor_if_changed(false);
+        }
+        if locale_settings_changed {
+            self.boss_table_mtime = None;
+            self.active_boss_locale = None;
+            self.checks_table_mtime = None;
+            self.active_checks_locale = None;
+        }
+        if regulation_changed {
+            self.regulation_sig = None;
+        }
+        self.maybe_reload_boss_table();
+        self.maybe_sync_checks();
+        self.sync_hotkey();
+        self.sync_section_state();
+        // Reload icons only when the referenced keys (or the toggle)
+        // actually changed — avoids reloading textures every reload tick.
+        let new_signature = Self::icon_signature_for(&self.config, self.layout.as_ref());
+        if new_signature != self.icon_signature {
+            self.icon_signature = new_signature;
+            self.icons_dirty = true;
+        }
+        // Hand the refreshed config/layout (scopes, data refs, challenge settings) to the
+        // polling worker so its next build reflects the reload.
+        self.push_poll_inputs();
     }
 
     /// Re-rasterizes and re-uploads the font atlas when `text_size`/`scale` changed.
@@ -840,33 +920,73 @@ impl ImguiRenderLoop for OverlayApp {
                 self.show_overlay
             );
         }
+        let frame_start = Instant::now();
+
+        let t0 = Instant::now();
         self.maybe_reload_config();
+        let reload_dt = t0.elapsed();
+
+        let visibility_before = (
+            self.show_overlay,
+            self.show_boss_panel,
+            self.show_checks_panel,
+            self.section_state.active_index,
+        );
         self.maybe_toggle_overlay_visibility(ui);
         self.maybe_cycle_section(ui);
         self.maybe_toggle_boss_panel(ui);
         self.maybe_toggle_checks_panel(ui);
+        let visibility_after = (
+            self.show_overlay,
+            self.show_boss_panel,
+            self.show_checks_panel,
+            self.section_state.active_index,
+        );
+        if visibility_before != visibility_after {
+            // Panel/overlay visibility affects how much work the poll worker does.
+            self.push_poll_inputs();
+        }
+
         // Drain unconditionally (even while hidden) so the worker's channel never backs up.
+        let t1 = Instant::now();
         self.drain_view_model();
+        let drain_dt = t1.elapsed();
+
         if !self.show_overlay {
+            let t2 = Instant::now();
             if self.config.keep_overlay_focus {
-                let _ = er_game_state::set_menu_cursor_visible(false);
+                self.set_menu_cursor_if_changed(false);
+            }
+            let cursor_dt = t2.elapsed();
+            let total = frame_start.elapsed();
+            self.frame_timing
+                .record(reload_dt, drain_dt, Duration::ZERO, cursor_dt, total);
+            if total > Duration::from_millis(2) {
+                warn!(
+                    "Slow overlay frame (hidden): {:.2} ms (reload {:.2}, drain {:.2})",
+                    total.as_secs_f64() * 1000.0,
+                    reload_dt.as_secs_f64() * 1000.0,
+                    drain_dt.as_secs_f64() * 1000.0,
+                );
             }
             return;
         }
-        let vm = &self.view_model;
+
+        let section_allows = self.section_allows_boss_panel(self.section_state.active_index);
+        let show_boss_panel = self.show_boss_panel && section_allows;
+        let show_checks_panel = self.show_checks_panel && section_allows;
+        let timing_snapshot = self.frame_timing.snapshot();
         let atlas = if self.config.use_item_icons && self.icon_atlas.is_loaded() {
             Some(&self.icon_atlas)
         } else {
             None
         };
-        let section_allows = self.section_allows_boss_panel(self.section_state.active_index);
-        let show_boss_panel = self.show_boss_panel && section_allows;
-        let show_checks_panel = self.show_checks_panel && section_allows;
 
+        let t2 = Instant::now();
         render_overlay(
             ui,
             &self.config,
-            vm,
+            &self.view_model,
             atlas,
             self.layout.as_ref(),
             self.section_state.active_index,
@@ -875,7 +995,11 @@ impl ImguiRenderLoop for OverlayApp {
             &mut self.boss_panel,
             show_checks_panel,
             &mut self.checks_panel,
+            Some(&timing_snapshot),
         );
+        let draw_dt = t2.elapsed();
+
+        let t3 = Instant::now();
         if self.config.keep_overlay_focus {
             let imgui_hovered = ui.is_window_hovered_with_flags(
                 WindowHoveredFlags::ANY_WINDOW
@@ -883,7 +1007,22 @@ impl ImguiRenderLoop for OverlayApp {
             );
             let interactive_visible =
                 show_boss_panel || show_checks_panel || self.config.show_debug;
-            let _ = er_game_state::set_menu_cursor_visible(interactive_visible || imgui_hovered);
+            self.set_menu_cursor_if_changed(interactive_visible || imgui_hovered);
+        }
+        let cursor_dt = t3.elapsed();
+
+        let total = frame_start.elapsed();
+        self.frame_timing
+            .record(reload_dt, drain_dt, draw_dt, cursor_dt, total);
+        if total > Duration::from_millis(2) {
+            warn!(
+                "Slow overlay frame: {:.2} ms (reload {:.2}, drain {:.2}, draw {:.2}, cursor {:.2})",
+                total.as_secs_f64() * 1000.0,
+                reload_dt.as_secs_f64() * 1000.0,
+                drain_dt.as_secs_f64() * 1000.0,
+                draw_dt.as_secs_f64() * 1000.0,
+                cursor_dt.as_secs_f64() * 1000.0,
+            );
         }
     }
 
@@ -892,7 +1031,7 @@ impl ImguiRenderLoop for OverlayApp {
             return MessageFilter::empty();
         }
         if !self.show_overlay {
-            let _ = er_game_state::set_menu_cursor_visible(false);
+            // Cannot mutate `self` here (`&self`); the next `render` tick clears the cursor bit.
             return MessageFilter::empty();
         }
 
@@ -905,4 +1044,8 @@ impl ImguiRenderLoop for OverlayApp {
         }
         filter
     }
+}
+
+fn file_mtime(path: &Path) -> Option<SystemTime> {
+    std::fs::metadata(path).and_then(|m| m.modified()).ok()
 }
