@@ -327,7 +327,7 @@ checksum = "877a4ace8713b0bcf2a4e7eec82529c029f1d0619886d18145fea96c3ffe5c0f"
 
 [[package]]
 name = "er_game_state"
-version = "1.3.6"
+version = "1.4.0"
 dependencies = [
  "eldenring",
  "er_overlay_common",
@@ -341,7 +341,7 @@ dependencies = [
 
 [[package]]
 name = "er_overlay_common"
-version = "1.3.6"
+version = "1.4.0"
 dependencies = [
  "anyhow",
  "serde",
@@ -354,7 +354,7 @@ dependencies = [
 
 [[package]]
 name = "er_overlay_dll"
-version = "1.3.6"
+version = "1.4.0"
 dependencies = [
  "er_game_state",
  "er_overlay_common",
@@ -367,7 +367,7 @@ dependencies = [
 
 [[package]]
 name = "er_overlay_injector"
-version = "1.3.6"
+version = "1.4.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -385,7 +385,7 @@ dependencies = [
 
 [[package]]
 name = "er_overlay_ui"
-version = "1.3.6"
+version = "1.4.0"
 dependencies = [
  "er_game_state",
  "er_overlay_common",
