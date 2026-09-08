@@ -34,6 +34,9 @@ pub enum ItemKind {
 pub struct GoodEntry {
     pub key: String,
     pub item_id: u32,
+    /// Param ids the game may swap `item_id` for: restoring a Great Rune replaces the
+    /// boss-dropped row (8148..8153) with the restored one (191..196).
+    pub alt_item_ids: Vec<u32>,
     pub name: String,
     pub file: String,
     /// Inventory category the item belongs to (goods vs accessory/talisman).
@@ -46,10 +49,18 @@ pub struct GoodEntry {
     pub countable: bool,
 }
 
+impl GoodEntry {
+    /// Every param id that counts as owning this good.
+    pub fn item_ids(&self) -> impl Iterator<Item = u32> + '_ {
+        std::iter::once(self.item_id).chain(self.alt_item_ids.iter().copied())
+    }
+}
+
 #[derive(Debug, Clone)]
 struct ParsedGood {
     key: String,
     item_id: u32,
+    alt_item_ids: Vec<u32>,
     name: String,
     file: String,
     category: ItemKind,
@@ -74,6 +85,8 @@ struct GoodsTable {
 struct GoodRow {
     key: String,
     item_id: u32,
+    #[serde(default)]
+    alt_item_ids: Vec<u32>,
     #[serde(default)]
     name: String,
     file: Option<String>,
@@ -112,6 +125,7 @@ static GOODS: LazyLock<Vec<ParsedGood>> = LazyLock::new(|| {
             ParsedGood {
                 key: row.key.clone(),
                 item_id: row.item_id,
+                alt_item_ids: row.alt_item_ids,
                 name: row.name,
                 file: row.file.unwrap_or_else(|| format!("{}.png", row.key)),
                 category: row.category,
@@ -172,6 +186,7 @@ fn good_entry(g: &ParsedGood) -> GoodEntry {
     GoodEntry {
         key: g.key.clone(),
         item_id: g.item_id,
+        alt_item_ids: g.alt_item_ids.clone(),
         name: g.name.clone(),
         file: g.file.clone(),
         category: g.category,
@@ -203,25 +218,37 @@ pub fn group_size(name: &str) -> u32 {
     group_members(name).len() as u32
 }
 
-/// Whether a good is currently present in the inventory.
-pub fn item_owned(source: &dyn GameStateSource, item_id: u32, category: ItemKind) -> Option<bool> {
-    source.has_item(item_id, category)
+/// Whether any of a good's param ids reads as present, `None` while none of them is readable.
+fn any_id_matches(good: &GoodEntry, mut probe: impl FnMut(u32) -> Option<bool>) -> Option<bool> {
+    let mut readable = false;
+    for id in good.item_ids() {
+        match probe(id) {
+            Some(true) => return Some(true),
+            Some(false) => readable = true,
+            None => {}
+        }
+    }
+    readable.then_some(false)
+}
+
+/// Whether a good is currently present in the inventory, under any of its param ids.
+pub fn item_owned(source: &dyn GameStateSource, good: &GoodEntry) -> Option<bool> {
+    any_id_matches(good, |id| source.has_item(id, good.category))
+}
+
+/// Whether a good is currently equipped, under any of its param ids.
+pub fn item_equipped(source: &dyn GameStateSource, good: &GoodEntry) -> Option<bool> {
+    any_id_matches(good, |id| source.is_item_equipped(id, good.category))
 }
 
 /// Whether a good is historically owned when the active layout asks for historic tracking.
-pub fn item_owned_historic(
-    source: &dyn GameStateSource,
-    key: &str,
-    item_id: u32,
-    category: ItemKind,
-    historic_lot: Option<LotRef>,
-) -> Option<bool> {
-    let current = item_owned(source, item_id, category);
+pub fn item_owned_historic(source: &dyn GameStateSource, good: &GoodEntry) -> Option<bool> {
+    let current = item_owned(source, good);
     if current == Some(true) {
         return current;
     }
 
-    match effective_good_flag(key, historic_lot) {
+    match effective_good_flag(&good.key, good.historic_lot) {
         Some(flag) => source.get_flag(flag).or(current),
         None => current,
     }
@@ -236,7 +263,7 @@ pub fn group_progress(source: &dyn GameStateSource, name: &str) -> Option<(u32, 
     let total = members.len() as u32;
     let mut owned = 0u32;
     for m in &members {
-        match item_owned(source, m.item_id, m.category) {
+        match item_owned(source, m) {
             Some(true) => owned += 1,
             Some(false) => {}
             None => return None,
@@ -282,6 +309,77 @@ mod tests {
         // the same-named 191..196 rows, which no item lot ever awards.
         assert_eq!(runes[0].item_id, 8148);
         assert!(!runes[0].countable, "runes are owned-checks, not counters");
+        // Restoring a rune at a Divine Tower swaps 8148..8153 for 191..196, so both rows
+        // have to count as owned.
+        assert_eq!(runes[0].alt_item_ids, vec![191]);
+        assert_eq!(
+            runes[5].alt_item_ids,
+            vec![196],
+            "every boss rune needs its restored row"
+        );
+        assert!(
+            group_members("great_runes")
+                .iter()
+                .find(|m| m.key == "unborn_rune")
+                .unwrap()
+                .alt_item_ids
+                .is_empty(),
+            "the Unborn rune is never restored"
+        );
+    }
+
+    #[test]
+    fn restored_great_rune_still_counts_as_owned() {
+        struct RestoredRunes;
+
+        impl GameStateSource for RestoredRunes {
+            fn get_igt(&self) -> Option<GameTime> {
+                None
+            }
+            fn get_death_count(&self) -> Option<u32> {
+                None
+            }
+            fn get_ng_cycle(&self) -> Option<u32> {
+                None
+            }
+            fn get_scadutree_blessing(&self) -> Option<u32> {
+                None
+            }
+            fn get_killed_boss_count(&self) -> Option<u32> {
+                None
+            }
+            fn get_goods_quantity(&self, _item_id: u32) -> Option<u32> {
+                None
+            }
+            fn has_item(&self, item_id: u32, _category: ItemKind) -> Option<bool> {
+                // Godrick's rune restored (191), Radahn's still unrestored (8149).
+                Some(item_id == 191 || item_id == 8149)
+            }
+            fn is_item_equipped(&self, item_id: u32, _category: ItemKind) -> Option<bool> {
+                Some(item_id == 191)
+            }
+            fn get_flag(&self, _flag_id: u32) -> Option<bool> {
+                Some(false)
+            }
+            fn get_current_subregion_id(&self) -> Option<u32> {
+                None
+            }
+            fn get_status(&self) -> GameStateDiagnostics {
+                GameStateDiagnostics::default()
+            }
+            fn bosses_total(&self) -> u32 {
+                0
+            }
+        }
+
+        let godrick = good_by_key("godrick_rune").unwrap();
+        assert_eq!(item_owned(&RestoredRunes, &godrick), Some(true));
+        assert_eq!(item_equipped(&RestoredRunes, &godrick), Some(true));
+        assert_eq!(
+            item_owned(&RestoredRunes, &good_by_key("morgott_rune").unwrap()),
+            Some(false)
+        );
+        assert_eq!(group_progress(&RestoredRunes, "great_runes"), Some((2, 7)));
     }
 
     #[test]
@@ -380,20 +478,22 @@ historic_vanilla_flag = 40001234
 
         let _guard = crate::lot_flags::lock_for_test();
         crate::clear_lot_seed_flags();
-        assert_eq!(
-            item_owned_historic(
-                &Source,
-                "fire_scorpion_charm",
-                1170,
-                ItemKind::Accessory,
-                Some(crate::LotRef {
-                    table: crate::LotTable::Map,
-                    lot_id: 123456,
-                    vanilla_flag: Some(40001234),
-                }),
-            ),
-            Some(true)
-        );
+        let good = GoodEntry {
+            key: "fire_scorpion_charm".to_string(),
+            item_id: 1170,
+            alt_item_ids: Vec::new(),
+            name: "Fire Scorpion Charm".to_string(),
+            file: "fire_scorpion_charm.png".to_string(),
+            category: ItemKind::Accessory,
+            historic_lot: Some(crate::LotRef {
+                table: crate::LotTable::Map,
+                lot_id: 123456,
+                vanilla_flag: Some(40001234),
+            }),
+            max: None,
+            countable: false,
+        };
+        assert_eq!(item_owned_historic(&Source, &good), Some(true));
     }
 
     #[test]

@@ -3,8 +3,8 @@ use std::collections::{HashMap, HashSet};
 use er_game_state::{
     bosses_in_region, checks_in_region, checks_region_label_for_subregion, checks_region_names,
     checks_seed_flags_loaded, checks_total_count, effective_flag, good_by_key, group_names,
-    group_progress, group_size, item_owned, item_owned_historic, region_label_for_subregion,
-    region_names, CheckEntry, GameStateSource,
+    group_progress, group_size, item_equipped, item_owned, item_owned_historic,
+    region_label_for_subregion, region_names, CheckEntry, GameStateSource,
 };
 use er_overlay_common::{
     BossPanelScope, ChallengeSnapshot, GameStateDiagnostics, GameTime, TrackKind,
@@ -454,20 +454,14 @@ pub fn build_view_model_with(
             }
         } else {
             let acquired = if historic_keys.contains(key) {
-                item_owned_historic(
-                    source,
-                    &good.key,
-                    good.item_id,
-                    good.category,
-                    good.historic_lot,
-                )
+                item_owned_historic(source, &good)
             } else {
-                item_owned(source, good.item_id, good.category)
+                item_owned(source, &good)
             };
             TrackKind::Unique { acquired }
         };
         let equipped = if equipped_keys.contains(key) {
-            source.is_item_equipped(good.item_id, good.category)
+            item_equipped(source, &good)
         } else {
             None
         };

@@ -24,9 +24,11 @@ No Rust changes are required for a standard good.
 | `historic_lot_table` / `historic_lot_id` / `historic_vanilla_flag` | The item lot that awards the item, and the flag it sets. Needed only for items that can *leave* the inventory (given to an NPC, consumed), on tiles marked `historic = true`. |
 
 **Always confirm the `item_id` against an item lot.** Several items appear twice in
-`EquipParamGoods` under the same display name, and only one of the rows is ever awarded — the
-Great Runes are both `191..196` and `8148..8153`, but the game only ever hands you the latter.
-An id no lot awards silently reads as "never owned":
+`EquipParamGoods` under the same display name. Sometimes only one row is ever awarded, and an id
+no lot awards silently reads as "never owned". Sometimes *both* are, at different points in the
+run: a boss drops its Great Rune as `8148..8153`, and restoring it at a Divine Tower replaces the
+row with `191..196`. Track those with `alt_item_ids` (see section 2) or the item vanishes from the
+overlay the moment it is restored:
 
 ```powershell
 companion\er_checks_extractor\bin\Release\net9.0\win-x64\er_checks_extractor.exe `
@@ -104,6 +106,7 @@ icon_id = 18000
 | `category` | talismans | `"accessory"` for talismans; default `"goods"`. Avoids param id collisions. |
 | `count` | stackables | `true` → metric shows inventory quantity. |
 | `max` | optional | Display cap, e.g. scadutree `max = 50`. |
+| `alt_item_ids` | items the game swaps | Extra param ids that also count as owning the good, e.g. `alt_item_ids = [191]` on Godrick's Great Rune for its restored row. |
 | `historic_lot_*` | items that leave the inventory | Lot + flag backing the `historic` tracking mode. |
 | `file` | optional | Override PNG filename. |
 

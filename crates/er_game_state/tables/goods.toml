@@ -3,6 +3,8 @@
 # key         : unique id + default PNG ({key}.png)
 # count       : true for stackable goods (0+) → show the inventory quantity instead.
 # max         : optional display cap for a counter (e.g. scadutree → "N/50").
+# alt_item_ids: extra param ids that also count as owning the good, for items the game swaps for
+#               another row (restoring a Great Rune replaces 8148..8153 with 191..196).
 # icon_id     : only for tools/goods/fetch_goods_icons.py
 texture_prefix = "MENU_Knowledge"
 
@@ -14,6 +16,7 @@ members = ["godrick_rune", "radahn_rune", "morgott_rune", "rykard_rune", "mohg_r
 [[good]]
 key = "godrick_rune"
 item_id = 8148
+alt_item_ids = [191]
 name = "Godrick's Great Rune"
 historic_lot_table = "map"
 historic_lot_id = 10010
@@ -23,6 +26,7 @@ icon_id = 3201
 [[good]]
 key = "radahn_rune"
 item_id = 8149
+alt_item_ids = [192]
 name = "Radahn's Great Rune"
 historic_lot_table = "map"
 historic_lot_id = 10301
@@ -32,6 +36,7 @@ icon_id = 3204
 [[good]]
 key = "morgott_rune"
 item_id = 8150
+alt_item_ids = [193]
 name = "Morgott's Great Rune"
 historic_lot_table = "map"
 historic_lot_id = 10041
@@ -41,6 +46,7 @@ icon_id = 3200
 [[good]]
 key = "rykard_rune"
 item_id = 8151
+alt_item_ids = [194]
 name = "Rykard's Great Rune"
 historic_lot_table = "map"
 historic_lot_id = 10221
@@ -50,6 +56,7 @@ icon_id = 3203
 [[good]]
 key = "mohg_rune"
 item_id = 8152
+alt_item_ids = [195]
 name = "Mohg's Great Rune"
 historic_lot_table = "map"
 historic_lot_id = 10121
@@ -59,6 +66,7 @@ icon_id = 3205
 [[good]]
 key = "malenia_rune"
 item_id = 8153
+alt_item_ids = [196]
 name = "Malenia's Great Rune"
 historic_lot_table = "map"
 historic_lot_id = 10201
@@ -78,6 +86,7 @@ icon_id = 3202
 [[good]]
 key = "great_rune_generic"
 item_id = 8148
+alt_item_ids = [191]
 historic_lot_table = "map"
 historic_lot_id = 10010
 historic_vanilla_flag = 171
