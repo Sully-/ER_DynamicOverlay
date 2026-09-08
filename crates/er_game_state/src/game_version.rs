@@ -1,18 +1,17 @@
-use std::sync::OnceLock;
-
 use fromsoftware_shared::game_version::{DetectError, GameVersion, LANG_ID_EN, LANG_ID_JP};
 use pelite::pe64::PeView;
 use tracing::{info, warn};
 use windows::core::PCSTR;
 use windows::Win32::System::LibraryLoader::GetModuleHandleA;
 
-/// Human-readable list of game builds supported by the bundled `eldenring` crate.
-pub const SUPPORTED_GAME_VERSIONS: &str = "2.7.0.0 (WW/EN), 2.7.0.1 (JP)";
+/// Human-readable list of game builds this release was checked against.
+pub const SUPPORTED_GAME_VERSIONS: &str = "2.7.0.0 (WW/EN), 2.7.0.1 (JP), 2.7.1.0 (WW/EN)";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SupportedGameVersion {
     Ww270,
     Jp2701,
+    Ww271,
 }
 
 impl SupportedGameVersion {
@@ -20,6 +19,7 @@ impl SupportedGameVersion {
         match self {
             Self::Ww270 => "2.7.0.0 WW",
             Self::Jp2701 => "2.7.0.1 JP",
+            Self::Ww271 => "2.7.1.0 WW",
         }
     }
 }
@@ -28,6 +28,7 @@ impl SupportedGameVersion {
 enum ErGameVersion {
     Ww270,
     Jp2701,
+    Ww271,
 }
 
 impl From<ErGameVersion> for SupportedGameVersion {
@@ -35,12 +36,14 @@ impl From<ErGameVersion> for SupportedGameVersion {
         match v {
             ErGameVersion::Ww270 => Self::Ww270,
             ErGameVersion::Jp2701 => Self::Jp2701,
+            ErGameVersion::Ww271 => Self::Ww271,
         }
     }
 }
 
-/// Must stay in sync with `ERGameVersion` in the `eldenring` crate: a version it
-/// doesn't know panics on the first RVA lookup instead of degrading gracefully.
+/// Builds verified by hand. This list is informational: it no longer gates
+/// reads, because [`crate::rva_scan`] locates what the overlay needs by byte
+/// pattern, so an unlisted build is attempted rather than refused.
 impl GameVersion for ErGameVersion {
     const NAME: &'static str = "elden ring";
 
@@ -48,6 +51,7 @@ impl GameVersion for ErGameVersion {
         match (lang_id, version) {
             (LANG_ID_EN, "2.7.0.0") => Some(Self::Ww270),
             (LANG_ID_JP, "2.7.0.1") => Some(Self::Jp2701),
+            (LANG_ID_EN, "2.7.1.0") => Some(Self::Ww271),
             _ => None,
         }
     }
@@ -94,15 +98,6 @@ pub fn probe_game_exe() -> GameExeProbe {
     }
 }
 
-/// Whether the loaded executable is a build the `eldenring` crate has RVAs for.
-///
-/// Cached because the answer cannot change while the process lives, and because
-/// the game-reading hot paths consult it on every poll.
-pub fn game_supported() -> bool {
-    static SUPPORTED: OnceLock<bool> = OnceLock::new();
-    *SUPPORTED.get_or_init(|| probe_game_exe().is_supported())
-}
-
 pub fn log_startup_context(overlay_version: &str) {
     info!("er_overlay version {overlay_version}");
     log_probe(&probe_game_exe());
@@ -110,20 +105,29 @@ pub fn log_startup_context(overlay_version: &str) {
 
 pub fn log_probe(probe: &GameExeProbe) {
     match probe.supported {
-        Some(v) => info!("Game executable supported ({})", v.label()),
-        None => warn!(
+        Some(v) => info!("Game executable verified ({})", v.label()),
+        None => info!(
             detected = ?probe.detected_version,
-            error = probe.error.as_deref().unwrap_or("unknown"),
-            "Game executable is not supported. Expected: {SUPPORTED_GAME_VERSIONS}. \
-             Metrics will show '---' until you update the game or the overlay. \
-             Set show_debug = true in er_overlay.toml for live pointer status."
+            "Game executable is not in the verified list ({SUPPORTED_GAME_VERSIONS}). \
+             Reading it anyway: the overlay locates what it needs by byte pattern, \
+             so a patch that leaves that code alone still works. \
+             See the pointer summary below."
         ),
     }
 }
 
 pub fn log_pointer_summary(gamedata: bool, event_flags: bool, world_chr: bool, field_area: bool) {
-    info!(
-        "Game pointers resolved: GameDataMan={gamedata} EventFlagMan={event_flags} \
-         WorldChrMan={world_chr} FieldArea={field_area}"
-    );
+    if gamedata || event_flags || world_chr || field_area {
+        info!(
+            "Game pointers resolved: GameDataMan={gamedata} EventFlagMan={event_flags} \
+             WorldChrMan={world_chr} FieldArea={field_area}"
+        );
+    } else {
+        // With no version gate left, this is the only signal that a patch moved
+        // something the overlay depends on.
+        warn!(
+            "No game pointer could be resolved on this build. Metrics will show '---'. \
+             Set show_debug = true in er_overlay.toml for live pointer status."
+        );
+    }
 }

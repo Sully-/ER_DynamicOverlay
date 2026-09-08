@@ -1,21 +1,14 @@
 use std::collections::{HashMap, HashSet};
-use std::time::Duration;
 
 use eldenring::cs::{CSEventFlagMan, GameDataMan};
-use eldenring::util::system::{wait_for_system_init, SystemInitError};
 use er_overlay_common::{BackendKind, GameStateDiagnostics, GameTime};
-use fromsoftware_shared::{program::Program, FromStatic};
-use tracing::{debug, warn};
+use fromsoftware_shared::FromStatic;
+use tracing::debug;
 
 use crate::boss_table::bosses_total_count;
-use crate::game_version::game_supported;
+use crate::rva_scan;
 use crate::tables::{boss_entries, group_size};
 use crate::{GameStateSource, ItemKind};
-
-/// Per-poll budget spent waiting for the FromSoftware system to come up. Kept
-/// short so the render thread is never blocked for long; init simply retries on
-/// the next poll until it succeeds.
-const SYSTEM_INIT_POLL_TIMEOUT: Duration = Duration::from_millis(20);
 
 pub struct GameStateReader {
     diagnostics: GameStateDiagnostics,
@@ -83,69 +76,66 @@ impl GameStateReader {
         ))
     }
 
-    /// Attempts initialization without blocking the caller (render thread) for
-    /// long. Returns immediately once initialized; otherwise spends only a small
-    /// time budget and retries on the next poll.
+    /// Checks readiness without ever blocking the caller: the addresses come
+    /// from a memoized scan and the engine-up test is a single read. Not being
+    /// ready yet (still on the loading screen) simply retries on the next poll.
     pub fn ensure_initialized(&mut self) {
         if self.initialized {
             return;
         }
-        // Every read below goes through the `eldenring` RVA table, which panics
-        // on a build it doesn't know. Checking the exe metadata first turns a
-        // game-breaking abort after an Elden Ring patch into blank metrics.
-        if !game_supported() {
+        if !rva_scan::addresses_available() {
+            // Scanning already logged why. Nothing is readable on this build,
+            // so metrics stay blank rather than reading arbitrary memory.
             self.diagnostics.backend = BackendKind::Unavailable;
             return;
         }
-        match wait_for_system_init(&Program::current(), SYSTEM_INIT_POLL_TIMEOUT) {
-            Ok(()) => {
-                debug!("fromsoftware system init OK");
-                self.diagnostics.backend = BackendKind::FromSoftwareRs;
-                self.initialized = true;
+        if rva_scan::system_initialized() {
+            debug!("game engine init OK");
+            self.diagnostics.backend = BackendKind::FromSoftwareRs;
+            self.initialized = true;
+        } else {
+            if !self.init_timed_out_logged {
+                debug!("game engine not ready yet; will retry");
+                self.init_timed_out_logged = true;
             }
-            Err(SystemInitError::Timeout) => {
-                // Not ready yet (e.g. still on a loading screen). Retry next poll
-                // instead of stalling the render thread.
-                if !self.init_timed_out_logged {
-                    debug!("fromsoftware system not ready yet; will retry");
-                    self.init_timed_out_logged = true;
-                }
-                self.diagnostics.backend = BackendKind::Unavailable;
-            }
-            Err(e) => {
-                warn!("wait_for_system_init failed: {e:?}");
-                self.diagnostics.backend = BackendKind::Unavailable;
-            }
+            self.diagnostics.backend = BackendKind::Unavailable;
         }
     }
 
     fn refresh_diag_flags(&mut self) {
         self.diagnostics.boss_flags_loaded = boss_entries().bosses.len() as u32;
         self.diagnostics.great_rune_flags_loaded = group_size("great_runes");
-        if !game_supported() {
+        if !rva_scan::system_initialized() {
             return;
         }
-        self.diagnostics.gamedata_man_resolved = unsafe { GameDataMan::instance().is_ok() };
+        self.diagnostics.gamedata_man_resolved = Self::game_data_man().is_some();
         self.diagnostics.event_flag_man_resolved = unsafe { CSEventFlagMan::instance().is_ok() };
         self.diagnostics.world_chr_man_resolved = crate::inventory::game::inventory_available();
         self.diagnostics.field_area_resolved = crate::field_area::field_area_available();
     }
 
     fn read_flag(flag_id: u32) -> Option<bool> {
-        if !game_supported() {
+        // The DLRF reflection data this singleton is looked up through is only
+        // populated once the engine is up.
+        if !rva_scan::system_initialized() {
             return None;
         }
         let man = unsafe { CSEventFlagMan::instance().ok()? };
         Some(man.virtual_memory_flag.get_flag(flag_id))
     }
 
-    /// Single guarded entry point to `GameDataMan`, which resolves through the
-    /// version-specific RVA table and would panic on an unsupported build.
+    /// Single entry point to `GameDataMan`, read through our own scan rather
+    /// than `GameDataMan::instance()`, which resolves via the crate's
+    /// version-keyed table and panics on any build it doesn't list.
     fn game_data_man() -> Option<&'static GameDataMan> {
-        if !game_supported() {
+        if !rva_scan::system_initialized() {
             return None;
         }
-        unsafe { GameDataMan::instance().ok() }
+        let slot = rva_scan::game_data_man_static()?;
+        // SAFETY: `slot` is the global that the game's own code writes the
+        // `GameDataMan` pointer into; it is null until the save is loaded.
+        let ptr = unsafe { std::ptr::read_unaligned(slot as *const *const GameDataMan) };
+        unsafe { ptr.as_ref() }
     }
 
     /// Recomputes the killed-boss count by scanning every boss flag once. Cached

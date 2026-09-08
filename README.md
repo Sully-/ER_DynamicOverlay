@@ -106,7 +106,7 @@ Open `er_overlay.toml` in any text editor (hot-reloaded ~every 2 s). The most co
 See **[Quick start](#quick-start)** above. Requirements:
 
 - Windows **x64**
-- Elden Ring **offline**, a version supported by the release (currently **2.7.0.0 (WW)** and **2.7.0.1 (JP)** — see [Troubleshooting](#troubleshooting) if values show `---`)
+- Elden Ring **offline**. The overlay finds what it reads by scanning for byte patterns rather than hardcoded addresses, so it normally keeps working across game patches. Verified on **2.7.0.0 (WW)**, **2.7.0.1 (JP)** and **2.7.1.0 (WW)**; other builds are attempted too — see [Troubleshooting](#troubleshooting) if values show `---`
 
 ### Build from source
 
@@ -377,7 +377,7 @@ The release zip includes a **visual editor** — no TOML syntax to learn. It shi
 | Injector: "process not found" | Launch Elden Ring first. |
 | Injection fails | EAC is active → run the game offline; try running the injector as administrator. |
 | "LoadLibraryW returned NULL" | DLL missing / missing dependency / wrong architecture — check the DLL path. |
-| All values show `---` | Game version unsupported — check `logs/er_overlay.log` for `Unsupported game executable` or set `show_debug = true`. Supported builds: **2.7.0.0 (WW), 2.7.0.1 (JP)** (`eldenring` 0.14). |
+| All values show `---` | The overlay could not locate the game's data in memory. Check `logs/er_overlay.log` for `byte pattern not found` or set `show_debug = true`. Verified builds: **2.7.0.0 (WW), 2.7.0.1 (JP), 2.7.1.0 (WW)**; a newer patch that moved the relevant code would need a new release. |
 | Game crashes on inject | Check `logs/er_overlay.log`: last line before crash pinpoints the step (`Hudhook::apply`, `build_view_model`, etc.). Update the game if the log says unsupported executable. |
 | No icons (only dots) | PNGs missing from `assets/icons` — see [Icons](#icons). |
 | Overlay crash | Conflict with another DX12 hook (RTSS, etc.). |

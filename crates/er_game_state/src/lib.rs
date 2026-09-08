@@ -17,6 +17,9 @@ mod game_version;
 mod reader;
 
 #[cfg(feature = "game")]
+mod rva_scan;
+
+#[cfg(feature = "game")]
 mod screen_state;
 
 pub use boss_table::{

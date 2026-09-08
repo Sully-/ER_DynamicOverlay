@@ -106,7 +106,7 @@ Ouvrez `er_overlay.toml` dans n'importe quel éditeur de texte (rechargé à cha
 Voir le **[Démarrage rapide](#démarrage-rapide)** ci-dessus. Prérequis :
 
 - Windows **x64**
-- Elden Ring **hors ligne**, une version prise en charge par la release (actuellement **2.7.0.0 (WW)** et **2.7.0.1 (JP)** — voir [Dépannage](#dépannage) si les valeurs affichent `---`)
+- Elden Ring **hors ligne**. L'overlay localise ce qu'il lit par recherche de motifs d'octets plutôt que par adresses figées, ce qui lui permet en général de continuer à fonctionner après un patch du jeu. Vérifié sur **2.7.0.0 (WW)**, **2.7.0.1 (JP)** et **2.7.1.0 (WW)** ; les autres builds sont tentés également — voir [Dépannage](#dépannage) si les valeurs affichent `---`
 
 ### Compiler depuis les sources
 
@@ -377,7 +377,7 @@ Le zip de release inclut un **éditeur visuel** : pas besoin d'apprendre la synt
 | Injecteur : "process not found" | Lancez Elden Ring d'abord. |
 | L'injection échoue | EAC est actif → lancez le jeu hors ligne ; essayez de lancer l'injecteur en administrateur. |
 | "LoadLibraryW returned NULL" | DLL manquante / dépendance manquante / mauvaise architecture — vérifiez le chemin de la DLL. |
-| Toutes les valeurs affichent `---` | Version du jeu non prise en charge — consultez `logs/er_overlay.log` pour `Unsupported game executable` ou définissez `show_debug = true`. Builds pris en charge : **2.7.0.0 (WW), 2.7.0.1 (JP)** (`eldenring` 0.14). |
+| Toutes les valeurs affichent `---` | L'overlay n'a pas pu localiser les données du jeu en mémoire. Consultez `logs/er_overlay.log` pour `byte pattern not found` ou définissez `show_debug = true`. Builds vérifiés : **2.7.0.0 (WW), 2.7.0.1 (JP), 2.7.1.0 (WW)** ; un patch plus récent qui déplacerait le code concerné nécessiterait une nouvelle release. |
 | Le jeu crash à l'injection | Consultez `logs/er_overlay.log` : la dernière ligne avant le crash indique l'étape (`Hudhook::apply`, `build_view_model`, etc.). Mettez le jeu à jour si le log indique un exécutable non pris en charge. |
 | Pas d'icônes (seulement des points) | PNG manquants dans `assets/icons` — voir [Icônes](#icônes). |
 | Crash de l'overlay | Conflit avec un autre hook DX12 (RTSS, etc.). |
