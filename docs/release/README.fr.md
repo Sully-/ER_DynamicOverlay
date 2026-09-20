@@ -211,6 +211,9 @@ Le champ `metric` d'une tuile `metric` accepte :
 | `deaths` | Nombre de morts. |
 | `ng_cycle` | Cycle New Game (`NG+N`). |
 | `bosses` | Boss tués sur 207. |
+| `checks` | Checks complétés sur la checklist complète (`N/46`). |
+| `checks_base` | Checks du jeu de base uniquement (`N/31`). |
+| `checks_dlc` | Checks Shadow of the Erdtree uniquement (`N/15`). |
 | `pb` | Record personnel du challenge (nécessite `[challenge] enabled = true`). |
 | `nbtries` | Nombre de runs challenge échouées (alias : `tries`, `challenge_pb`, `challenge_tries`). |
 | `scadutree_blessing` | Niveau de Bénédiction de l'Arbre-Occulte dépensé aux Sites de grâce (`N/20`). |

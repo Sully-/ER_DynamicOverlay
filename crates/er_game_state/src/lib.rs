@@ -28,11 +28,11 @@ pub use boss_table::{
     DEFAULT_LOCALE_ID,
 };
 pub use checks_table::{
-    active_checks_locale, checks_in_region, checks_region_label_for_subregion, checks_region_names,
-    checks_seed_flags_loaded, checks_seed_regulation_hash, checks_total_count,
-    clear_checks_seed_flags, effective_flag, load_checks_flags_from_path,
-    load_checks_table_from_path, reload_checks_flags_if_modified, reload_checks_table_if_modified,
-    resolve_checks_table_path, CheckEntry, ChecksTableData,
+    active_checks_locale, checks_base_count, checks_dlc_count, checks_in_region,
+    checks_region_label_for_subregion, checks_region_names, checks_seed_flags_loaded,
+    checks_seed_regulation_hash, checks_total_count, clear_checks_seed_flags, effective_flag,
+    load_checks_flags_from_path, load_checks_table_from_path, reload_checks_flags_if_modified,
+    reload_checks_table_if_modified, resolve_checks_table_path, CheckEntry, ChecksTableData,
 };
 pub use lot_flags::{
     clear_lot_seed_flags, effective_lot_flag, load_lot_flags_from_path, lot_seed_flags_loaded,

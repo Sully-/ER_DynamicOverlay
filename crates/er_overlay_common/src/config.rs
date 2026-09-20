@@ -55,13 +55,13 @@ pub struct OverlayConfig {
     #[serde(default = "default_layout_file")]
     pub layout_file: Option<String>,
     /// Hotkey to cycle layout sections (e.g. `"F8"`, `"Ctrl+Shift+F1"`).
-    #[serde(default)]
+    #[serde(default = "default_layout_section_hotkey")]
     pub layout_section_hotkey: Option<String>,
     /// Hotkey to toggle the regional boss checklist panel (e.g. `"F7"`).
     #[serde(default = "default_boss_panel_hotkey")]
     pub boss_panel_hotkey: Option<String>,
     /// Hotkey to show/hide the entire overlay (HUD + boss panel).
-    #[serde(default)]
+    #[serde(default = "default_hide_all_hotkey")]
     pub hide_all_hotkey: Option<String>,
     /// Boss panel filter: `current-region` or `all-regions` (player location is always tracked).
     #[serde(default)]
@@ -164,6 +164,14 @@ fn default_checks_panel_hotkey() -> Option<String> {
     Some("F6".into())
 }
 
+fn default_layout_section_hotkey() -> Option<String> {
+    Some("F8".into())
+}
+
+fn default_hide_all_hotkey() -> Option<String> {
+    Some("F9".into())
+}
+
 impl Default for OverlayConfig {
     fn default() -> Self {
         Self {
@@ -178,9 +186,9 @@ impl Default for OverlayConfig {
             use_item_icons: true,
             icons_dir: None,
             layout_file: default_layout_file(),
-            layout_section_hotkey: None,
+            layout_section_hotkey: default_layout_section_hotkey(),
             boss_panel_hotkey: default_boss_panel_hotkey(),
-            hide_all_hotkey: None,
+            hide_all_hotkey: default_hide_all_hotkey(),
             boss_panel_scope: BossPanelScope::default(),
             boss_panel_expand_all_regions: false,
             boss_panel_visible: true,
@@ -335,6 +343,17 @@ mod tests {
             Some("layouts/dashboard.toml")
         );
         assert_eq!(parsed.anchor, Anchor::TopRight);
+    }
+
+    /// A config predating a hotkey key (or pruned by hand) must still resolve every default.
+    /// These used to fall back to `None`, which silently disabled the key with no warning.
+    #[test]
+    fn hotkeys_default_when_absent_from_config() {
+        let cfg: OverlayConfig = toml::from_str("").unwrap();
+        assert_eq!(cfg.layout_section_hotkey.as_deref(), Some("F8"));
+        assert_eq!(cfg.hide_all_hotkey.as_deref(), Some("F9"));
+        assert_eq!(cfg.boss_panel_hotkey.as_deref(), Some("F7"));
+        assert_eq!(cfg.checks_panel_hotkey.as_deref(), Some("F6"));
     }
 
     #[test]

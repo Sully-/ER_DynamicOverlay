@@ -153,6 +153,16 @@ pub fn checks_total_count() -> usize {
     checks_table().checks.len()
 }
 
+/// Number of base-game checks in the table (used as a fallback max).
+pub fn checks_base_count() -> usize {
+    checks_table().checks.iter().filter(|c| !c.dlc).count()
+}
+
+/// Number of Shadow of the Erdtree checks in the table.
+pub fn checks_dlc_count() -> usize {
+    checks_table().checks.iter().filter(|c| c.dlc).count()
+}
+
 /// Checks whose `region` label matches `region`, in table order.
 pub fn checks_in_region(region: &str) -> Vec<CheckEntry> {
     checks_table()

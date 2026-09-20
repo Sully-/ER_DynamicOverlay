@@ -467,11 +467,11 @@ h = 1
 label = "RUN"
 ```
 
-**Fields per tile kind** (all: `col`, `row`, `w`/`col_span`, `h`/`row_span`, optional `id`):
+**Fields per tile kind** (all: `col`, `row`, `w`/`col_span`, `h`/`row_span`, optional `id`, optional `show_border` — set `false` to hide the tile outline, default `true`):
 
 - `metric`: `metric` (metric id, see [Available metrics](#available-metrics-reference)), `label`, `show_max` (bool, shows `N/total`), `icon` (optional PNG key shown above the text).
 - `item`: `key` (a good key from `goods.toml`). Optional `track_equipped = true` (green border while equipped) and `historic = true` (stay owned after the item leaves the inventory). See [Item tracking modes](#item-tracking-modes) for behavior.
-- `label`: `label` (text).
+- `label`: `label` (text), `icon` (optional PNG key — centered icon with text overlaid at the top; ignored when `use_item_icons = false`).
 
 **Validation rules**: `columns > 0`, spans `> 0`, no overlapping tiles *within the same section*, `col + col_span ≤ columns`, unique and non-empty section names, non-empty sections. The file is re-validated on every reload (every 2 s).
 
@@ -485,6 +485,9 @@ The `metric` field of a `metric` tile accepts:
 | `deaths` | Death count. |
 | `ng_cycle` | New Game cycle (`NG+N`). |
 | `bosses` | Bosses killed out of 207. |
+| `checks` | Checks completed out of the full checklist (`N/46`). |
+| `checks_base` | Base-game checks only (`N/31`). |
+| `checks_dlc` | Shadow of the Erdtree checks only (`N/15`). |
 | `pb` | Challenge personal best (requires `[challenge] enabled = true`). |
 | `nbtries` | Challenge failed run count (aliases: `tries`, `challenge_pb`, `challenge_tries`). |
 | `scadutree_blessing` | Scadutree Blessing level spent at Sites of Grace (`N/20`). Distinct from the `scadutree` good key (fragment inventory count). |

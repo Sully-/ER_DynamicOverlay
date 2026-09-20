@@ -211,6 +211,9 @@ The `metric` field of a `metric` tile accepts:
 | `deaths` | Death count. |
 | `ng_cycle` | New Game cycle (`NG+N`). |
 | `bosses` | Bosses killed out of 207. |
+| `checks` | Checks completed out of the full checklist (`N/46`). |
+| `checks_base` | Base-game checks only (`N/31`). |
+| `checks_dlc` | Shadow of the Erdtree checks only (`N/15`). |
 | `pb` | Challenge personal best (requires `[challenge] enabled = true`). |
 | `nbtries` | Challenge failed run count (aliases: `tries`, `challenge_pb`, `challenge_tries`). |
 | `scadutree_blessing` | Scadutree Blessing level spent at Sites of Grace (`N/20`). |

@@ -91,12 +91,47 @@ impl Default for IconAtlas {
     }
 }
 
+/// hudhook uploads a single mip (`MaxLOD = 0`). Minifying a 1k PNG onto a ~64px
+/// tile then aliases badly (pixelated text). Pre-filter to this edge on the CPU.
+const MAX_ICON_GPU_EDGE: u32 = 256;
+
+fn prepare_icon_rgba(image: image::RgbaImage) -> image::RgbaImage {
+    let (w, h) = image.dimensions();
+    let longest = w.max(h);
+    if longest <= MAX_ICON_GPU_EDGE {
+        return image;
+    }
+    let scale = MAX_ICON_GPU_EDGE as f32 / longest as f32;
+    let nw = ((w as f32 * scale).round() as u32).max(1);
+    let nh = ((h as f32 * scale).round() as u32).max(1);
+    image::imageops::resize(&image, nw, nh, image::imageops::FilterType::Lanczos3)
+}
+
 fn load_png_texture(
     render_ctx: &mut dyn RenderContext,
     path: &Path,
 ) -> Result<TextureId, Box<dyn std::error::Error>> {
-    let image = image::ImageReader::open(path)?.decode()?.into_rgba8();
+    let image = prepare_icon_rgba(image::ImageReader::open(path)?.decode()?.into_rgba8());
     let width = image.width();
     let height = image.height();
     Ok(render_ctx.load_texture(image.as_raw(), width, height)?)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn small_icons_are_uploaded_unchanged() {
+        let img = image::RgbaImage::new(128, 128);
+        let out = prepare_icon_rgba(img);
+        assert_eq!(out.dimensions(), (128, 128));
+    }
+
+    #[test]
+    fn large_icons_are_downscaled_to_max_edge() {
+        let img = image::RgbaImage::new(1042, 1042);
+        let out = prepare_icon_rgba(img);
+        assert_eq!(out.dimensions(), (MAX_ICON_GPU_EDGE, MAX_ICON_GPU_EDGE));
+    }
 }

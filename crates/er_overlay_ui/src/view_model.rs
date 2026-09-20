@@ -1,10 +1,11 @@
 use std::collections::{HashMap, HashSet};
 
 use er_game_state::{
-    bosses_in_region, checks_in_region, checks_region_label_for_subregion, checks_region_names,
-    checks_seed_flags_loaded, checks_total_count, effective_flag, good_by_key, group_names,
-    group_progress, group_size, item_equipped, item_owned, item_owned_historic,
-    region_label_for_subregion, region_names, CheckEntry, GameStateSource,
+    bosses_in_region, checks_base_count, checks_dlc_count, checks_in_region,
+    checks_region_label_for_subregion, checks_region_names, checks_seed_flags_loaded,
+    checks_total_count, effective_flag, good_by_key, group_names, group_progress, group_size,
+    item_equipped, item_owned, item_owned_historic, region_label_for_subregion, region_names,
+    CheckEntry, GameStateSource,
 };
 use er_overlay_common::{
     BossPanelScope, ChallengeSnapshot, GameStateDiagnostics, GameTime, TrackKind,
@@ -115,6 +116,10 @@ pub struct OverlayViewModel {
     pub checks_panel_total: u32,
     pub checks_done: u32,
     pub checks_total: u32,
+    pub checks_base_done: u32,
+    pub checks_base_total: u32,
+    pub checks_dlc_done: u32,
+    pub checks_dlc_total: u32,
     pub checks_current_region: Option<String>,
     /// Preformatted checks panel title line.
     pub checks_panel_title: String,
@@ -276,6 +281,30 @@ fn build_all_checks_progress(source: &dyn GameStateSource) -> (u32, u32) {
     (done_total, checks_total)
 }
 
+/// done/total (traceable only) for base-game and DLC checks, in a single walk.
+fn build_split_checks_progress(source: &dyn GameStateSource) -> (u32, u32, u32, u32) {
+    let (mut base_done, mut base_total, mut dlc_done, mut dlc_total) = (0u32, 0u32, 0u32, 0u32);
+
+    for region in checks_region_names() {
+        for check in checks_in_region(&region) {
+            let (done_state, traceable) = check_done_state(source, &check);
+            let (done, total) = if check.dlc {
+                (&mut dlc_done, &mut dlc_total)
+            } else {
+                (&mut base_done, &mut base_total)
+            };
+            if traceable {
+                *total += 1;
+            }
+            if done_state == Some(true) {
+                *done += 1;
+            }
+        }
+    }
+
+    (base_done, base_total, dlc_done, dlc_total)
+}
+
 fn build_checks_panel_sections(
     source: &dyn GameStateSource,
     scope: BossPanelScope,
@@ -399,6 +428,10 @@ pub fn empty_view_model(
         checks_panel_total: 0,
         checks_done: 0,
         checks_total,
+        checks_base_done: 0,
+        checks_base_total: checks_base_count() as u32,
+        checks_dlc_done: 0,
+        checks_dlc_total: checks_dlc_count() as u32,
         checks_current_region: None,
         checks_panel_title: "Checks".to_string(),
         checks_seed_active: false,
@@ -502,6 +535,9 @@ pub fn build_view_model_with(
 
     let checks_current_region = current_subregion_id.and_then(checks_region_label_for_subregion);
     let need_checks_metric = referenced_keys.iter().any(|k| k == "checks");
+    let need_checks_split = referenced_keys
+        .iter()
+        .any(|k| k == "checks_base" || k == "checks_dlc");
     let (checks_panel_sections, checks_panel_done, checks_panel_total) = if options
         .build_checks_panel
     {
@@ -521,6 +557,13 @@ pub fn build_view_model_with(
     } else {
         (0, checks_total_count() as u32)
     };
+
+    let (checks_base_done, checks_base_total, checks_dlc_done, checks_dlc_total) =
+        if need_checks_split {
+            build_split_checks_progress(source)
+        } else {
+            (0, checks_base_count() as u32, 0, checks_dlc_count() as u32)
+        };
 
     let checks_seed_active = checks_seed_flags_loaded();
     let checks_panel_title = format_checks_panel_title(
@@ -555,6 +598,10 @@ pub fn build_view_model_with(
         checks_panel_total,
         checks_done,
         checks_total,
+        checks_base_done,
+        checks_base_total,
+        checks_dlc_done,
+        checks_dlc_total,
         checks_current_region,
         checks_panel_title,
         checks_seed_active,

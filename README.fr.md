@@ -467,11 +467,11 @@ h = 1
 label = "RUN"
 ```
 
-**Champs par type de tuile** (tous : `col`, `row`, `w`/`col_span`, `h`/`row_span`, `id` optionnel) :
+**Champs par type de tuile** (tous : `col`, `row`, `w`/`col_span`, `h`/`row_span`, `id` optionnel, `show_border` optionnel — `false` pour masquer le contour de la tuile, défaut `true`) :
 
 - `metric` : `metric` (id de métrique, voir [Métriques disponibles](#métriques-disponibles-référence)), `label`, `show_max` (bool, affiche `N/total`), `icon` (clé PNG optionnelle affichée au-dessus du texte).
 - `item` : `key` (clé de good depuis `goods.toml`). `track_equipped = true` optionnel (bordure verte quand équipé) et `historic = true` optionnel (reste possédé après que l'objet quitte l'inventaire). Voir [Modes de suivi d'un objet](#modes-de-suivi-dun-objet) pour le comportement.
-- `label` : `label` (texte).
+- `label` : `label` (texte), `icon` (clé PNG optionnelle — icône centrée avec le texte en surimpression en haut, ignorée si `use_item_icons = false`).
 
 **Règles de validation** : `columns > 0`, spans `> 0`, aucune tuile superposée *dans une même section*, `col + col_span ≤ columns`, noms de sections uniques et non vides, sections non vides. Le fichier est revalidé à chaque rechargement (toutes les 2 s).
 
@@ -485,6 +485,9 @@ Le champ `metric` d'une tuile `metric` accepte :
 | `deaths` | Nombre de morts. |
 | `ng_cycle` | Cycle New Game (`NG+N`). |
 | `bosses` | Boss tués sur 207. |
+| `checks` | Checks complétés sur la checklist complète (`N/46`). |
+| `checks_base` | Checks du jeu de base uniquement (`N/31`). |
+| `checks_dlc` | Checks Shadow of the Erdtree uniquement (`N/15`). |
 | `pb` | Record personnel du challenge (nécessite `[challenge] enabled = true`). |
 | `nbtries` | Nombre de runs challenge échouées (alias : `tries`, `challenge_pb`, `challenge_tries`). |
 | `scadutree_blessing` | Niveau de Bénédiction de l'Arbre-Occulte dépensé aux Sites de grâce (`N/20`). Distinct de la clé de good `scadutree` (nombre de fragments en inventaire). |

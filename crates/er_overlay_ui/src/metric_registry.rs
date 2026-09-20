@@ -38,6 +38,14 @@ pub fn resolve_metric(metric: &str, vm: &OverlayViewModel) -> MetricValue {
             current: Some(vm.checks_done),
             max: Some(vm.checks_total),
         },
+        "checks_base" => MetricValue::Count {
+            current: Some(vm.checks_base_done),
+            max: Some(vm.checks_base_total),
+        },
+        "checks_dlc" => MetricValue::Count {
+            current: Some(vm.checks_dlc_done),
+            max: Some(vm.checks_dlc_total),
+        },
         "pb" | "challenge_pb" => {
             if vm.challenge.enabled {
                 MetricValue::Count {
@@ -248,6 +256,35 @@ mod tests {
                 max: Some(er_game_state::checks_total_count() as u32),
             }
         );
+    }
+
+    #[test]
+    fn checks_base_and_dlc_metrics_split_progress() {
+        let refs = keys(&["checks_base", "checks_dlc"]);
+        let vm = build_view_model(
+            &MockGameState::default(),
+            &refs,
+            &HashSet::new(),
+            &HashSet::new(),
+            er_overlay_common::BossPanelScope::CurrentRegion,
+            er_overlay_common::BossPanelScope::CurrentRegion,
+            er_overlay_common::ChallengeSnapshot::default(),
+        );
+        assert_eq!(
+            resolve_metric("checks_base", &vm),
+            MetricValue::Count {
+                current: Some(0),
+                max: Some(er_game_state::checks_base_count() as u32),
+            }
+        );
+        assert_eq!(
+            resolve_metric("checks_dlc", &vm),
+            MetricValue::Count {
+                current: Some(0),
+                max: Some(er_game_state::checks_dlc_count() as u32),
+            }
+        );
+        assert_eq!(vm.checks_base_total + vm.checks_dlc_total, vm.checks_total);
     }
 
     #[test]

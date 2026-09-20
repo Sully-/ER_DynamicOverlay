@@ -6,6 +6,8 @@ const METRICS = [
   { id: "ng_cycle", label: "NG", showMax: false },
   { id: "bosses", label: "BOSS", showMax: true, defaultMax: 165 },
   { id: "checks", label: "CHECKS", showMax: true, defaultMax: 46 },
+  { id: "checks_base", label: "CHECKS BASE", showMax: true, defaultMax: 31 },
+  { id: "checks_dlc", label: "CHECKS DLC", showMax: true, defaultMax: 15 },
   { id: "great_runes", label: "RUNES", showMax: true, defaultMax: 7 },
   { id: "kindling", label: "KINDLING", showMax: true, icon: "kindling", defaultMax: 8 },
   { id: "scadutree", label: "SHARDS", showMax: true, icon: "scadutree", defaultMax: 20 },
@@ -15,7 +17,7 @@ const METRICS = [
 ];
 
 /** Numeric metrics a PB tile can be computed on (source for the challenge personal best). */
-const PB_SOURCE_METRICS = ["bosses", "deaths", "checks", "great_runes", "scadutree_blessing", "ng_cycle"];
+const PB_SOURCE_METRICS = ["bosses", "deaths", "checks", "checks_base", "checks_dlc", "great_runes", "scadutree_blessing", "ng_cycle"];
 const PB_DEFAULT_SOURCE = "bosses";
 const PB_DEFAULT_MODE = "max";
 
@@ -49,6 +51,8 @@ const PREVIEW_METRICS = {
   ng_cycle: "NG+2",
   bosses: "12/165",
   checks: "12/46",
+  checks_base: "8/31",
+  checks_dlc: "4/15",
   great_runes: "6/7",
   kindling: "7/8",
   scadutree: "12/20",
@@ -59,7 +63,7 @@ const PREVIEW_METRICS = {
 
 const OVERLAY_COUNTER_SCALE = 0.85;
 const PREVIEW_ITEM_COUNT = "3";
-const TILE_RENDER_VERSION = 8;
+const TILE_RENDER_VERSION = 10;
 
 /** Prefer `er_overlay.toml` next to the HTML (release / local-test root). */
 const OVERLAY_CONFIG_URL = new URL("er_overlay.toml", new URL(".", location.href)).href;
@@ -189,6 +193,7 @@ function tileContentKey(tile, gm) {
     tile.max_mode,
     tile.max,
     tile.icon,
+    tile.show_border,
     tile.key,
     tile.track_equipped,
     tile.historic,
@@ -350,6 +355,7 @@ const els = {
   propTrackEquipped: $("#prop-track-equipped"),
   propHistoric: $("#prop-historic"),
   propIcon: $("#prop-icon"),
+  propShowBorder: $("#prop-show-border"),
   fieldLabel: $("#field-label"),
   fieldMetric: $("#field-metric"),
   fieldPbSource: $("#field-pb-source"),
@@ -360,6 +366,7 @@ const els = {
   fieldTrackEquipped: $("#field-track-equipped"),
   fieldHistoric: $("#field-historic"),
   fieldIcon: $("#field-icon"),
+  fieldShowBorder: $("#field-show-border"),
   cfgColumns: $("#cfg-columns"),
   cfgRows: $("#cfg-rows"),
   cfgUnitSize: $("#cfg-unit-size"),
@@ -931,6 +938,17 @@ function fillPaletteThumb(thumb, kind, data) {
     return;
   }
   if (kind === "label") {
+    if (data.icon && iconUrl(data.icon)) {
+      const img = makeIconImg(data.icon, "tile-icon");
+      img.style.width = "88%";
+      img.style.height = "88%";
+      img.style.objectFit = "contain";
+      thumb.appendChild(img);
+      if (data.label) {
+        appendTileLabelOverlay(thumb, data.label, thumbW, thumbW, scales.label);
+      }
+      return;
+    }
     const val = document.createElement("span");
     val.className = "palette-thumb-value";
     const fitted = fitFontScale(data.label || t("defaultTitle"), maxW, scales.value);
@@ -953,7 +971,7 @@ function fillPaletteThumb(thumb, kind, data) {
   }
 }
 
-function fillIconTileWithCounter(body, pxW, pxH, { iconKey, counterText, labelText = "" }) {
+function fillIconTile(body, pxW, pxH, { iconKey, labelText = "" }) {
   const scales = overlayFontScales();
   const iconSize = iconTileSize(pxW, pxH);
   const ix = (pxW - iconSize) * 0.5;
@@ -964,7 +982,10 @@ function fillIconTileWithCounter(body, pxW, pxH, { iconKey, counterText, labelTe
   if (labelText.trim()) {
     appendTileLabelOverlay(body, labelText, pxW, pxH, scales.label);
   }
+}
 
+function fillIconTileWithCounter(body, pxW, pxH, { iconKey, counterText, labelText = "" }) {
+  fillIconTile(body, pxW, pxH, { iconKey, labelText });
   appendTileCountBottomRight(body, counterText, pxW, pxH);
 }
 
@@ -977,6 +998,15 @@ function fillTileBody(body, tile, pxW, pxH) {
   const maxW = maxTextWidth(pxW);
 
   if (tile.kind === "label") {
+    const iconKey = tile.icon || null;
+    const hasIcon = !!(iconKey && iconUrl(iconKey));
+    if (hasIcon) {
+      fillIconTile(body, pxW, pxH, {
+        iconKey,
+        labelText: tile.label || "",
+      });
+      return;
+    }
     if (!tile.label) return;
     const fitted = fitFontScale(tile.label, maxW, scales.value);
     layoutTextTileBody(body, pxW, pxH, [
@@ -1329,6 +1359,7 @@ function updateTileEl(el, tile, gm, overlap) {
   el.style.borderRadius = `${state.grid.border_radius * gm.preview}px`;
   el.classList.toggle("selected", selectedTileIds.has(tile._id));
   el.classList.toggle("overlap", overlap);
+  el.classList.toggle("tile--no-border", tile.show_border === false);
   el.classList.toggle(
     "tile--resizing",
     dragState?.mode === "resize" && dragState.tileId === tile._id
@@ -1420,6 +1451,7 @@ function renderTileEl(tile, gm, overlap) {
   el.style.height = `${h}px`;
   el.style.borderRadius = `${state.grid.border_radius * gm.preview}px`;
   el.style.background = rgbaCss(state.style.tile_bg);
+  el.classList.toggle("tile--no-border", tile.show_border === false);
 
   const body = document.createElement("div");
   body.className = "tile-body";
@@ -1538,7 +1570,7 @@ function renderProperties() {
   );
   els.fieldTrackEquipped.classList.toggle("hidden", tile.kind !== "item");
   els.fieldHistoric.classList.toggle("hidden", tile.kind !== "item");
-  els.fieldIcon.classList.toggle("hidden", tile.kind !== "metric");
+  els.fieldIcon.classList.toggle("hidden", tile.kind !== "metric" && tile.kind !== "label");
 
   els.propLabel.value = tile.label || "";
   els.propMetric.value = tile.metric || "igt";
@@ -1555,6 +1587,7 @@ function renderProperties() {
   els.propTrackEquipped.checked = !!tile.track_equipped;
   els.propHistoric.checked = !!tile.historic;
   els.propIcon.value = tile.icon || "";
+  els.propShowBorder.checked = tile.show_border !== false;
 }
 
 function syncConfigInputs() {
@@ -1588,7 +1621,7 @@ function updateGridInfo() {
 function createTile(kind, data, col, row) {
   const base = { _id: uid(), kind, col, row, w: 1, h: 1 };
   if (kind === "label") {
-    return { ...base, label: data.label || t("defaultTitle") };
+    return { ...base, label: data.label || t("defaultTitle"), icon: data.icon || undefined };
   }
   if (kind === "metric") {
     const m = METRICS.find((x) => x.id === data.id) || data;
@@ -1653,6 +1686,11 @@ function applyPropChanges() {
   const gm = gridMetrics();
   const beforeKey = tileContentKey(tile, gm);
   if (tile.kind !== "item") tile.label = els.propLabel.value;
+  tile.show_border = els.propShowBorder.checked;
+  if (tile.kind === "metric" || tile.kind === "label") {
+    const icon = els.propIcon.value.trim();
+    tile.icon = icon || undefined;
+  }
   if (tile.kind === "metric") {
     tile.metric = els.propMetric.value;
     tile.show_max = els.propShowMax.checked;
@@ -1664,8 +1702,6 @@ function applyPropChanges() {
       delete tile.max;
     }
     els.propMaxValue.disabled = els.propMaxMode.value !== "manual";
-    const icon = els.propIcon.value.trim();
-    tile.icon = icon || undefined;
     els.fieldMetricMax.classList.toggle(
       "hidden",
       !metricHasMax(tile.metric) && !tile.show_max
@@ -2061,6 +2097,7 @@ function exportToml() {
         }
       } else if (tile.kind === "label") {
         if (tile.label) lines.push(`label = "${tile.label}"`);
+        if (tile.icon) lines.push(`icon = "${tile.icon}"`);
       } else if (tile.kind === "item") {
         lines.push(`key = "${tile.key}"`);
         if (tile.track_equipped) lines.push("track_equipped = true");
@@ -2070,6 +2107,7 @@ function exportToml() {
       lines.push(`row = ${tile.row}`);
       if (tile.w !== 1) lines.push(`w = ${tile.w}`);
       if (tile.h !== 1) lines.push(`h = ${tile.h}`);
+      if (tile.show_border === false) lines.push("show_border = false");
       lines.push("");
     }
   }
@@ -2154,6 +2192,7 @@ function parseTileDef(t) {
     row: t.row ?? 0,
     w: t.w ?? t.col_span ?? 1,
     h: t.h ?? t.row_span ?? 1,
+    show_border: t.show_border !== false,
   };
   if (t.kind === "metric") {
     const maxManual = typeof t.max === "number";
@@ -2173,7 +2212,7 @@ function parseTileDef(t) {
     return tile;
   }
   if (t.kind === "label") {
-    return { ...base, label: t.label || "" };
+    return { ...base, label: t.label || "", icon: t.icon || undefined };
   }
   if (t.kind === "item") {
     return {
@@ -2221,6 +2260,7 @@ function bindEvents() {
     els.propTrackEquipped,
     els.propHistoric,
     els.propIcon,
+    els.propShowBorder,
   ]) {
     input.addEventListener("input", applyPropChanges);
     input.addEventListener("change", applyPropChanges);

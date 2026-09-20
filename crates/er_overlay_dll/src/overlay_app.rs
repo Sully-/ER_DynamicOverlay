@@ -23,6 +23,39 @@ use tracing::{debug, info, warn};
 
 use crate::poll_worker::{PollInputs, PollWorker};
 
+/// Minimum gap between two accepted activations of the same hotkey.
+///
+/// Guards against a key that reports several presses for one physical press — traced in the field
+/// to a worn key switch chattering at 29–49 ms intervals, but a keyboard macro or turbo mode does
+/// the same. Every hotkey here toggles, so an even number of activations cancels itself out and
+/// the key looks simply dead; the section cycle is the worst case, because with two sections a
+/// double activation is an exact round trip back to where it started, leaving nothing on screen to
+/// hint at what happened. The window is far below a deliberate double tap, so it costs nothing.
+const HOTKEY_DEBOUNCE: Duration = Duration::from_millis(150);
+
+/// Rejects hotkey activations that follow the previous one too closely to be a separate press.
+#[derive(Debug, Default)]
+struct HotkeyDebounce {
+    last: Option<Instant>,
+}
+
+impl HotkeyDebounce {
+    fn accept(&mut self) -> bool {
+        self.accept_at(Instant::now())
+    }
+
+    fn accept_at(&mut self, now: Instant) -> bool {
+        if self
+            .last
+            .is_some_and(|last| now.duration_since(last) < HOTKEY_DEBOUNCE)
+        {
+            return false;
+        }
+        self.last = Some(now);
+        true
+    }
+}
+
 struct LayoutSectionState {
     active_index: usize,
     known_sections: Vec<String>,
@@ -41,6 +74,13 @@ pub struct OverlayApp {
     checks_hotkey_raw: Option<String>,
     parsed_hide_all_hotkey: Option<HotkeyBinding>,
     hide_all_hotkey_raw: Option<String>,
+    /// Last reason the section hotkey was inert, so the state is logged once per change instead of
+    /// on every frame. Seeded with a placeholder so the first armed frame logs its transition too.
+    section_cycle_block: Option<&'static str>,
+    section_debounce: HotkeyDebounce,
+    boss_debounce: HotkeyDebounce,
+    checks_debounce: HotkeyDebounce,
+    hide_all_debounce: HotkeyDebounce,
     show_overlay: bool,
     show_boss_panel: bool,
     boss_panel: BossPanelState,
@@ -80,6 +120,8 @@ pub struct OverlayApp {
     extractor_running: Arc<AtomicBool>,
     /// Set once the render loop draws its first frame, to log that milestone exactly once.
     first_render_logged: bool,
+    /// Last logged `(display_size, dpi_framebuffer_scale)`, to log the viewport only on change.
+    last_display_metrics: Option<([f32; 2], [f32; 2])>,
 }
 
 impl OverlayApp {
@@ -160,6 +202,11 @@ impl OverlayApp {
             checks_hotkey_raw,
             parsed_hide_all_hotkey,
             hide_all_hotkey_raw,
+            section_cycle_block: Some("startup"),
+            section_debounce: HotkeyDebounce::default(),
+            boss_debounce: HotkeyDebounce::default(),
+            checks_debounce: HotkeyDebounce::default(),
+            hide_all_debounce: HotkeyDebounce::default(),
             show_overlay,
             show_boss_panel,
             boss_panel,
@@ -203,6 +250,7 @@ impl OverlayApp {
             regulation_sig: None,
             extractor_running: Arc::new(AtomicBool::new(false)),
             first_render_logged: false,
+            last_display_metrics: None,
         };
         app.sync_section_state();
         app.maybe_reload_boss_table();
@@ -214,6 +262,12 @@ impl OverlayApp {
             app.show_overlay,
             app.show_boss_panel,
             app.show_checks_panel
+        );
+        // A hotkey missing from the config resolves to `None` and is then silently dead, so the
+        // resolved set has to be visible in the log to triage "key X does nothing" reports.
+        info!(
+            "Hotkeys: section={:?}, boss={:?}, checks={:?}, hide_all={:?}",
+            app.hotkey_raw, app.boss_hotkey_raw, app.checks_hotkey_raw, app.hide_all_hotkey_raw
         );
         app
     }
@@ -279,11 +333,21 @@ impl OverlayApp {
         let path = resolve_layout_path(&base_dir, config.layout_file.as_deref())?;
         match load_layout(&path) {
             Ok(layout) => {
+                // Per-section tile counts, because a section that parses but ends up empty makes
+                // the section hotkey look dead: the renderer silently falls back to the default
+                // section instead of showing the empty one.
+                let sections = layout
+                    .section_names()
+                    .iter()
+                    .enumerate()
+                    .map(|(i, name)| format!("{name}: {} tiles", layout.tiles_for_section(i).len()))
+                    .collect::<Vec<_>>()
+                    .join(", ");
                 debug!(
-                    "Loaded layout from {} ({} sections, section 0: {} tiles)",
+                    "Loaded layout from {} ({} sections — {})",
                     path.display(),
                     layout.section_count(),
-                    layout.tiles_for_section(0).len()
+                    sections
                 );
                 Some(layout)
             }
@@ -393,7 +457,7 @@ impl OverlayApp {
             return;
         }
         let key = overlay_key_to_imgui(hk.key);
-        if ui.is_key_pressed_no_repeat(key) {
+        if ui.is_key_pressed_no_repeat(key) && self.boss_debounce.accept() {
             let opening = !self.show_boss_panel;
             self.show_boss_panel = !self.show_boss_panel;
             self.show_overlay = true;
@@ -415,7 +479,7 @@ impl OverlayApp {
             return;
         }
         let key = overlay_key_to_imgui(hk.key);
-        if ui.is_key_pressed_no_repeat(key) {
+        if ui.is_key_pressed_no_repeat(key) && self.checks_debounce.accept() {
             let opening = !self.show_checks_panel;
             self.show_checks_panel = !self.show_checks_panel;
             self.show_overlay = true;
@@ -437,7 +501,7 @@ impl OverlayApp {
             return;
         }
         let key = overlay_key_to_imgui(hk.key);
-        if ui.is_key_pressed_no_repeat(key) {
+        if ui.is_key_pressed_no_repeat(key) && self.hide_all_debounce.accept() {
             self.show_overlay = !self.show_overlay;
             debug!("Overlay visibility toggled: {}", self.show_overlay);
         }
@@ -471,25 +535,56 @@ impl OverlayApp {
         }
     }
 
-    fn maybe_cycle_section(&mut self, ui: &imgui::Ui) {
-        let Some(hk) = self.parsed_hotkey else {
-            return;
-        };
-        let Some(layout) = self.layout.as_ref() else {
-            return;
-        };
-        if layout.section_count() < 2 {
+    /// Logs why the section hotkey is inert, once per state change. The early returns below are
+    /// otherwise silent, which makes a hotkey disabled by a bad layout reload indistinguishable
+    /// from one whose keypress never arrives.
+    fn set_section_cycle_block(&mut self, reason: Option<&'static str>) {
+        if self.section_cycle_block == reason {
             return;
         }
+        self.section_cycle_block = reason;
+        match reason {
+            Some(r) => warn!("Section hotkey inert: {r}"),
+            None => info!("Section hotkey armed"),
+        }
+    }
+
+    fn maybe_cycle_section(&mut self, ui: &imgui::Ui) {
+        let Some(hk) = self.parsed_hotkey else {
+            self.set_section_cycle_block(Some("no hotkey configured"));
+            return;
+        };
+        let block = match self.layout.as_ref() {
+            None => Some("layout not loaded"),
+            Some(l) if l.section_count() < 2 => Some("layout has fewer than 2 sections"),
+            Some(_) => None,
+        };
+        self.set_section_cycle_block(block);
+        if block.is_some() {
+            return;
+        }
+
         if !modifiers_match(ui, hk) {
             return;
         }
         let key = overlay_key_to_imgui(hk.key);
-        if ui.is_key_pressed_no_repeat(key) {
+        let Some(layout) = self.layout.as_ref() else {
+            return;
+        };
+        if ui.is_key_pressed_no_repeat(key) && self.section_debounce.accept() {
             self.show_overlay = true;
-            self.section_state.active_index =
-                (self.section_state.active_index + 1) % layout.section_count();
-            if !self.section_allows_boss_panel(self.section_state.active_index) {
+            let index = (self.section_state.active_index + 1) % layout.section_count();
+            self.section_state.active_index = index;
+            // The other hotkeys all log their toggle; without the same trace here a "section
+            // hotkey does nothing" report cannot be split between the key never arriving and the
+            // section switching to something that renders invisibly.
+            debug!(
+                "Section cycled to {} ({:?}, {} tiles)",
+                index,
+                layout.section_names().get(index).copied().unwrap_or("?"),
+                layout.tiles_for_section(index).len()
+            );
+            if !self.section_allows_boss_panel(index) {
                 self.hide_boss_panel_for_layout();
             }
         }
@@ -799,6 +894,24 @@ impl OverlayApp {
             .load_keys(render_ctx, &icons_dir, keys, *enabled);
         self.icons_dirty = false;
     }
+
+    /// Logs the viewport the render hook handed us, plus ImGui's framebuffer scale. Every window
+    /// position derives from that viewport, so resolution-specific reports cannot be triaged
+    /// without it. A framebuffer scale other than 1.0 means the renderer is magnifying the
+    /// overlay past the back buffer, which hides it entirely (hudhook 0.9.2 did that from the
+    /// window DPI). Logged on change, so a mid-session resolution switch shows up too.
+    fn log_display_metrics_if_changed(&mut self, ui: &imgui::Ui) {
+        let io = ui.io();
+        let metrics = (io.display_size, io.display_framebuffer_scale);
+        if self.last_display_metrics == Some(metrics) {
+            return;
+        }
+        self.last_display_metrics = Some(metrics);
+        info!(
+            "Viewport {}x{}, framebuffer scale {}x{}",
+            metrics.0[0], metrics.0[1], metrics.1[0], metrics.1[1]
+        );
+    }
 }
 
 fn modifiers_match(ui: &imgui::Ui, hk: HotkeyBinding) -> bool {
@@ -913,6 +1026,7 @@ impl ImguiRenderLoop for OverlayApp {
     }
 
     fn render(&mut self, ui: &mut imgui::Ui) {
+        self.log_display_metrics_if_changed(ui);
         if !self.first_render_logged {
             self.first_render_logged = true;
             info!(
@@ -1048,4 +1162,44 @@ impl ImguiRenderLoop for OverlayApp {
 
 fn file_mtime(path: &Path) -> Option<SystemTime> {
     std::fs::metadata(path).and_then(|m| m.modified()).ok()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn debounce_accepts_first_activation() {
+        let mut d = HotkeyDebounce::default();
+        assert!(d.accept_at(Instant::now()));
+    }
+
+    #[test]
+    fn debounce_rejects_the_duplicate_two_frames_later() {
+        // The spacing measured in the field between spurious repeats of one physical press.
+        let mut d = HotkeyDebounce::default();
+        let t0 = Instant::now();
+        assert!(d.accept_at(t0));
+        assert!(!d.accept_at(t0 + Duration::from_millis(33)));
+        assert!(!d.accept_at(t0 + Duration::from_millis(66)));
+    }
+
+    #[test]
+    fn debounce_still_allows_a_deliberate_second_press() {
+        let mut d = HotkeyDebounce::default();
+        let t0 = Instant::now();
+        assert!(d.accept_at(t0));
+        assert!(d.accept_at(t0 + Duration::from_millis(200)));
+    }
+
+    #[test]
+    fn debounce_measures_from_the_accepted_activation_not_the_rejected_one() {
+        // A rejected repeat must not extend the window, otherwise holding the key through a burst
+        // of repeats would keep the hotkey suppressed indefinitely.
+        let mut d = HotkeyDebounce::default();
+        let t0 = Instant::now();
+        assert!(d.accept_at(t0));
+        assert!(!d.accept_at(t0 + Duration::from_millis(100)));
+        assert!(d.accept_at(t0 + Duration::from_millis(160)));
+    }
 }

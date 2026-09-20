@@ -30,6 +30,7 @@ pub struct TileDrawCtx<'a> {
     pub config: &'a OverlayConfig,
     pub atlas: Option<&'a IconAtlas>,
     pub radius: f32,
+    pub show_border: bool,
 }
 
 /// Largest font scale (≤ `scale`) at which `text` fits in `max_width`.
@@ -56,6 +57,7 @@ pub fn draw_tile_frame(
     border: [u8; 4],
     bg: [u8; 4],
     radius: f32,
+    show_border: bool,
 ) {
     let draw = ui.get_window_draw_list();
     let p0 = pos;
@@ -64,11 +66,13 @@ pub fn draw_tile_frame(
         .filled(true)
         .rounding(radius)
         .build();
-    draw.add_rect(p0, p1, color_from_rgba(border))
-        .filled(false)
-        .thickness(1.5)
-        .rounding(radius)
-        .build();
+    if show_border {
+        draw.add_rect(p0, p1, color_from_rgba(border))
+            .filled(false)
+            .thickness(1.5)
+            .rounding(radius)
+            .build();
+    }
 }
 
 const OVERLAY_COUNTER_SCALE: f32 = 0.85;
@@ -175,6 +179,7 @@ pub fn draw_metric_tile(
         style,
         config,
         radius,
+        show_border,
         ..
     } = ctx;
     let border = if complete {
@@ -182,7 +187,15 @@ pub fn draw_metric_tile(
     } else {
         style.border_default
     };
-    draw_tile_frame(ui, *pos, *size, border, style.tile_bg, *radius);
+    draw_tile_frame(
+        ui,
+        *pos,
+        *size,
+        border,
+        style.tile_bg,
+        *radius,
+        *show_border,
+    );
 
     let has_icon = icon_key.is_some() && config.use_item_icons;
     if has_icon {
@@ -241,16 +254,37 @@ pub fn draw_metric_tile(
     ui.set_window_font_scale(base_scale);
 }
 
-pub fn draw_label_tile(
-    ui: &Ui,
-    pos: [f32; 2],
-    size: [f32; 2],
-    label: &str,
-    style: &LayoutStyle,
-    config: &OverlayConfig,
-    radius: f32,
-) {
-    draw_tile_frame(ui, pos, size, style.border_default, style.tile_bg, radius);
+pub fn draw_label_tile(ctx: &TileDrawCtx<'_>, label: &str, icon_key: Option<&str>) {
+    let TileDrawCtx {
+        ui,
+        pos,
+        size,
+        style,
+        config,
+        atlas,
+        radius,
+        show_border,
+    } = ctx;
+    draw_tile_frame(
+        ui,
+        *pos,
+        *size,
+        style.border_default,
+        style.tile_bg,
+        *radius,
+        *show_border,
+    );
+
+    if let Some(key) = icon_key.filter(|_| config.use_item_icons) {
+        let icon_size = icon_tile_size(size[0], size[1]);
+        let ix = pos[0] + (size[0] - icon_size) * 0.5;
+        let iy = pos[1] + (size[1] - icon_size) * 0.5;
+        draw_icon_key_at(ui, key, [ix, iy], icon_size, 1.0, *atlas, config);
+        if !label.is_empty() {
+            draw_label_overlay(ui, *pos, *size, label, style, config);
+        }
+        return;
+    }
 
     if label.is_empty() {
         return;
@@ -294,6 +328,7 @@ pub fn draw_item_tile(
         config,
         atlas,
         radius,
+        show_border,
     } = ctx;
     let (acquired, unknown) = crate::tracked_icon::track_status(&row.kind);
     let border = if track_equipped && row.equipped == Some(true) {
@@ -305,7 +340,7 @@ pub fn draw_item_tile(
     if !acquired || unknown {
         bg[3] = (f32::from(bg[3]) * 0.55) as u8;
     }
-    draw_tile_frame(ui, *pos, *size, border, bg, *radius);
+    draw_tile_frame(ui, *pos, *size, border, bg, *radius, *show_border);
 
     let icon_size = icon_tile_size(size[0], size[1]);
     let ix = pos[0] + (size[0] - icon_size) * 0.5;

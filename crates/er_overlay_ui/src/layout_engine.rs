@@ -48,6 +48,7 @@ pub fn render_layout_dashboard(
                     config,
                     atlas,
                     radius,
+                    show_border: position.show_border,
                 };
 
                 if value == crate::metric_registry::MetricValue::Unavailable {
@@ -76,6 +77,7 @@ pub fn render_layout_dashboard(
                     config,
                     atlas,
                     radius,
+                    show_border: position.show_border,
                 };
 
                 if let Some(row) = resolve_tracked_key(good_key, vm) {
@@ -85,12 +87,25 @@ pub fn render_layout_dashboard(
                 }
             }
             TileDef::Label {
-                position, label, ..
+                position,
+                label,
+                icon,
+                ..
             } => {
                 let origin = layout.tile_origin(position.col, position.row, scale);
                 let pos = [window_origin[0] + origin[0], window_origin[1] + origin[1]];
                 let size = layout.tile_size(position.col_span, position.row_span, scale);
-                draw_label_tile(ui, pos, size, label, &layout.style, config, radius);
+                let ctx = TileDrawCtx {
+                    ui,
+                    pos,
+                    size,
+                    style: &layout.style,
+                    config,
+                    atlas,
+                    radius,
+                    show_border: position.show_border,
+                };
+                draw_label_tile(&ctx, label, icon.as_deref());
             }
         }
     }

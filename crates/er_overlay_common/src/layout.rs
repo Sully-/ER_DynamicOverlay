@@ -193,10 +193,21 @@ pub struct TilePosition {
     pub col_span: u32,
     #[serde(default = "default_span", alias = "h")]
     pub row_span: u32,
+    /// Draw the tile outline. Defaults to true; set `show_border = false` to hide it.
+    #[serde(default = "default_show_border", skip_serializing_if = "is_true")]
+    pub show_border: bool,
 }
 
 fn default_span() -> u32 {
     1
+}
+
+fn default_show_border() -> bool {
+    true
+}
+
+fn is_true(b: &bool) -> bool {
+    *b
 }
 
 /// Display cap for count metrics. `Auto` uses the value resolved from game data.
@@ -310,6 +321,9 @@ pub enum TileDef {
         position: TilePosition,
         #[serde(default)]
         label: String,
+        /// PNG key in `assets/icons` (e.g. `kindling`). If absent, no icon.
+        #[serde(default)]
+        icon: Option<String>,
     },
 }
 
@@ -505,12 +519,11 @@ impl LayoutConfig {
         for tile in tiles {
             match tile {
                 TileDef::Item { good_key, .. } => push(good_key),
-                TileDef::Metric { icon, .. } => {
+                TileDef::Metric { icon, .. } | TileDef::Label { icon, .. } => {
                     if let Some(key) = icon.as_deref() {
                         push(key);
                     }
                 }
-                TileDef::Label { .. } => {}
             }
         }
     }
@@ -840,6 +853,7 @@ mod tests {
                         row: 0,
                         col_span: 1,
                         row_span: 1,
+                        show_border: true,
                     },
                     label: "IGT".into(),
                     show_max: false,
@@ -856,6 +870,7 @@ mod tests {
                         row: 1,
                         col_span: 1,
                         row_span: 1,
+                        show_border: true,
                     },
                     track_equipped: false,
                     historic: false,
@@ -898,6 +913,7 @@ label = "IGT"
                 row: 0,
                 col_span: 1,
                 row_span: 1,
+                show_border: true,
             },
             label: "DEATHS".into(),
             show_max: false,
@@ -1064,6 +1080,66 @@ label = "STONES"
             _ => panic!("expected label"),
         }
         layout.validate().unwrap();
+    }
+
+    #[test]
+    fn parse_label_tile_with_icon() {
+        let raw = r#"
+[[tile]]
+kind = "label"
+col = 0
+row = 0
+label = "RUN"
+icon = "kindling"
+"#;
+        let layout: LayoutConfig = toml::from_str(raw).unwrap();
+        match &layout.tiles[0] {
+            TileDef::Label { label, icon, .. } => {
+                assert_eq!(label, "RUN");
+                assert_eq!(icon.as_deref(), Some("kindling"));
+            }
+            _ => panic!("expected label"),
+        }
+        assert_eq!(layout.collect_icon_keys(), vec!["kindling".to_string()]);
+        layout.validate().unwrap();
+    }
+
+    #[test]
+    fn parse_show_border_false() {
+        let raw = r#"
+[[tile]]
+kind = "label"
+col = 0
+row = 0
+label = "X"
+show_border = false
+"#;
+        let layout: LayoutConfig = toml::from_str(raw).unwrap();
+        match &layout.tiles[0] {
+            TileDef::Label { position, .. } => {
+                assert!(!position.show_border);
+            }
+            _ => panic!("expected label"),
+        }
+        layout.validate().unwrap();
+    }
+
+    #[test]
+    fn show_border_defaults_to_true() {
+        let raw = r#"
+[[tile]]
+kind = "metric"
+metric = "igt"
+col = 0
+row = 0
+"#;
+        let layout: LayoutConfig = toml::from_str(raw).unwrap();
+        match &layout.tiles[0] {
+            TileDef::Metric { position, .. } => {
+                assert!(position.show_border);
+            }
+            _ => panic!("expected metric"),
+        }
     }
 
     #[test]
