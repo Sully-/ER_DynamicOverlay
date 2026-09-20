@@ -10,3 +10,6 @@
 **/__pycache__/**
 **/.idea/**
 /.cursor/*
+/layout-editor-test/*
+/er-overlay-local-test.zip
+er-overlay-local-test.zip
