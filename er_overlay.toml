@@ -71,6 +71,8 @@ checks_panel_visible = false
 # acquisition flag changes every seed. Point this at the regulation.bin the game LOADS
 # (your ModEngine mod) and the overlay resolves the current flags automatically — no
 # manual step. Leave empty/omitted for vanilla (dynamic checks use their vanilla flags).
+# A relative path is resolved from the folder holding er_overlay.dll. The extractor then
+# writes lot_flags.toml next to the DLL.
 # regulation_path = "C:/.../ModEngine2/mod/regulation.bin"
 # Path to the shipped extractor. Omit to auto-find companion/er_checks_extractor.exe
 # (then er_checks_extractor.exe) next to the DLL.

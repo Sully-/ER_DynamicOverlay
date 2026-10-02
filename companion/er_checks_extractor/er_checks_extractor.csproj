@@ -22,6 +22,19 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SoulsFormatsNEXT\SoulsFormats\SoulsFormats.csproj" />
+    <!-- Same version as SoulsFormats; referenced here only to locate its native libzstd.dll. -->
+    <PackageReference Include="ZstdNet" Version="1.4.5" GeneratePathProperty="true" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- ZstdNet's own targets drop libzstd.dll under x64/, which it cannot load from a
+         single-file exe. Bundle it at the root so the self-extracting exe finds it; without it,
+         reading a zstd-compressed regulation.bin needs a libzstd.dll on PATH (e.g. Git's). -->
+    <None Include="$(PkgZstdNet)\build\x64\libzstd.dll">
+      <Link>libzstd.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>

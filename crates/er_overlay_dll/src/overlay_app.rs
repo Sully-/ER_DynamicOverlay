@@ -33,6 +33,19 @@ use crate::poll_worker::{PollInputs, PollWorker};
 /// hint at what happened. The window is far below a deliberate double tap, so it costs nothing.
 const HOTKEY_DEBOUNCE: Duration = Duration::from_millis(150);
 
+/// Outcome of the last per-seed extraction, written under `logs/` even when logging is off so a
+/// missing `lot_flags.toml` can be diagnosed on any machine.
+const EXTRACTOR_REPORT_FILE: &str = "er_checks_extractor.log";
+
+fn write_extractor_report(base: &Path, report: &str) {
+    let dir = base.join("logs");
+    let written = std::fs::create_dir_all(&dir)
+        .and_then(|()| std::fs::write(dir.join(EXTRACTOR_REPORT_FILE), report));
+    if let Err(e) = written {
+        warn!("could not write {EXTRACTOR_REPORT_FILE}: {e}");
+    }
+}
+
 /// Rejects hotkey activations that follow the previous one too closely to be a separate press.
 #[derive(Debug, Default)]
 struct HotkeyDebounce {
@@ -116,6 +129,8 @@ pub struct OverlayApp {
     checks_flags_mtime: Option<SystemTime>,
     /// `(mtime, len)` of the watched regulation.bin, to detect a new seed.
     regulation_sig: Option<(SystemTime, u64)>,
+    /// Whether the "regulation.bin not found" report was already written for the current path.
+    regulation_missing_reported: bool,
     /// Guards against spawning the extractor while a previous run is in flight.
     extractor_running: Arc<AtomicBool>,
     /// Set once the render loop draws its first frame, to log that milestone exactly once.
@@ -248,6 +263,7 @@ impl OverlayApp {
             active_checks_locale,
             checks_flags_mtime: None,
             regulation_sig: None,
+            regulation_missing_reported: false,
             extractor_running: Arc::new(AtomicBool::new(false)),
             first_render_logged: false,
             last_display_metrics: None,
@@ -628,7 +644,13 @@ impl OverlayApp {
             .filter(|p| !p.is_empty());
         match regulation {
             Some(reg) => {
-                self.maybe_run_extractor(&base, &locale_id, Path::new(&reg));
+                let reg = Path::new(&reg);
+                let reg = if reg.is_absolute() {
+                    reg.to_path_buf()
+                } else {
+                    base.join(reg)
+                };
+                self.maybe_run_extractor(&base, &locale_id, &reg);
                 let lot_flags_path = base.join("lot_flags.toml");
                 let legacy_flags_path = base.join("checks_flags.toml");
                 let flags_path = if lot_flags_path.is_file() {
@@ -651,9 +673,22 @@ impl OverlayApp {
     /// Spawns the checks extractor (in a background thread) when the watched regulation.bin
     /// changes, so the modded seed's randomized loot flags get resolved.
     fn maybe_run_extractor(&mut self, base: &Path, locale_id: &str, regulation: &Path) {
-        let Ok(meta) = std::fs::metadata(regulation) else {
-            return;
+        let meta = match std::fs::metadata(regulation) {
+            Ok(meta) => meta,
+            Err(e) => {
+                if !self.regulation_missing_reported {
+                    self.regulation_missing_reported = true;
+                    let msg = format!(
+                        "regulation_path not readable: {} ({e}); dynamic checks use vanilla flags",
+                        regulation.display()
+                    );
+                    warn!("{msg}");
+                    write_extractor_report(base, &msg);
+                }
+                return;
+            }
         };
+        self.regulation_missing_reported = false;
         let sig = (
             meta.modified().ok().unwrap_or(SystemTime::UNIX_EPOCH),
             meta.len(),
@@ -666,7 +701,9 @@ impl OverlayApp {
         }
 
         let Some(extractor) = self.resolve_extractor_path(base) else {
-            warn!("regulation_path is set but er_checks_extractor was not found; dynamic checks use vanilla flags");
+            let msg = "regulation_path is set but er_checks_extractor was not found; dynamic checks use vanilla flags";
+            warn!("{msg}");
+            write_extractor_report(base, msg);
             // Mark as handled so we don't warn every tick for the same regulation.
             self.regulation_sig = Some(sig);
             return;
@@ -692,6 +729,7 @@ impl OverlayApp {
         let running = Arc::clone(&self.extractor_running);
         running.store(true, Ordering::Release);
         self.regulation_sig = Some(sig);
+        let base = base.to_path_buf();
 
         let spawned = std::thread::Builder::new()
             .name("er_checks_extractor".into())
@@ -709,21 +747,33 @@ impl OverlayApp {
                 if let Some(layout) = layout_path.as_deref() {
                     cmd.arg("--layout").arg(layout);
                 }
-                let result = cmd.output();
-                match result {
-                    Ok(out) if out.status.success() => {
-                        debug!(
-                            "checks extractor ok: {}",
-                            String::from_utf8_lossy(&out.stdout).trim()
-                        );
+                let command = format!("{cmd:?}");
+                let report = match cmd.output() {
+                    Ok(out) => {
+                        let stdout = String::from_utf8_lossy(&out.stdout);
+                        let stderr = String::from_utf8_lossy(&out.stderr);
+                        if out.status.success() {
+                            debug!("checks extractor ok: {}", stdout.trim());
+                        } else {
+                            warn!(
+                                "checks extractor failed ({}): {}",
+                                out.status,
+                                stderr.trim()
+                            );
+                        }
+                        format!(
+                            "command: {command}\nstatus: {}\n\n[stdout]\n{}\n\n[stderr]\n{}\n",
+                            out.status,
+                            stdout.trim(),
+                            stderr.trim()
+                        )
                     }
-                    Ok(out) => warn!(
-                        "checks extractor failed ({}): {}",
-                        out.status,
-                        String::from_utf8_lossy(&out.stderr).trim()
-                    ),
-                    Err(e) => warn!("failed to launch checks extractor: {e}"),
-                }
+                    Err(e) => {
+                        warn!("failed to launch checks extractor: {e}");
+                        format!("command: {command}\nfailed to launch: {e}\n")
+                    }
+                };
+                write_extractor_report(&base, &report);
                 running.store(false, Ordering::Release);
             });
 
@@ -823,6 +873,7 @@ impl OverlayApp {
         }
         if regulation_changed {
             self.regulation_sig = None;
+            self.regulation_missing_reported = false;
         }
         self.maybe_reload_boss_table();
         self.maybe_sync_checks();
