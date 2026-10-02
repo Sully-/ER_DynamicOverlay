@@ -1888,6 +1888,7 @@ icon_id = 3806
 key = "o_mother"
 item_id = 2009004
 name = "O Mother"
+gesture = true
 historic_lot_table = "map"
 historic_lot_id = 2050450510
 historic_vanilla_flag = 2050457510

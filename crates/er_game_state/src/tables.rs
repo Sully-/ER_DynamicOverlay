@@ -4,7 +4,7 @@ use std::sync::LazyLock;
 use serde::Deserialize;
 
 use crate::boss_table::boss_table;
-use crate::lot_flags::{effective_good_flag, LotRef, LotTable};
+use crate::lot_flags::{effective_good_flags, LotRef, LotTable};
 use crate::GameStateSource;
 
 #[derive(Debug, Clone)]
@@ -47,6 +47,9 @@ pub struct GoodEntry {
     pub max: Option<u32>,
     /// Stackable good: show inventory quantity (`true`) instead of owned / not-owned.
     pub countable: bool,
+    /// Gesture unlock: picking it up learns the gesture instead of storing the good, so
+    /// ownership is read from its acquisition flag, never from the inventory.
+    pub gesture: bool,
 }
 
 impl GoodEntry {
@@ -67,6 +70,7 @@ struct ParsedGood {
     historic_lot: Option<LotRef>,
     max: Option<u32>,
     countable: bool,
+    gesture: bool,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -101,6 +105,8 @@ struct GoodRow {
     max: Option<u32>,
     #[serde(default)]
     count: bool,
+    #[serde(default)]
+    gesture: bool,
 }
 
 const GOODS_TOML: &str = include_str!("../tables/goods.toml");
@@ -132,6 +138,7 @@ static GOODS: LazyLock<Vec<ParsedGood>> = LazyLock::new(|| {
                 historic_lot,
                 max: row.max,
                 countable: row.count,
+                gesture: row.gesture,
             }
         })
         .collect()
@@ -193,6 +200,7 @@ fn good_entry(g: &ParsedGood) -> GoodEntry {
         historic_lot: g.historic_lot,
         max: g.max,
         countable: g.countable,
+        gesture: g.gesture,
     }
 }
 
@@ -218,10 +226,13 @@ pub fn group_size(name: &str) -> u32 {
     group_members(name).len() as u32
 }
 
-/// Whether any of a good's param ids reads as present, `None` while none of them is readable.
-fn any_id_matches(good: &GoodEntry, mut probe: impl FnMut(u32) -> Option<bool>) -> Option<bool> {
+/// Whether any of `ids` reads as present, `None` while none of them is readable.
+fn any_matches(
+    ids: impl IntoIterator<Item = u32>,
+    mut probe: impl FnMut(u32) -> Option<bool>,
+) -> Option<bool> {
     let mut readable = false;
-    for id in good.item_ids() {
+    for id in ids {
         match probe(id) {
             Some(true) => return Some(true),
             Some(false) => readable = true,
@@ -231,14 +242,25 @@ fn any_id_matches(good: &GoodEntry, mut probe: impl FnMut(u32) -> Option<bool>) 
     readable.then_some(false)
 }
 
+/// Whether any acquisition flag of the good is set, `None` while untraceable or unreadable.
+fn acquisition_flag_set(source: &dyn GameStateSource, good: &GoodEntry) -> Option<bool> {
+    let flags = effective_good_flags(&good.key, good.historic_lot);
+    any_matches(flags, |flag| source.get_flag(flag))
+}
+
 /// Whether a good is currently present in the inventory, under any of its param ids.
 pub fn item_owned(source: &dyn GameStateSource, good: &GoodEntry) -> Option<bool> {
-    any_id_matches(good, |id| source.has_item(id, good.category))
+    if good.gesture {
+        return acquisition_flag_set(source, good);
+    }
+    any_matches(good.item_ids(), |id| source.has_item(id, good.category))
 }
 
 /// Whether a good is currently equipped, under any of its param ids.
 pub fn item_equipped(source: &dyn GameStateSource, good: &GoodEntry) -> Option<bool> {
-    any_id_matches(good, |id| source.is_item_equipped(id, good.category))
+    any_matches(good.item_ids(), |id| {
+        source.is_item_equipped(id, good.category)
+    })
 }
 
 /// Whether a good is historically owned when the active layout asks for historic tracking.
@@ -247,11 +269,7 @@ pub fn item_owned_historic(source: &dyn GameStateSource, good: &GoodEntry) -> Op
     if current == Some(true) {
         return current;
     }
-
-    match effective_good_flag(&good.key, good.historic_lot) {
-        Some(flag) => source.get_flag(flag).or(current),
-        None => current,
-    }
+    acquisition_flag_set(source, good).or(current)
 }
 
 /// `(owned, total)` members of an aggregate group, or `None` while the data is incomplete.
@@ -492,8 +510,16 @@ historic_vanilla_flag = 40001234
             }),
             max: None,
             countable: false,
+            gesture: false,
         };
         assert_eq!(item_owned_historic(&Source, &good), Some(true));
+        assert_eq!(item_owned(&Source, &good), Some(false));
+
+        let gesture = GoodEntry {
+            gesture: true,
+            ..good
+        };
+        assert_eq!(item_owned(&Source, &gesture), Some(true));
     }
 
     #[test]

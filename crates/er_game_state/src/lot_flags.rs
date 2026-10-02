@@ -26,7 +26,8 @@ pub struct LotFlagsData {
     pub regulation_sha256: Option<String>,
     pub map: HashMap<u32, u32>,
     pub enemy: HashMap<u32, u32>,
-    pub goods: HashMap<String, u32>,
+    /// Acquisition flags per good key: a seed can place the same good in several lots.
+    pub goods: HashMap<String, Vec<u32>>,
 }
 
 /// `None` means no seed mapping is loaded (vanilla, or no `regulation_path` configured):
@@ -45,7 +46,23 @@ struct LotFlagsFile {
     #[serde(default)]
     enemy: HashMap<String, u32>,
     #[serde(default)]
-    goods: HashMap<String, u32>,
+    goods: HashMap<String, GoodFlags>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(untagged)]
+enum GoodFlags {
+    One(u32),
+    Many(Vec<u32>),
+}
+
+impl From<GoodFlags> for Vec<u32> {
+    fn from(flags: GoodFlags) -> Self {
+        match flags {
+            GoodFlags::One(flag) => vec![flag],
+            GoodFlags::Many(flags) => flags,
+        }
+    }
 }
 
 pub fn lot_seed_flags() -> Option<Arc<LotFlagsData>> {
@@ -70,7 +87,11 @@ pub fn parse_lot_flags(raw: &str) -> Result<LotFlagsData, String> {
         regulation_sha256: file.regulation_sha256,
         map,
         enemy: parse_flag_map("enemy", file.enemy)?,
-        goods: file.goods,
+        goods: file
+            .goods
+            .into_iter()
+            .map(|(key, flags)| (key, flags.into()))
+            .collect(),
     })
 }
 
@@ -186,13 +207,17 @@ pub fn effective_lot_flag(lot: LotRef) -> Option<u32> {
     }
 }
 
-/// Effective flag for a historically tracked good. With a seed mapping loaded, goods are resolved
-/// by item key because the runtime extractor has to find where that item was placed in this seed.
-/// Without a seed mapping, fall back to the vanilla lot metadata from goods.toml.
-pub fn effective_good_flag(key: &str, vanilla_lot: Option<LotRef>) -> Option<u32> {
+/// Effective flags for a historically tracked good (acquired once any of them is set). With a
+/// seed mapping loaded, goods are resolved by item key because the runtime extractor has to find
+/// where that item was placed in this seed. Without a seed mapping, fall back to the vanilla lot
+/// metadata from goods.toml. Empty when the good is untraceable.
+pub fn effective_good_flags(key: &str, vanilla_lot: Option<LotRef>) -> Vec<u32> {
     match lot_seed_flags() {
-        Some(data) => data.goods.get(key).copied(),
-        None => vanilla_lot.and_then(effective_lot_flag),
+        Some(data) => data.goods.get(key).cloned().unwrap_or_default(),
+        None => vanilla_lot
+            .and_then(effective_lot_flag)
+            .into_iter()
+            .collect(),
     }
 }
 
@@ -216,13 +241,15 @@ regulation_sha256 = "abc"
 
 [goods]
 fire_scorpion_charm = 700
+o_mother = [800, 900]
 "#;
         let data = parse_lot_flags(raw).unwrap();
         assert_eq!(data.regulation_sha256.as_deref(), Some("abc"));
         assert_eq!(data.map.get(&100), Some(&200));
         assert_eq!(data.map.get(&300), Some(&400));
         assert_eq!(data.enemy.get(&500), Some(&600));
-        assert_eq!(data.goods.get("fire_scorpion_charm"), Some(&700));
+        assert_eq!(data.goods["fire_scorpion_charm"], [700]);
+        assert_eq!(data.goods["o_mother"], [800, 900]);
     }
 
     #[test]
@@ -252,7 +279,7 @@ fire_scorpion_charm = 700
     }
 
     #[test]
-    fn effective_good_flag_prefers_seed_item_mapping_then_vanilla_lot() {
+    fn effective_good_flags_prefer_seed_item_mapping_then_vanilla_lot() {
         let _guard = lock_for_test();
         let lot = LotRef {
             table: LotTable::Map,
@@ -261,12 +288,12 @@ fire_scorpion_charm = 700
         };
         set_lot_flags(None);
         assert_eq!(
-            effective_good_flag("fire_scorpion_charm", Some(lot)),
-            Some(200)
+            effective_good_flags("fire_scorpion_charm", Some(lot)),
+            [200]
         );
 
         let mut goods = HashMap::new();
-        goods.insert("fire_scorpion_charm".to_string(), 700);
+        goods.insert("fire_scorpion_charm".to_string(), vec![700, 701]);
         set_lot_flags(Some(LotFlagsData {
             regulation_sha256: None,
             map: HashMap::new(),
@@ -274,10 +301,10 @@ fire_scorpion_charm = 700
             goods,
         }));
         assert_eq!(
-            effective_good_flag("fire_scorpion_charm", Some(lot)),
-            Some(700)
+            effective_good_flags("fire_scorpion_charm", Some(lot)),
+            [700, 701]
         );
-        assert_eq!(effective_good_flag("missing", Some(lot)), None);
+        assert!(effective_good_flags("missing", Some(lot)).is_empty());
         set_lot_flags(None);
     }
 }

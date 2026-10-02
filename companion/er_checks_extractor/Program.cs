@@ -47,9 +47,7 @@ static int ExtractRuntimeFlags(string[] args)
 
     var wanted = ParseWantedChecks(checksPath);
     var historicKeys = ParseHistoricLayoutKeys(options.LayoutPaths);
-    var historicGoods = new List<RuntimeGood>();
-    if (historicKeys.Count > 0)
-        historicGoods = ParseRuntimeHistoricGoods(LoadGoodsToml(options.GoodsPath), historicKeys);
+    var historicGoods = ParseRuntimeHistoricGoods(LoadGoodsToml(options.GoodsPath), historicKeys);
 
     var distinct = wanted.Distinct().ToList();
     var regBytes = File.ReadAllBytes(regPath);
@@ -60,7 +58,7 @@ static int ExtractRuntimeFlags(string[] args)
     var missing = 0;
     var mapFlags = new SortedDictionary<int, uint>();
     var enemyFlags = new SortedDictionary<int, uint>();
-    var goodFlags = new SortedDictionary<string, uint>();
+    var goodFlags = new SortedDictionary<string, List<uint>>();
 
     if (distinct.Count > 0 || historicGoods.Count > 0)
     {
@@ -100,31 +98,20 @@ static int ExtractRuntimeFlags(string[] args)
 
         foreach (var good in historicGoods)
         {
-            var matches = FindLotsForRuntimeGood(itemLots, good).ToList();
-            if (matches.Count == 1)
-            {
-                goodFlags[good.Key] = matches[0].VanillaFlag;
-                resolved++;
-            }
-            else if (matches.Count == 0)
+            // A seed can place the same good in several lots: owning it means any of them was looted.
+            var flags = FindLotsForRuntimeGood(itemLots, good)
+                .Select(m => m.VanillaFlag)
+                .Distinct()
+                .Order()
+                .ToList();
+            if (flags.Count == 0)
             {
                 Console.Error.WriteLine($"warn: historic good {good.Key} ({good.ItemId}) not found in current regulation");
                 missing++;
+                continue;
             }
-            else
-            {
-                Console.Error.WriteLine(
-                    "warn: historic good "
-                        + $"{good.Key} is ambiguous in current regulation: "
-                        + string.Join(
-                            ", ",
-                            matches.Select(m =>
-                                $"{m.TableName}:{m.LotId}/cat={m.ItemLotCategory}/flag={m.VanillaFlag}"
-                            )
-                        )
-                );
-                untraceable++;
-            }
+            goodFlags[good.Key] = flags;
+            resolved++;
         }
     }
 
@@ -355,11 +342,9 @@ static HashSet<string> ParseHistoricLayoutKeys(IEnumerable<string> paths)
 
 static List<RuntimeGood> ParseRuntimeHistoricGoods(string goodsToml, HashSet<string> historicKeys)
 {
-    if (historicKeys.Count == 0)
-        return [];
-
+    // Gestures never stay in the inventory, so the overlay always tracks them by flag.
     return ParseGoodBlocks(goodsToml)
-        .Where(g => historicKeys.Contains(g.Key) && !g.Count)
+        .Where(g => (g.Gesture || historicKeys.Contains(g.Key)) && !g.Count)
         .Select(g => new RuntimeGood(g.Key, g.ItemId, g.Category))
         .ToList();
 }
@@ -381,6 +366,7 @@ static List<GoodBlock> ParseGoodBlocks(string rawToml)
     var category = CategoryGoods;
     LotMetadata? historicLot = null;
     var count = false;
+    var gesture = false;
     LotTable? historicLotTable = null;
     int? historicLotId = null;
     uint? historicVanillaFlag = null;
@@ -389,12 +375,13 @@ static List<GoodBlock> ParseGoodBlocks(string rawToml)
     {
         historicLot ??= BuildHistoricLot(historicLotTable, historicLotId, historicVanillaFlag);
         if (inGood && key is not null && itemId is int id)
-            result.Add(new GoodBlock(key, id, category, count, historicLot));
+            result.Add(new GoodBlock(key, id, category, count, gesture, historicLot));
         key = null;
         itemId = null;
         category = CategoryGoods;
         historicLot = null;
         count = false;
+        gesture = false;
         historicLotTable = null;
         historicLotId = null;
         historicVanillaFlag = null;
@@ -446,6 +433,9 @@ static List<GoodBlock> ParseGoodBlocks(string rawToml)
                 break;
             case "count":
                 count = v!.StartsWith("true", StringComparison.OrdinalIgnoreCase);
+                break;
+            case "gesture":
+                gesture = v!.StartsWith("true", StringComparison.OrdinalIgnoreCase);
                 break;
         }
     }
@@ -678,12 +668,15 @@ static void AppendFlagsSection(StringBuilder sb, string name, SortedDictionary<i
         sb.AppendLine($"{lot} = {flag}");
 }
 
-static void AppendGoodsSection(StringBuilder sb, SortedDictionary<string, uint> flags)
+static void AppendGoodsSection(StringBuilder sb, SortedDictionary<string, List<uint>> flags)
 {
     sb.AppendLine();
     sb.AppendLine("[goods]");
-    foreach (var (key, flag) in flags)
-        sb.AppendLine($"{key} = {flag}");
+    foreach (var (key, keyFlags) in flags)
+    {
+        var value = keyFlags.Count == 1 ? $"{keyFlags[0]}" : $"[{string.Join(", ", keyFlags)}]";
+        sb.AppendLine($"{key} = {value}");
+    }
 }
 
 static ExtractOptions ParseOptions(string[] args, int start)
@@ -839,7 +832,14 @@ readonly record struct LotDebugMatch(
     public string TableName => Table == LotTable.Map ? "map" : "enemy";
 }
 
-readonly record struct GoodBlock(string Key, int ItemId, int Category, bool Count, LotMetadata? HistoricLot);
+readonly record struct GoodBlock(
+    string Key,
+    int ItemId,
+    int Category,
+    bool Count,
+    bool Gesture,
+    LotMetadata? HistoricLot
+);
 
 readonly record struct BootstrapGood(string Key, int ItemId, int Category, LotMetadata? HistoricLot);
 
