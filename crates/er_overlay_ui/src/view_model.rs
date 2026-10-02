@@ -11,6 +11,8 @@ use er_overlay_common::{
     BossPanelScope, ChallengeSnapshot, GameStateDiagnostics, GameTime, TrackKind,
 };
 
+use crate::metric_registry::MetricValue;
+
 #[derive(Debug, Clone)]
 pub struct TrackedEntryRow {
     pub name: String,
@@ -126,6 +128,9 @@ pub struct OverlayViewModel {
     /// Whether a per-seed flag mapping is loaded (regulation parsed). Surfaced in the panel.
     pub checks_seed_active: bool,
     pub challenge: ChallengeSnapshot,
+    /// Latest reading of every accepted plugin metric. Empty when no plugin is loaded.
+    /// Built-in metrics, groups and tracked goods always win over a plugin id.
+    pub plugin_metrics: HashMap<String, MetricValue>,
 }
 
 impl OverlayViewModel {
@@ -436,6 +441,7 @@ pub fn empty_view_model(
         checks_panel_title: "Checks".to_string(),
         checks_seed_active: false,
         challenge: ChallengeSnapshot::default(),
+        plugin_metrics: HashMap::new(),
     }
 }
 
@@ -606,6 +612,7 @@ pub fn build_view_model_with(
         checks_panel_title,
         checks_seed_active,
         challenge,
+        plugin_metrics: HashMap::new(),
     }
 }
 

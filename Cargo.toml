@@ -6,6 +6,8 @@ members = [
     "crates/er_overlay_ui",
     "crates/er_overlay_dll",
     "crates/er_overlay_injector",
+    "crates/er_overlay_plugin_abi",
+    "sdk/er_overlay_plugin_sdk",
 ]
 default-members = [
     "crates/er_overlay_injector",
@@ -52,6 +54,7 @@ eldenring = { git = "https://github.com/vswarte/fromsoftware-rs", rev = "e0948c8
 fromsoftware-shared = { git = "https://github.com/vswarte/fromsoftware-rs", rev = "e0948c8d64594b79785e9490877baacea5605a9d" }
 
 er_overlay_common = { path = "crates/er_overlay_common" }
+er_overlay_plugin_abi = { path = "crates/er_overlay_plugin_abi" }
 er_game_state = { path = "crates/er_game_state", default-features = false }
 er_overlay_ui = { path = "crates/er_overlay_ui" }
 

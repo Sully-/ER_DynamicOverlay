@@ -104,3 +104,13 @@ enabled = false
 budget_metric = "deaths"
 budget_max = 0
 start_flag = 100
+
+# ── Metric plugins ───────────────────────────────────────────────────
+# Native DLLs dropped in this folder extend the metric ids a layout can reference.
+# The plugin only supplies an id and a number; label, icon and show_max stay on the tile.
+# A missing directory is left alone. See docs/plugins.md.
+[plugins]
+enabled = true
+dir = "plugins"
+disabled = []
+

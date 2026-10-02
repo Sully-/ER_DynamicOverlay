@@ -17,7 +17,7 @@ pub use fonts::setup_overlay_fonts;
 pub use frame_timing::{FrameTimingAccum, FrameTimingSnapshot};
 pub use hud_window::{HudBounds, HudDragState};
 pub use icon_atlas::IconAtlas;
-pub use metric_registry::resolve_metric_count;
+pub use metric_registry::{resolve_metric_count, MetricValue};
 pub use render::render_overlay;
 pub use view_model::{
     build_view_model, build_view_model_with, empty_view_model, OverlayViewModel,

@@ -193,6 +193,7 @@ impl OverlayApp {
             &mut active_checks_locale,
         );
         let view_model = empty_view_model(config.boss_panel_scope, config.checks_panel_scope);
+        let plugins = config.plugins.clone();
         let config_mtime = file_mtime(&config_path);
         let layout_mtime = {
             let base_dir = er_overlay_common::default_base_dir();
@@ -256,6 +257,7 @@ impl OverlayApp {
                     boss_panel_visible: false,
                     checks_panel_visible: false,
                 },
+                plugins,
             ),
             boss_table_mtime,
             active_boss_locale,
@@ -935,14 +937,20 @@ impl OverlayApp {
             self.config.icons_dir.as_deref().map(std::path::Path::new),
             &base_dir,
         );
+        let plugin_icons = self.config.plugins.directory(&base_dir).join("icons");
+        let icon_dirs = [icons_dir, plugin_icons];
         let (enabled, keys) = &self.icon_signature;
         debug!(
             "Loading {} item icon(s) from {}",
             keys.len(),
-            icons_dir.display()
+            icon_dirs
+                .iter()
+                .map(|dir| dir.display().to_string())
+                .collect::<Vec<_>>()
+                .join(", ")
         );
         self.icon_atlas
-            .load_keys(render_ctx, &icons_dir, keys, *enabled);
+            .load_keys(render_ctx, &icon_dirs, keys, *enabled);
         self.icons_dirty = false;
     }
 

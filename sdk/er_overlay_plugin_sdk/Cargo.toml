@@ -1,0 +1,10 @@
+[package]
+name = "er_overlay_plugin_sdk"
+description = "Rust SDK for Elden Ring overlay metric plugins"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+er_overlay_plugin_abi.workspace = true

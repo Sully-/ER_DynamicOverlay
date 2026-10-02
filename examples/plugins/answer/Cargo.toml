@@ -1,0 +1,20 @@
+[workspace]
+
+[package]
+name = "answer"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Smallest possible Elden Ring overlay metric plugin: always returns 42"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+er_overlay_plugin_sdk = { path = "../../../sdk/er_overlay_plugin_sdk" }
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"

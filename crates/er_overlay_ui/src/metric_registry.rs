@@ -3,6 +3,7 @@ use er_overlay_common::{GameTime, TrackKind};
 
 use crate::view_model::{OverlayViewModel, TrackedEntryRow};
 
+/// Counter, duration, cycle, free-form text, or no reading yet.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MetricValue {
     Time(GameTime),
@@ -11,6 +12,8 @@ pub enum MetricValue {
         max: Option<u32>,
     },
     NgCycle(Option<u32>),
+    /// Plugin-provided text (a rank such as `S`). Not a numeric reading.
+    Text(String),
     Unavailable,
 }
 
@@ -83,6 +86,8 @@ pub fn resolve_metric(metric: &str, vm: &OverlayViewModel) -> MetricValue {
                         max: Some(1),
                     },
                 }
+            } else if let Some(value) = vm.plugin_metrics.get(other) {
+                value.clone()
             } else {
                 MetricValue::Unavailable
             }
@@ -100,7 +105,7 @@ pub fn resolve_metric_count(metric: &str, vm: &OverlayViewModel) -> Option<u32> 
     match resolve_metric(metric, vm) {
         MetricValue::Count { current, .. } => current,
         MetricValue::NgCycle(n) => n,
-        MetricValue::Time(_) | MetricValue::Unavailable => None,
+        MetricValue::Time(_) | MetricValue::Text(_) | MetricValue::Unavailable => None,
     }
 }
 
@@ -110,7 +115,11 @@ pub fn metric_is_complete(value: &MetricValue) -> bool {
             current: Some(c),
             max: Some(m),
         } => *m > 0 && *c >= *m,
-        _ => false,
+        MetricValue::Count { .. }
+        | MetricValue::Time(_)
+        | MetricValue::NgCycle(_)
+        | MetricValue::Text(_)
+        | MetricValue::Unavailable => false,
     }
 }
 
@@ -146,6 +155,7 @@ pub fn format_metric_value(value: &MetricValue, show_max: bool) -> String {
         MetricValue::Count { current: None, .. } | MetricValue::Unavailable => "---".to_string(),
         MetricValue::NgCycle(Some(n)) => format!("NG+{n}"),
         MetricValue::NgCycle(None) => "---".to_string(),
+        MetricValue::Text(text) => text.clone(),
     }
 }
 
@@ -156,7 +166,7 @@ mod tests {
     use er_game_state::mock::MockGameState;
 
     use super::*;
-    use crate::view_model::build_view_model;
+    use crate::view_model::{build_view_model, empty_view_model};
 
     fn keys(list: &[&str]) -> Vec<String> {
         list.iter().map(|s| s.to_string()).collect()
@@ -368,5 +378,111 @@ mod tests {
         );
         let row = resolve_tracked_key("daedicar_s_woe", &vm).unwrap();
         assert_eq!(row.equipped, Some(false));
+    }
+
+    #[test]
+    fn plugin_metric_does_not_shadow_group_or_good() {
+        let mut vm = empty_view_model(
+            er_overlay_common::BossPanelScope::CurrentRegion,
+            er_overlay_common::BossPanelScope::CurrentRegion,
+        );
+        vm.plugin_metrics.insert(
+            "answer.value".into(),
+            MetricValue::Count {
+                current: Some(42),
+                max: None,
+            },
+        );
+        vm.plugin_metrics.insert(
+            "great_runes".into(),
+            MetricValue::Count {
+                current: Some(99),
+                max: None,
+            },
+        );
+        assert_eq!(
+            resolve_metric("answer.value", &vm),
+            MetricValue::Count {
+                current: Some(42),
+                max: None,
+            }
+        );
+
+        let built = build_view_model(
+            &MockGameState::default(),
+            &keys(&["godrick_rune"]),
+            &HashSet::new(),
+            &HashSet::new(),
+            er_overlay_common::BossPanelScope::CurrentRegion,
+            er_overlay_common::BossPanelScope::CurrentRegion,
+            er_overlay_common::ChallengeSnapshot::default(),
+        );
+        let mut shadowed = built;
+        shadowed.plugin_metrics.insert(
+            "great_runes".into(),
+            MetricValue::Count {
+                current: Some(99),
+                max: None,
+            },
+        );
+        shadowed.plugin_metrics.insert(
+            "godrick_rune".into(),
+            MetricValue::Count {
+                current: Some(99),
+                max: None,
+            },
+        );
+        assert_eq!(
+            resolve_metric("great_runes", &shadowed),
+            MetricValue::Count {
+                current: Some(0),
+                max: Some(7),
+            }
+        );
+        assert_ne!(
+            resolve_metric("godrick_rune", &shadowed),
+            MetricValue::Count {
+                current: Some(99),
+                max: None,
+            }
+        );
+    }
+
+    #[test]
+    fn text_metric_formats_as_itself_and_is_not_a_count() {
+        let text = MetricValue::Text("S".into());
+        assert_eq!(format_metric_value(&text, true), "S");
+        assert!(!metric_is_complete(&text));
+        assert_eq!(
+            apply_metric_max(text.clone(), er_overlay_common::MetricMax::Manual(100)),
+            text
+        );
+        let mut vm = empty_view_model(
+            er_overlay_common::BossPanelScope::CurrentRegion,
+            er_overlay_common::BossPanelScope::CurrentRegion,
+        );
+        vm.plugin_metrics
+            .insert("score.rank".into(), MetricValue::Text("A+".into()));
+        vm.plugin_metrics.insert(
+            "score.total".into(),
+            MetricValue::Count {
+                current: Some(1250),
+                max: Some(4000),
+            },
+        );
+        assert_eq!(resolve_metric_count("score.rank", &vm), None);
+        assert_eq!(resolve_metric_count("score.total", &vm), Some(1250));
+        assert_eq!(
+            format_metric_value(&resolve_metric("score.total", &vm), true),
+            "1250/4000"
+        );
+        assert!(metric_is_complete(&MetricValue::Count {
+            current: Some(4000),
+            max: Some(4000),
+        }));
+        assert_eq!(
+            format_metric_value(&MetricValue::Time(GameTime::from_ms(2_700_000)), false),
+            "00:45:00"
+        );
     }
 }

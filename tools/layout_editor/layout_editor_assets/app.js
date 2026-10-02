@@ -1072,10 +1072,57 @@ function fillTileBody(body, tile, pxW, pxH) {
   return {};
 }
 
+function defaultLabelForMetricId(id) {
+  const parts = String(id).split(".").filter(Boolean);
+  const tail = parts.length > 1 ? parts[parts.length - 1] : String(id);
+  return tail.replace(/_/g, " ").toUpperCase();
+}
+
+function previewForKind(kind) {
+  if (kind === "time_ms") return "00:45:00";
+  if (kind === "text") return "S";
+  return "0";
+}
+
+/** Registers an id the editor did not ship with. Returns true when it was new. */
+function ensureMetricKnown(id, kind) {
+  if (!id || METRICS.some((m) => m.id === id)) return false;
+  METRICS.push({
+    id,
+    label: defaultLabelForMetricId(id),
+    showMax: false,
+    plugin: true,
+  });
+  PREVIEW_METRICS[id] = previewForKind(kind);
+  if (kind !== "time_ms" && kind !== "text" && !PB_SOURCE_METRICS.includes(id)) {
+    PB_SOURCE_METRICS.push(id);
+    if (els.propPbSource) {
+      const opt = document.createElement("option");
+      opt.value = id;
+      opt.textContent = id;
+      els.propPbSource.appendChild(opt);
+    }
+  }
+  return true;
+}
+
+/** Adds a metric to the palette and the property dropdown if it is not already known. */
+function mountMetric(id, kind) {
+  if (!ensureMetricKnown(id, kind)) return false;
+  const m = METRICS[METRICS.length - 1];
+  els.paletteMetrics.appendChild(makePaletteEl("metric", m.id, m));
+  const opt = document.createElement("option");
+  opt.value = m.id;
+  opt.textContent = m.id;
+  els.propMetric.appendChild(opt);
+  return true;
+}
+
 function buildPalette() {
   els.paletteMetrics.innerHTML = "";
+  els.propMetric.innerHTML = "";
   for (const m of METRICS) {
-    els.paletteMetrics.appendChild(makePaletteEl("metric", m.label, m));
+    els.paletteMetrics.appendChild(makePaletteEl("metric", m.plugin ? m.id : m.label, m));
   }
 
   els.paletteLabel.innerHTML = "";
@@ -1573,6 +1620,7 @@ function renderProperties() {
   els.fieldIcon.classList.toggle("hidden", tile.kind !== "metric" && tile.kind !== "label");
 
   els.propLabel.value = tile.label || "";
+  if (tile.kind === "metric") mountMetric(tile.metric);
   els.propMetric.value = tile.metric || "igt";
   els.propPbSource.value = tile.pb_metric || PB_DEFAULT_SOURCE;
   els.propPbMode.value = tile.pb_mode || PB_DEFAULT_MODE;
@@ -2130,6 +2178,33 @@ function downloadToml() {
 
 // ── TOML import ─────────────────────────────────────────────────────
 
+function importPluginMetrics(text) {
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    alert(t("importPluginsBad"));
+    return;
+  }
+  const list = Array.isArray(data) ? data : data && data.metrics;
+  if (!Array.isArray(list)) {
+    alert(t("importPluginsBad"));
+    return;
+  }
+  let added = 0;
+  for (const entry of list) {
+    const id = entry && (entry.id || entry.metric);
+    if (!id) continue;
+    if (mountMetric(String(id), entry.kind)) added += 1;
+  }
+  if (added === 0) {
+    alert(t("importPluginsNone"));
+    return;
+  }
+  render();
+  alert(t("importPluginsLoaded", { count: added }));
+}
+
 function importToml(text) {
   const raw = parseLayoutToml(text);
   const newState = createDefaultState();
@@ -2177,6 +2252,11 @@ function importToml(text) {
 
   state = newState;
   layoutImported = true;
+  for (const section of state.sections) {
+    for (const tile of section.tiles) {
+      if (tile.kind === "metric") mountMetric(tile.metric);
+    }
+  }
   state.grid.columns = globalGridColumns();
   clearSelection();
   resetGridDom();
@@ -2246,6 +2326,13 @@ function bindEvents() {
     if (!file) return;
     importToml(await file.text());
     e.target.value = "";
+  });
+
+  $("#import-plugins").addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+    importPluginMetrics(await file.text());
   });
 
   for (const input of [

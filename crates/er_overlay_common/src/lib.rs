@@ -12,7 +12,7 @@ pub use challenge::{
 };
 pub use config::{
     default_base_dir, default_config_path, load_or_create_config, resolve_configured_path,
-    set_overlay_base_dir, Anchor, BossPanelScope, OverlayConfig,
+    set_overlay_base_dir, Anchor, BossPanelScope, OverlayConfig, PluginsConfig,
 };
 pub use hotkey::{parse_hotkey, HotkeyBinding, OverlayKey};
 pub use layout::{load_layout, resolve_layout_path, LayoutConfig, MetricMax, TileDef};

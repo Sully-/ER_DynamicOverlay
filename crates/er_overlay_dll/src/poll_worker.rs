@@ -15,15 +15,18 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{Receiver, Sender, TryRecvError};
 use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use er_game_state::{GameStateReader, GameStateSource};
 use er_overlay_common::{
     BossPanelScope, ChallengeConfig, ChallengeSnapshot, ChallengeTracker, PbDirection,
+    PluginsConfig,
 };
 use er_overlay_ui::{
     build_view_model_with, resolve_metric_count, OverlayViewModel, ViewModelBuildOptions,
 };
+
+use crate::plugin_host::PluginHost;
 
 /// How often the worker polls the game and republishes the view model.
 ///
@@ -68,7 +71,12 @@ pub struct PollWorker {
 }
 
 impl PollWorker {
-    pub fn spawn(reader: GameStateReader, challenge: ChallengeTracker, inputs: PollInputs) -> Self {
+    pub fn spawn(
+        reader: GameStateReader,
+        challenge: ChallengeTracker,
+        inputs: PollInputs,
+        plugins: PluginsConfig,
+    ) -> Self {
         let (cmd_tx, cmd_rx) = std::sync::mpsc::channel::<Command>();
         let (vm_tx, vm_rx) = std::sync::mpsc::channel::<OverlayViewModel>();
         let stop = Arc::new(AtomicBool::new(false));
@@ -77,7 +85,15 @@ impl PollWorker {
         let handle = thread::Builder::new()
             .name("er_overlay_poll".into())
             .spawn(move || {
-                run(reader, challenge, inputs, cmd_rx, vm_tx, stop_thread);
+                run(
+                    reader,
+                    challenge,
+                    inputs,
+                    plugins,
+                    cmd_rx,
+                    vm_tx,
+                    stop_thread,
+                );
             })
             .ok();
 
@@ -127,11 +143,14 @@ fn run(
     mut reader: GameStateReader,
     mut challenge: ChallengeTracker,
     mut inputs: PollInputs,
+    plugins: PluginsConfig,
     cmd_rx: Receiver<Command>,
     vm_tx: Sender<OverlayViewModel>,
     stop: Arc<AtomicBool>,
 ) {
     challenge.sync_config(&inputs.challenge_config);
+    let mut plugins = PluginHost::load(&plugins);
+    let started = Instant::now();
 
     while !stop.load(Ordering::Relaxed) {
         loop {
@@ -148,7 +167,8 @@ fn run(
 
         reader.poll();
         if reader.is_ready() {
-            let vm = build(&reader, &mut challenge, &inputs);
+            let tick_ms = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX);
+            let vm = build(&reader, &mut challenge, &inputs, &mut plugins, tick_ms);
             if vm_tx.send(vm).is_err() {
                 return;
             }
@@ -164,9 +184,12 @@ fn build(
     reader: &GameStateReader,
     challenge: &mut ChallengeTracker,
     inputs: &PollInputs,
+    plugins: &mut PluginHost,
+    tick_ms: u64,
 ) -> OverlayViewModel {
     // Build first (with a placeholder challenge snapshot) so the PB metric can be resolved from
-    // live game data before the challenge tracker consumes it.
+    // live game data before the challenge tracker consumes it. Plugin metrics are filled before
+    // that resolution, so a layout can use one as the personal-best source.
     let mut vm = build_view_model_with(
         reader,
         &inputs.data_refs,
@@ -180,6 +203,7 @@ fn build(
             build_checks_panel: inputs.checks_panel_visible,
         },
     );
+    vm.plugin_metrics = plugins.poll_all(tick_ms);
 
     let snapshot = if inputs.challenge_config.enabled && reader.challenge_update_ready() {
         challenge.configure(

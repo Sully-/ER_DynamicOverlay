@@ -117,6 +117,9 @@ pub struct OverlayConfig {
     /// Challenge mode (PB / failed runs), aligned with EROverlay boss challenge.
     #[serde(default)]
     pub challenge: ChallengeConfig,
+    /// Native metric plugins loaded from `dir` next to the DLL.
+    #[serde(default)]
+    pub plugins: PluginsConfig,
     /// Write a diagnostic log file to `logs/er_overlay.log` next to the DLL. Off by default;
     /// enable it to troubleshoot injection/startup issues (e.g. the overlay not showing up).
     #[serde(default)]
@@ -172,6 +175,45 @@ fn default_hide_all_hotkey() -> Option<String> {
     Some("F9".into())
 }
 
+fn default_plugins_dir() -> String {
+    "plugins".into()
+}
+
+/// Where native metric plugins are loaded from. A missing directory is not created.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PluginsConfig {
+    /// `false` skips discovery entirely.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Directory of `*.dll` plugins, absolute or relative to the overlay DLL.
+    #[serde(default = "default_plugins_dir")]
+    pub dir: String,
+    /// File names (or stems) to ignore, so a plugin can be turned off without deleting it.
+    #[serde(default)]
+    pub disabled: Vec<String>,
+}
+
+impl Default for PluginsConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            dir: default_plugins_dir(),
+            disabled: Vec::new(),
+        }
+    }
+}
+
+impl PluginsConfig {
+    pub fn directory(&self, base: &Path) -> PathBuf {
+        let path = Path::new(&self.dir);
+        if path.is_absolute() {
+            path.to_path_buf()
+        } else {
+            base.join(path)
+        }
+    }
+}
+
 impl Default for OverlayConfig {
     fn default() -> Self {
         Self {
@@ -207,6 +249,7 @@ impl Default for OverlayConfig {
             challenge: ChallengeConfig::default(),
             log_enabled: false,
             log_level: None,
+            plugins: PluginsConfig::default(),
         }
     }
 }
@@ -354,6 +397,20 @@ mod tests {
         assert_eq!(cfg.hide_all_hotkey.as_deref(), Some("F9"));
         assert_eq!(cfg.boss_panel_hotkey.as_deref(), Some("F7"));
         assert_eq!(cfg.checks_panel_hotkey.as_deref(), Some("F6"));
+    }
+
+    #[test]
+    fn plugins_default_when_absent_from_config() {
+        let cfg: OverlayConfig = toml::from_str("").unwrap();
+        assert!(cfg.plugins.enabled);
+        assert_eq!(cfg.plugins.dir, "plugins");
+        assert!(cfg.plugins.disabled.is_empty());
+
+        let partial: OverlayConfig =
+            toml::from_str("[plugins]\ndisabled = [\"answer\"]\n").unwrap();
+        assert!(partial.plugins.enabled);
+        assert_eq!(partial.plugins.dir, "plugins");
+        assert_eq!(partial.plugins.disabled, vec!["answer".to_string()]);
     }
 
     #[test]

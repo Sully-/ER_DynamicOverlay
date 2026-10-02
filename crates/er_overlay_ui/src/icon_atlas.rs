@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use er_game_state::good_by_key;
 use hudhook::RenderContext;
@@ -24,7 +24,7 @@ impl IconAtlas {
     pub fn load_keys(
         &mut self,
         render_ctx: &mut dyn RenderContext,
-        icons_dir: &Path,
+        icon_dirs: &[PathBuf],
         keys: &[String],
         enabled: bool,
     ) {
@@ -34,8 +34,15 @@ impl IconAtlas {
             return;
         }
 
-        if !icons_dir.is_dir() {
-            warn!("Icons directory not found: {}", icons_dir.display());
+        if !icon_dirs.iter().any(|dir| dir.is_dir()) {
+            warn!(
+                "Icons directories not found: {}",
+                icon_dirs
+                    .iter()
+                    .map(|dir| dir.display().to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            );
             return;
         }
 
@@ -43,10 +50,13 @@ impl IconAtlas {
             let file = good_by_key(key)
                 .map(|g| g.file)
                 .unwrap_or_else(|| format!("{}.png", key));
-            let path = icons_dir.join(&file);
-            if !path.is_file() {
+            let Some(path) = icon_dirs
+                .iter()
+                .map(|dir| dir.join(&file))
+                .find(|path| path.is_file())
+            else {
                 continue;
-            }
+            };
             match load_png_texture(render_ctx, &path) {
                 Ok(tex_id) => {
                     self.textures.insert(key.clone(), tex_id);
@@ -60,7 +70,11 @@ impl IconAtlas {
         if self.textures.is_empty() {
             warn!(
                 "No item icons loaded from {} — run tools/goods/fetch_goods_icons.py or set ELDEN_RING_GAME",
-                icons_dir.display()
+                icon_dirs
+                    .iter()
+                    .map(|dir| dir.display().to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ")
             );
         }
     }

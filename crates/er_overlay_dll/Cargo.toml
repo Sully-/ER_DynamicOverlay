@@ -13,6 +13,7 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 er_overlay_common.workspace = true
+er_overlay_plugin_abi.workspace = true
 er_game_state = { workspace = true, features = ["game"] }
 er_overlay_ui.workspace = true
 hudhook.workspace = true
