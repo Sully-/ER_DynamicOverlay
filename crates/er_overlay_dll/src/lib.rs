@@ -1,6 +1,7 @@
 mod overlay_app;
 mod plugin_host;
 mod poll_worker;
+mod startup_wait;
 
 use std::ffi::c_void;
 use std::fs::OpenOptions;
@@ -113,6 +114,10 @@ fn init_overlay(hmodule: HINSTANCE) {
     }
 
     er_game_state::log_startup_context(env!("CARGO_PKG_VERSION"));
+
+    // Also delays OverlayApp::new: its game-language detection (Steam API) and the poll worker's
+    // first pattern scans memoize their result and must not run while the game is still booting.
+    startup_wait::wait_for_game_window();
 
     info!("Building OverlayApp");
     let app = OverlayApp::new(config, config_path);
