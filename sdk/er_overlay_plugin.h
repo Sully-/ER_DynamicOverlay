@@ -39,6 +39,13 @@
 #define ER_LOG_DEBUG 3
 #define ER_LOG_TRACE 4
 
+#if defined(_WIN32) && !defined(ER_OVERLAY_PLUGIN_API)
+#define ER_OVERLAY_PLUGIN_API __declspec(dllexport)
+#endif
+#ifndef ER_OVERLAY_PLUGIN_API
+#define ER_OVERLAY_PLUGIN_API
+#endif
+
 typedef struct ErMetricDesc {
     const char* id; /* "score.total", UTF-8, NUL-terminated, valid until destroy */
     uint32_t kind;
@@ -64,23 +71,33 @@ typedef struct ErHostInfo {
 } ErHostInfo;
 
 #ifdef __cplusplus
+static_assert(sizeof(ErMetricDesc) == 24, "ErMetricDesc must be 24 bytes");
+static_assert(sizeof(ErMetricSample) == 32, "ErMetricSample must be 32 bytes");
+static_assert(sizeof(ErHostInfo) == 32, "ErHostInfo must be 32 bytes");
+#elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+_Static_assert(sizeof(ErMetricDesc) == 24, "ErMetricDesc must be 24 bytes");
+_Static_assert(sizeof(ErMetricSample) == 32, "ErMetricSample must be 32 bytes");
+_Static_assert(sizeof(ErHostInfo) == 32, "ErHostInfo must be 32 bytes");
+#endif
+
+#ifdef __cplusplus
 extern "C" {
 #endif
 
-uint32_t er_overlay_plugin_abi_version(void);
+ER_OVERLAY_PLUGIN_API uint32_t er_overlay_plugin_abi_version(void);
 
 /* NULL rejects the plugin. Copy what you need from host before returning. */
-void* er_overlay_plugin_create(const ErHostInfo* host);
+ER_OVERLAY_PLUGIN_API void* er_overlay_plugin_create(const ErHostInfo* host);
 
 /* Called once after create. out_len is required. */
-const ErMetricDesc* er_overlay_plugin_metrics(void* ctx, size_t* out_len);
+ER_OVERLAY_PLUGIN_API const ErMetricDesc* er_overlay_plugin_metrics(void* ctx, size_t* out_len);
 
-void er_overlay_plugin_poll(void* ctx, uint64_t tick_ms);
+ER_OVERLAY_PLUGIN_API void er_overlay_plugin_poll(void* ctx, uint64_t tick_ms);
 
 /* index is the position in the metrics() array, not a string lookup. */
-ErMetricSample er_overlay_plugin_sample(void* ctx, size_t index);
+ER_OVERLAY_PLUGIN_API ErMetricSample er_overlay_plugin_sample(void* ctx, size_t index);
 
-void er_overlay_plugin_destroy(void* ctx);
+ER_OVERLAY_PLUGIN_API void er_overlay_plugin_destroy(void* ctx);
 
 #ifdef __cplusplus
 }

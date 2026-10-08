@@ -1,0 +1,7 @@
+{
+  "metrics": [
+    { "id": "demo_cpp.uptime", "kind": "time_ms" },
+    { "id": "demo_cpp.progress", "kind": "count" },
+    { "id": "demo_cpp.rank", "kind": "text" }
+  ]
+}

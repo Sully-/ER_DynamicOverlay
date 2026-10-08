@@ -1,0 +1,7 @@
+{
+  "metrics": [
+    { "id": "demo_rust.uptime", "kind": "time_ms" },
+    { "id": "demo_rust.progress", "kind": "count" },
+    { "id": "demo_rust.rank", "kind": "text" }
+  ]
+}

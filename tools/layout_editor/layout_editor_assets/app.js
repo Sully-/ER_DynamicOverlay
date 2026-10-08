@@ -2178,31 +2178,51 @@ function downloadToml() {
 
 // ── TOML import ─────────────────────────────────────────────────────
 
-function importPluginMetrics(text) {
+/** Parses one metrics JSON body. Returns the metrics array, or null if invalid. */
+function parsePluginMetricsJson(text) {
   let data;
   try {
     data = JSON.parse(text);
   } catch {
-    alert(t("importPluginsBad"));
-    return;
+    return null;
   }
   const list = Array.isArray(data) ? data : data && data.metrics;
-  if (!Array.isArray(list)) {
-    alert(t("importPluginsBad"));
-    return;
-  }
+  return Array.isArray(list) ? list : null;
+}
+
+/**
+ * Imports metric ids from one or more sidecar / aggregated JSON texts.
+ * Each text is a per-plugin `*.metrics.json` or the overlay's `plugins/metrics.json`.
+ */
+function importPluginMetricsFromTexts(texts) {
   let added = 0;
-  for (const entry of list) {
-    const id = entry && (entry.id || entry.metric);
-    if (!id) continue;
-    if (mountMetric(String(id), entry.kind)) added += 1;
+  let bad = 0;
+  for (const text of texts) {
+    const list = parsePluginMetricsJson(text);
+    if (!list) {
+      bad += 1;
+      continue;
+    }
+    for (const entry of list) {
+      const id = entry && (entry.id || entry.metric);
+      if (!id) continue;
+      if (mountMetric(String(id), entry.kind)) added += 1;
+    }
   }
   if (added === 0) {
-    alert(t("importPluginsNone"));
+    alert(bad > 0 && texts.length === bad ? t("importPluginsBad") : t("importPluginsNone"));
     return;
   }
   render();
-  alert(t("importPluginsLoaded", { count: added }));
+  if (bad > 0) {
+    alert(t("importPluginsPartial", { count: added, bad }));
+  } else {
+    alert(t("importPluginsLoaded", { count: added }));
+  }
+}
+
+function importPluginMetrics(text) {
+  importPluginMetricsFromTexts([text]);
 }
 
 function importToml(text) {
@@ -2329,10 +2349,11 @@ function bindEvents() {
   });
 
   $("#import-plugins").addEventListener("change", async (e) => {
-    const file = e.target.files[0];
+    const files = Array.from(e.target.files || []);
     e.target.value = "";
-    if (!file) return;
-    importPluginMetrics(await file.text());
+    if (files.length === 0) return;
+    const texts = await Promise.all(files.map((file) => file.text()));
+    importPluginMetricsFromTexts(texts);
   });
 
   for (const input of [

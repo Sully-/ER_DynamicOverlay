@@ -1,0 +1,10 @@
+/build/
+/out/
+/cmake-build-*/
+/*.user
+/*.suo
+/*.obj
+/*.dll
+/*.lib
+/*.exp
+/*.pdb

@@ -1,0 +1,5 @@
+{
+  "metrics": [
+    { "id": "answer.value", "kind": "count" }
+  ]
+}

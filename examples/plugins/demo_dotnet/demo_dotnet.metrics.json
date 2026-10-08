@@ -1,0 +1,7 @@
+{
+  "metrics": [
+    { "id": "demo_dotnet.uptime", "kind": "time_ms" },
+    { "id": "demo_dotnet.progress", "kind": "count" },
+    { "id": "demo_dotnet.rank", "kind": "text" }
+  ]
+}

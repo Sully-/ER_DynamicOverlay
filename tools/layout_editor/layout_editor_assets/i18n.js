@@ -6,9 +6,13 @@ const I18N = {
     brandTitle: "Layout Editor",
     importLayout: "Import layout file",
     importPlugins: "Import plugin metrics",
-    importPluginsBad: "Could not read that file as a plugin metric list. Expected plugins/metrics.json.",
-    importPluginsNone: "That file does not list any metrics.",
-    importPluginsLoaded: "Imported {count} plugin metric(s). Drag one onto the grid, then set its label and icon on the tile.",
+    importPluginsBad:
+      "Could not read that file as a plugin metric list. Expected a per-plugin *.metrics.json (next to the DLL) or plugins/metrics.json.",
+    importPluginsNone: "Those file(s) do not list any new metrics.",
+    importPluginsLoaded:
+      "Imported {count} plugin metric(s). Drag one onto the grid, then set its label and icon on the tile.",
+    importPluginsPartial:
+      "Imported {count} plugin metric(s). {bad} file(s) could not be read (expected *.metrics.json or plugins/metrics.json).",
     new: "New",
     exportLayout: "Export layout file",
     palette: "Palette",
@@ -94,9 +98,13 @@ const I18N = {
     brandTitle: "Éditeur de layout",
     importLayout: "Importer un fichier de layout",
     importPlugins: "Importer des métriques de plugin",
-    importPluginsBad: "Impossible de lire ce fichier comme une liste de métriques. Attendu : plugins/metrics.json.",
-    importPluginsNone: "Ce fichier ne liste aucune métrique.",
-    importPluginsLoaded: "{count} métrique(s) de plugin importée(s). Glissez-en une sur la grille, puis réglez le label et l'icône sur la tuile.",
+    importPluginsBad:
+      "Impossible de lire ce fichier comme une liste de métriques. Attendu : un *.metrics.json à côté de la DLL, ou plugins/metrics.json.",
+    importPluginsNone: "Ce(s) fichier(s) ne listent aucune nouvelle métrique.",
+    importPluginsLoaded:
+      "{count} métrique(s) de plugin importée(s). Glissez-en une sur la grille, puis réglez le label et l'icône sur la tuile.",
+    importPluginsPartial:
+      "{count} métrique(s) de plugin importée(s). {bad} fichier(s) illisible(s) (attendu : *.metrics.json ou plugins/metrics.json).",
     new: "Nouveau",
     exportLayout: "Exporter le fichier de layout",
     palette: "Palette",

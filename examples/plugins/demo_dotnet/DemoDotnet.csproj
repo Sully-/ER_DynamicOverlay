@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <OutputType>Library</OutputType>
+    <AssemblyName>demo_dotnet</AssemblyName>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PublishAot>true</PublishAot>
+    <NativeLib>Shared</NativeLib>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <StripSymbols>true</StripSymbols>
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,20 @@
+[workspace]
+
+[package]
+name = "demo_rust"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Demo Elden Ring overlay metric plugin (Rust): uptime, progress, rank"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+er_overlay_plugin_sdk = { path = "../../../sdk/er_overlay_plugin_sdk" }
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
